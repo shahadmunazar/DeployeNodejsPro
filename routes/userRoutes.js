@@ -1,7 +1,7 @@
 const express = require("express");
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 const { getCurrentUser } = require("../controllers/authController");
-const {CreateRoles,GetAllRoles,GetRoleById} = require("../controllers/SuperAdmin/rolesController")
+const {CreateRoles,GetAllRoles,GetRoleById,CreateAdmin} = require("../controllers/SuperAdmin/rolesController")
 const router = express.Router();
 
 
@@ -19,6 +19,7 @@ router.post('/rolse-create', ...withAuthAndRole(CreateRoles));
 router.get('/roles-get', ...withAuthAndRole(GetAllRoles));
 //GetRoleById
 router.get('/roles-details', ...withAuthAndRole(GetRoleById));
+router.post('/create-admins', ...withAuthAndRole(CreateAdmin));
 
 
 router.get("/admin", authenticateUser, authorizeRoles("admin"), (req, res) => {
@@ -55,27 +56,3 @@ router.get("/compliance", authenticateUser, authorizeRoles("compliance"), (req, 
 
 module.exports = router;
 
-
-// const { MongoClient, ServerApiVersion } = require('mongodb');
-// const uri = "mongodb+srv://visionlang:<db_password>@cluster0.u6nvn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
-// // Create a MongoClient with a MongoClientOptions object to set the Stable API version
-// const client = new MongoClient(uri, {
-//   serverApi: {
-//     version: ServerApiVersion.v1,
-//     strict: true,
-//     deprecationErrors: true,
-//   }
-// });
-// async function run() {
-//   try {
-//     // Connect the client to the server	(optional starting in v4.7)
-//     await client.connect();
-//     // Send a ping to confirm a successful connection
-//     await client.db("admin").command({ ping: 1 });
-//     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-//   } finally {
-//     // Ensures that the client will close when you finish/error
-//     await client.close();
-//   }
-// }
-// run().catch(console.dir);

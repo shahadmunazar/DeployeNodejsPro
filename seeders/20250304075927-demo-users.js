@@ -2,10 +2,12 @@ const bcrypt = require("bcrypt");
 
 module.exports = {
   async up(queryInterface) {
-    return queryInterface.bulkInsert("Users", [
+    return queryInterface.bulkInsert("Users", 
+      [
       {
         name: "Admin User",
         email: "admin@example.com",
+        username: "admin_user",
         password: await bcrypt.hash("admin123", 10),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -13,6 +15,7 @@ module.exports = {
       {
         name: "Regular Manager",
         email: "manager@example.com",
+        username: "manager_user",
         password: await bcrypt.hash("Manager123", 10),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -20,6 +23,7 @@ module.exports = {
       {
         name: "Officer User",
         email: "officer@example.com",
+        username: "officer_user",
         password: await bcrypt.hash("Officer231", 10),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -27,6 +31,7 @@ module.exports = {
       {
         name: "Technician User",
         email: "technician@example.com",
+        username: "technician_user",
         password: await bcrypt.hash("tech@123", 10),
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -34,6 +39,7 @@ module.exports = {
       {
         name: "Compliance User",
         email: "compliance@example.com",
+        username: "compliance_user",
         password: await bcrypt.hash("comp@123", 10),
         createdAt: new Date(),
         updatedAt: new Date(),

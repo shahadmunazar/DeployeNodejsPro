@@ -81,4 +81,12 @@ async function UpdateRoles(req, res) {
     }
 }
 
-module.exports = { CreateRoles,GetAllRoles ,GetRoleById,};
+async function CreateAdmin(req ,res) {
+    try {
+        console.log('check routes');
+    } catch (error) {
+        
+    }
+}
+
+module.exports = { CreateRoles,GetAllRoles ,UpdateRoles,GetRoleById,CreateAdmin};
