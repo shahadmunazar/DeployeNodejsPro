@@ -15,7 +15,7 @@ const authenticateUser = async (req, res, next) => {
       return res.status(401).json({ message: "User not found, Unauthorized" });
     }
     req.user = { id: user.id, name: user.name, email: user.email, roles: decoded.roles };
-    // console.log(req.user);
+    console.log("user request",req.user);
     next();
   } catch (error) {
     return res.status(401).json({ message: "Token is invalid or expired",status:401 });
@@ -25,6 +25,7 @@ const authenticateUser = async (req, res, next) => {
 
 const authorizeRoles = (...roles) => {
     return (req, res, next) => {
+      console.log(req.user);
       if (!req.user || !Array.isArray(req.user.roles)) {
         return res.status(403).json({ message: "Access Denied!",status:401 });
       }

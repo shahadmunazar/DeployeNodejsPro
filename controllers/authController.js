@@ -84,43 +84,68 @@ const verifyOtp = async (req, res) => {
   try {
     console.log("Verify OTP request:", req.body);
     let { email, username, otp } = req.body;
+
+    // Ensure only one field is provided
     if ((email && username) || (!email && !username)) {
       return res.status(400).json({ message: "Provide only one: either email or username" });
     }
+
     if (!otp) {
       return res.status(400).json({ message: "OTP is required" });
     }
-    otp = parseInt(otp.toString().trim());
+
+    // Ensure OTP is an integer
+    otp = parseInt(otp.toString().trim(), 10);
+
+    // Find user
     const whereClause = email ? { email } : { username };
     const user = await User.findOne({ where: whereClause });
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
     console.log("User found:", user.username);
     console.log("Stored OTP:", user.otp, typeof user.otp);
     console.log("Entered OTP:", otp, typeof otp);
     console.log("OTP Expiry:", user.otpExpiresAt);
+
+    // Validate OTP presence & expiration
     if (!user.otp || !user.otpExpiresAt) {
       return res.status(400).json({ message: "OTP is missing or invalid" });
     }
-    const storedOtp = parseInt(user.otp);
+
     if (user.otpExpiresAt < new Date()) {
       return res.status(400).json({ message: "OTP has expired" });
     }
+
+    // Compare OTP
+    const storedOtp = parseInt(user.otp, 10);
     if (storedOtp !== otp) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
+
+    // Clear OTP after successful verification
     await user.update({ otp: null, otpExpiresAt: null });
+
+    // Fetch user roles
     const userRoles = await UserRole.findAll({ where: { userId: user.id } });
-    const roles = await Promise.all(userRoles.map(async (ur) => {
-      const role = await Role.findByPk(ur.roleId);
-      return role.name;
-    }));
-    const token = jwt.sign({ id: user.id, username: user.username }, "your_secret_key", {
-      expiresIn: "30d",
-    });
+    const roles = userRoles.length
+      ? await Promise.all(userRoles.map(async (ur) => {
+          const role = await Role.findByPk(ur.roleId);
+          return role ? role.name : null;
+        }))
+      : [];
+
+    // Generate JWT token with roles
+    const token = jwt.sign(
+      { id: user.id, username: user.username, roles },
+      "your_secret_key",
+      { expiresIn: "30d" }
+    );
+
     res.json({
-      message: "OTP verified successfully And Logged In",
+      message: "OTP verified successfully. Logged In!",
       status: 200,
       token,
       user: {
@@ -129,8 +154,9 @@ const verifyOtp = async (req, res) => {
         username: user.username,
         email: user.email,
       },
-      roles
+      roles,
     });
+
   } catch (error) {
     console.error("Error verifying OTP:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });

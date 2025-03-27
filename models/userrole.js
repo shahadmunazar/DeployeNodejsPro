@@ -5,8 +5,14 @@ class UserRole extends Model {}
 
 UserRole.init(
   {
-    userId: DataTypes.INTEGER,
-    roleId: DataTypes.INTEGER,
+    userId: {
+      type: DataTypes.INTEGER,
+      references: { model: "Users", key: "id" },
+    },
+    roleId: {
+      type: DataTypes.INTEGER,
+      references: { model: "Roles", key: "id" },
+    },
   },
   { sequelize, modelName: "UserRole" }
 );
