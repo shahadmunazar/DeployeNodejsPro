@@ -1,8 +1,11 @@
 const express = require("express");
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 const { getCurrentUser } = require("../controllers/authController");
-const {CreateRoles,GetAllRoles,GetRoleById,CreateAdmin} = require("../controllers/SuperAdmin/rolesController")
+const {CreateRoles,GetAllRoles,GetRoleById,CreateAdmin, UpdateRoles} = require("../controllers/SuperAdmin/rolesController")
 const router = express.Router();
+
+const { CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink} = require("../controllers/SuperAdmin/AdminCreationcontroller");
+
 
 
 /**
@@ -13,13 +16,20 @@ const router = express.Router();
  */
 const withAuthAndRole = (handler, role = "admin") => [authenticateUser, authorizeRoles(role), handler];
 
+router.post('/create-new-user', ...withAuthAndRole(CreateUserLogin));
+router.get('/get-user', ...withAuthAndRole(GetAllUsersWithRoles));
+router.get('/get-user-by-id/:id', ...withAuthAndRole(GetuserById));
+router.put('/update-user', ...withAuthAndRole(UpdateUsers));
+router.delete('/delete-user', ...withAuthAndRole(DeleteUser));
+router.get('/get-all-roles', ...withAuthAndRole(GetAllRolesListing));
+router.post('/send-invitation-link', ...withAuthAndRole(SnedInvitationLink));
 
-router.post('/rolse-create', ...withAuthAndRole(CreateRoles));
-// GetAllRoles
-router.get('/roles-get', ...withAuthAndRole(GetAllRoles));
-//GetRoleById
-router.get('/roles-details', ...withAuthAndRole(GetRoleById));
-router.post('/create-admins', ...withAuthAndRole(CreateAdmin));
+// router.post('/rolse-create', ...withAuthAndRole(CreateRoles));
+// // GetAllRoles
+// router.get('/roles-get', ...withAuthAndRole(GetAllRoles));
+// //GetRoleById
+// router.get('/roles-details', ...withAuthAndRole(GetRoleById));
+// router.post('/create-admins', ...withAuthAndRole(CreateAdmin));
 
 
 router.get("/admin", authenticateUser, authorizeRoles("admin"), (req, res) => {
