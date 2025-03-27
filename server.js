@@ -6,17 +6,16 @@ const LoginRoutes = require("./routes/authRoutes");
 const app = express();
 
 app.use(cors({
-    origin: "*",  // Allows all origins
+    origin: "*", 
     methods: "GET, POST, PUT, DELETE, OPTIONS", // Allows all common methods
-    allowedHeaders: "*",  // Allows all headers
+    allowedHeaders: "*",
 }));
 
-// Enable CORS for all origins
+
 app.use(cors());
 
 // Middleware to parse JSON
 app.use(express.json());
-
 app.use("/api/auth", userRoutes);
 app.use("/api", LoginRoutes);
 
