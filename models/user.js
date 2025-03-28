@@ -24,7 +24,7 @@ User.init(
       defaultValue: 0,
     },
     user_status: {
-      type: DataTypes.ENUM("active", "locked"),
+      type: DataTypes.ENUM("active", "inactive"),
       allowNull: false,
       defaultValue: "active",
     },
@@ -33,7 +33,7 @@ User.init(
       allowNull: true,
     },
     invitation_status: {
-      type: DataTypes.ENUM("pending", "accepted", "expired"),
+      type: DataTypes.ENUM("pending", "accepted", "expired","sent"),
       allowNull: false,
       defaultValue: "pending",
     },

@@ -9,7 +9,7 @@ module.exports = {
     });
 
     await queryInterface.addColumn("Users", "user_status", {
-      type: Sequelize.ENUM("active", "locked"),
+      type: Sequelize.ENUM("active", "inactive"),
       allowNull: false,
       defaultValue: "active",
     });
