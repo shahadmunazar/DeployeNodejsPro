@@ -7,7 +7,6 @@ const router = express.Router();
 const { CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink} = require("../controllers/SuperAdmin/AdminCreationcontroller");
 
 
-
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
  * @param {Function} handler - The route handler function.
@@ -31,14 +30,11 @@ router.post('/send-invitation-link', ...withAuthAndRole(SnedInvitationLink));
 // router.get('/roles-details', ...withAuthAndRole(GetRoleById));
 // router.post('/create-admins', ...withAuthAndRole(CreateAdmin));
 
-
 router.get("/admin", authenticateUser, authorizeRoles("admin"), (req, res) => {
     res.json({ message: "Welcome Admin!" });
 });
 
-
 router.get("/user", authenticateUser, getCurrentUser);
-
 
 router.get("/user", authenticateUser, authorizeRoles("user"), (req, res) => {
     res.json({ message: "Welcome User!" });
