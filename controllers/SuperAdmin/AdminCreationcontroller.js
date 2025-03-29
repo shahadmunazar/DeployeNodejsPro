@@ -86,42 +86,68 @@ const CreateUserLogin = async (req, res) => {
 };
 
 const GetAllUsersWithRoles = async (req, res) => {
-    try {
+  try {
+      // Extract filters from request query
+      const { role, status, startDate, endDate } = req.query;
+
+      let whereConditions = {};
+      let roleCondition = {};
+
+      // 🔹 Filter by Status (Active/Inactive)
+      if (status) {
+          whereConditions.user_status = status.toLowerCase() === "active" ? "active" : "inactive";
+      }
+
+      // 🔹 Filter by Created Date Range
+      if (startDate && endDate) {
+          whereConditions.createdAt = {
+              [Op.between]: [new Date(startDate), new Date(endDate)],
+          };
+      }
+
+      // 🔹 Filter by Role Name (if provided)
+      if (role) {
+          roleCondition.name = role;
+      }
+
       const users = await User.findAll({
-        include: [
-          {
-            model: Role, // Directly include Role through UserRole
-            attributes: ["id", "name"], // Fetch only role ID & name
-            through: { attributes: [] }, // Exclude UserRole table fields
-          },
-        ],
-        attributes: ["id", "name", "email", "username","user_status", "createdAt", "updatedAt"],
+          where: whereConditions,
+          include: [
+              {
+                  model: Role,
+                  attributes: ["id", "name"],
+                  through: { attributes: [] },
+                  where: Object.keys(roleCondition).length ? roleCondition : undefined, // Apply role filter if provided
+              },
+          ],
+          attributes: ["id", "name", "email", "username", "user_status", "createdAt", "updatedAt"],
       });
-  
-      // Format Data Inline
+
+      // 🔹 Format Data Inline
       const formattedUsers = users.map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        username: user.username,
-        user_status: user.user_status,
-        createdAt: user.createdAt
-          ? `${String(user.createdAt.getDate()).padStart(2, "0")}-${String(user.createdAt.getMonth() + 1).padStart(2, "0")}-${user.createdAt.getFullYear()} ${String(user.createdAt.getHours()).padStart(2, "0")}:${String(user.createdAt.getMinutes()).padStart(2, "0")}`
-          : null,
-        updatedAt: user.updatedAt
-          ? `${String(user.updatedAt.getDate()).padStart(2, "0")}-${String(user.updatedAt.getMonth() + 1).padStart(2, "0")}-${user.updatedAt.getFullYear()} ${String(user.updatedAt.getHours()).padStart(2, "0")}:${String(user.updatedAt.getMinutes()).padStart(2, "0")}`
-          : null,
-        roles: user.Roles.map((role) => ({
-          id: role.id,
-          name: role.name,
-        })),
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          username: user.username,
+          user_status: user.user_status,
+          createdAt: user.createdAt
+              ? `${String(user.createdAt.getDate()).padStart(2, "0")}-${String(user.createdAt.getMonth() + 1).padStart(2, "0")}-${user.createdAt.getFullYear()} ${String(user.createdAt.getHours()).padStart(2, "0")}:${String(user.createdAt.getMinutes()).padStart(2, "0")}`
+              : null,
+          updatedAt: user.updatedAt
+              ? `${String(user.updatedAt.getDate()).padStart(2, "0")}-${String(user.updatedAt.getMonth() + 1).padStart(2, "0")}-${user.updatedAt.getFullYear()} ${String(user.updatedAt.getHours()).padStart(2, "0")}:${String(user.updatedAt.getMinutes()).padStart(2, "0")}`
+              : null,
+          roles: user.Roles.map((role) => ({
+              id: role.id,
+              name: role.name,
+          })),
       }));
+
       res.status(200).json({ message: "User List Retrieved Successfully", data: formattedUsers });
-    } catch (error) {
+  } catch (error) {
       console.error("Error:", error);
       res.status(500).json({ message: "Internal Server Error", error: error.message });
-    }
-  };
+  }
+};
   
   
 
