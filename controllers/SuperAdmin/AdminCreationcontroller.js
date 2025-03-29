@@ -1,13 +1,17 @@
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const User = require("../../models/user");
+const jwt = require("jsonwebtoken");
 const Role = require("../../models/role");
 const UserRole = require("../../models/userrole");
 require("dotenv").config();
+const { onlineUsers } = require("../socket");
+
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
 
+const activeTokens = new Set(); // Store active tokens temporarily
 
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
@@ -87,7 +91,7 @@ const CreateUserLogin = async (req, res) => {
 
 const GetAllUsersWithRoles = async (req, res) => {
   try {
-      // Extract filters from request query
+      // 🔹 Extract filters from request query
       const { role, status, startDate, endDate } = req.query;
 
       let whereConditions = {};
@@ -110,6 +114,7 @@ const GetAllUsersWithRoles = async (req, res) => {
           roleCondition.name = role;
       }
 
+      // 🔹 Fetch Users with Roles
       const users = await User.findAll({
           where: whereConditions,
           include: [
@@ -117,19 +122,20 @@ const GetAllUsersWithRoles = async (req, res) => {
                   model: Role,
                   attributes: ["id", "name"],
                   through: { attributes: [] },
-                  where: Object.keys(roleCondition).length ? roleCondition : undefined, // Apply role filter if provided
+                  where: Object.keys(roleCondition).length ? roleCondition : undefined,
               },
           ],
           attributes: ["id", "name", "email", "username", "user_status", "createdAt", "updatedAt"],
       });
 
-      // 🔹 Format Data Inline
+      // 🔹 Format Data with Online Status
       const formattedUsers = users.map((user) => ({
           id: user.id,
           name: user.name,
           email: user.email,
           username: user.username,
           user_status: user.user_status,
+          is_online: onlineUsers.hasOwnProperty(user.id), // 🔥 Check real-time online status
           createdAt: user.createdAt
               ? `${String(user.createdAt.getDate()).padStart(2, "0")}-${String(user.createdAt.getMonth() + 1).padStart(2, "0")}-${user.createdAt.getFullYear()} ${String(user.createdAt.getHours()).padStart(2, "0")}:${String(user.createdAt.getMinutes()).padStart(2, "0")}`
               : null,
@@ -148,6 +154,7 @@ const GetAllUsersWithRoles = async (req, res) => {
       res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+
   
   
 
@@ -390,6 +397,25 @@ const SnedInvitationLink = async (req, res) => {
     }
   };
 
+
+  const checkTokenMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Unauthorized, token required" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        activeTokens.add(token); // Track active tokens
+        req.user = decoded; // Attach user info to request
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid or expired token" });
+    }
+};
+
 const UpdateUsersStatus = async (req, res) => {
   try {
     const { id, user_status } = req.body;
@@ -414,7 +440,45 @@ const UpdateUsersStatus = async (req, res) => {
   }
 };
 
+const GetAllUsersToken = async (req, res) => {
+  try {
+      // Fetch all users with their tokens
+      const users = await User.findAll({
+          attributes: ["id", "name", "email", "token"],
+      });
+
+      // Process user tokens
+      const userTokens = users.map((user) => {
+          let isTokenValid = false;
+          let decodedToken = null;
+          let tokenExpiry = null;
+
+          if (user.token) {
+              try {
+                  decodedToken = jwt.verify(user.token, process.env.JWT_SECRET);
+                  isTokenValid = decodedToken.exp > Math.floor(Date.now() / 1000);
+                  tokenExpiry = new Date(decodedToken.exp * 1000);
+              } catch (err) {
+                  isTokenValid = false;
+              }
+          }
+
+          return {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              token: user.token,
+              token_valid: isTokenValid,
+              token_expiry: tokenExpiry,
+          };
+      });
+
+      res.status(200).json({ message: "Fetched all users' tokens", data: userTokens });
+  } catch (error) {
+      console.error("Error fetching users' tokens:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 
-
-module.exports = { CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink,UpdateUsersStatus};
+module.exports = { GetAllUsersToken,CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink,UpdateUsersStatus};
