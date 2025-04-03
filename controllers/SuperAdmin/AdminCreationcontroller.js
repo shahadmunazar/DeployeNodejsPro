@@ -1,13 +1,17 @@
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const User = require("../../models/user");
+const jwt = require("jsonwebtoken");
 const Role = require("../../models/role");
 const UserRole = require("../../models/userrole");
 require("dotenv").config();
+const { onlineUsers } = require("../socket");
+
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
 
+const activeTokens = new Set(); // Store active tokens temporarily
 
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
@@ -27,7 +31,7 @@ const CreateUserLogin = async (req, res) => {
           return true;
         })
         .run(req),
-        body("username")
+      body("username")
         .optional({ checkFalsy: true })
         .custom(async (username) => {
           if (username) {
@@ -44,15 +48,21 @@ const CreateUserLogin = async (req, res) => {
         .withMessage("Password must be at least 6 characters long")
         .run(req),
       body("roles")
-        .isArray({ min: 1 })
-        .withMessage("Roles are required and must be an array of valid IDs")
         .custom(async (roles) => {
-          if (!Array.isArray(roles) || roles.length === 0) {
-            throw new Error("Roles array cannot be empty");
+          // Convert single role ID to an array if needed
+          const roleIds = Array.isArray(roles) ? roles : [roles];
+
+          // Ensure at least one role exists
+          if (roleIds.length === 0) {
+            throw new Error("At least one role is required");
           }
+
+          // Fetch valid roles from DB
           const existingRoles = await Role.findAll({ attributes: ["id"] });
           const validRoleIds = existingRoles.map((role) => role.id);
-          for (let roleId of roles) {
+
+          // Validate each role
+          for (let roleId of roleIds) {
             if (!validRoleIds.includes(roleId)) {
               throw new Error(`Invalid role ID: ${roleId}`);
             }
@@ -61,33 +71,43 @@ const CreateUserLogin = async (req, res) => {
         })
         .run(req),
     ]);
+
+    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ message: "Validation failed", errors: errors.array() });
     }
+
+    // Extract request data
     const { name, email, username, password, roles } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);    
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create User
     const newUser = await User.create({
       name,
       email,
       username,
       password: hashedPassword,
     });
-    const userRoles = roles.map((roleId) => ({
+
+    // Assign roles
+    const roleIds = Array.isArray(roles) ? roles : [roles]; // Convert to array if not already
+    const userRoles = roleIds.map((roleId) => ({
       userId: newUser.id,
       roleId: roleId,
     }));
     await UserRole.bulkCreate(userRoles);
-    res.status(201).json({ message: "User created successfully", user: newUser });
+    res.status(200).json({ message: "User created successfully", user: newUser });
   } catch (error) {
     console.error("Error creating user:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
 
+
 const GetAllUsersWithRoles = async (req, res) => {
   try {
-      // Extract filters from request query
+      // 🔹 Extract filters from request query
       const { role, status, startDate, endDate } = req.query;
 
       let whereConditions = {};
@@ -110,6 +130,7 @@ const GetAllUsersWithRoles = async (req, res) => {
           roleCondition.name = role;
       }
 
+      // 🔹 Fetch Users with Roles
       const users = await User.findAll({
           where: whereConditions,
           include: [
@@ -117,19 +138,20 @@ const GetAllUsersWithRoles = async (req, res) => {
                   model: Role,
                   attributes: ["id", "name"],
                   through: { attributes: [] },
-                  where: Object.keys(roleCondition).length ? roleCondition : undefined, // Apply role filter if provided
+                  where: Object.keys(roleCondition).length ? roleCondition : undefined,
               },
           ],
           attributes: ["id", "name", "email", "username", "user_status", "createdAt", "updatedAt"],
       });
 
-      // 🔹 Format Data Inline
+      // 🔹 Format Data with Online Status
       const formattedUsers = users.map((user) => ({
           id: user.id,
           name: user.name,
           email: user.email,
           username: user.username,
           user_status: user.user_status,
+          is_online: onlineUsers.hasOwnProperty(user.id), // 🔥 Check real-time online status
           createdAt: user.createdAt
               ? `${String(user.createdAt.getDate()).padStart(2, "0")}-${String(user.createdAt.getMonth() + 1).padStart(2, "0")}-${user.createdAt.getFullYear()} ${String(user.createdAt.getHours()).padStart(2, "0")}:${String(user.createdAt.getMinutes()).padStart(2, "0")}`
               : null,
@@ -148,6 +170,7 @@ const GetAllUsersWithRoles = async (req, res) => {
       res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+
   
   
 
@@ -313,7 +336,7 @@ const SnedInvitationLink = async (req, res) => {
   
       // **Find User**
       const user = await User.findByPk(id, {
-        attributes: ["id", "name", "email", "username", "invite_token", "invite_expires_at"],
+        attributes: ["id", "name", "email", "username","password", "invite_token","invitation_status", "invite_expires_at"],
       });
   
       if (!user) {
@@ -327,9 +350,7 @@ const SnedInvitationLink = async (req, res) => {
       let inviteToken = user.invite_token;
       let inviteExpiresAt = user.invite_expires_at ? new Date(user.invite_expires_at) : null;
       const now = new Date();
-  
-      // **Check if Token is Expired or Doesn't Exist**
-      if (!inviteToken || !inviteExpiresAt || inviteExpiresAt < now) {
+        if (!inviteToken || !inviteExpiresAt || inviteExpiresAt < now) {
         inviteToken = crypto.randomBytes(64).toString("hex");
         inviteExpiresAt = new Date();
         inviteExpiresAt.setHours(inviteExpiresAt.getHours() + 48); // 48 hours expiry
@@ -338,7 +359,7 @@ const SnedInvitationLink = async (req, res) => {
         await user.update({
           invite_token: inviteToken,
           invite_expires_at: inviteExpiresAt,
-          invitation_status: "pending",
+          invitation_status: "sent",
         });
       }
   
@@ -390,6 +411,25 @@ const SnedInvitationLink = async (req, res) => {
     }
   };
 
+
+  const checkTokenMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Unauthorized, token required" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        activeTokens.add(token); // Track active tokens
+        req.user = decoded; // Attach user info to request
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid or expired token" });
+    }
+};
+
 const UpdateUsersStatus = async (req, res) => {
   try {
     const { id, user_status } = req.body;
@@ -414,7 +454,45 @@ const UpdateUsersStatus = async (req, res) => {
   }
 };
 
+const GetAllUsersToken = async (req, res) => {
+  try {
+      // Fetch all users with their tokens
+      const users = await User.findAll({
+          attributes: ["id", "name", "email", "token"],
+      });
+
+      // Process user tokens
+      const userTokens = users.map((user) => {
+          let isTokenValid = false;
+          let decodedToken = null;
+          let tokenExpiry = null;
+
+          if (user.token) {
+              try {
+                  decodedToken = jwt.verify(user.token, process.env.JWT_SECRET);
+                  isTokenValid = decodedToken.exp > Math.floor(Date.now() / 1000);
+                  tokenExpiry = new Date(decodedToken.exp * 1000);
+              } catch (err) {
+                  isTokenValid = false;
+              }
+          }
+
+          return {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              token: user.token,
+              token_valid: isTokenValid,
+              token_expiry: tokenExpiry,
+          };
+      });
+
+      res.status(200).json({ message: "Fetched all users' tokens", data: userTokens });
+  } catch (error) {
+      console.error("Error fetching users' tokens:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 
-
-module.exports = { CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink,UpdateUsersStatus};
+module.exports = { GetAllUsersToken,CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink,UpdateUsersStatus};
