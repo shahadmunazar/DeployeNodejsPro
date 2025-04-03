@@ -338,15 +338,12 @@ const SnedInvitationLink = async (req, res) => {
       const user = await User.findByPk(id, {
         attributes: ["id", "name", "email", "username","password", "invite_token","invitation_status", "invite_expires_at"],
       });
-  
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-  
       if (!user.email) {
         return res.status(400).json({ message: "User does not have an email" });
       }
-  
       let inviteToken = user.invite_token;
       let inviteExpiresAt = user.invite_expires_at ? new Date(user.invite_expires_at) : null;
       const now = new Date();
