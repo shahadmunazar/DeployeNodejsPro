@@ -31,7 +31,7 @@ const CreateUserLogin = async (req, res) => {
           return true;
         })
         .run(req),
-        body("username")
+      body("username")
         .optional({ checkFalsy: true })
         .custom(async (username) => {
           if (username) {
@@ -48,15 +48,21 @@ const CreateUserLogin = async (req, res) => {
         .withMessage("Password must be at least 6 characters long")
         .run(req),
       body("roles")
-        .isArray({ min: 1 })
-        .withMessage("Roles are required and must be an array of valid IDs")
         .custom(async (roles) => {
-          if (!Array.isArray(roles) || roles.length === 0) {
-            throw new Error("Roles array cannot be empty");
+          // Convert single role ID to an array if needed
+          const roleIds = Array.isArray(roles) ? roles : [roles];
+
+          // Ensure at least one role exists
+          if (roleIds.length === 0) {
+            throw new Error("At least one role is required");
           }
+
+          // Fetch valid roles from DB
           const existingRoles = await Role.findAll({ attributes: ["id"] });
           const validRoleIds = existingRoles.map((role) => role.id);
-          for (let roleId of roles) {
+
+          // Validate each role
+          for (let roleId of roleIds) {
             if (!validRoleIds.includes(roleId)) {
               throw new Error(`Invalid role ID: ${roleId}`);
             }
@@ -65,29 +71,39 @@ const CreateUserLogin = async (req, res) => {
         })
         .run(req),
     ]);
+
+    // Check validation errors
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ message: "Validation failed", errors: errors.array() });
     }
+
+    // Extract request data
     const { name, email, username, password, roles } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);    
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create User
     const newUser = await User.create({
       name,
       email,
       username,
       password: hashedPassword,
     });
-    const userRoles = roles.map((roleId) => ({
+
+    // Assign roles
+    const roleIds = Array.isArray(roles) ? roles : [roles]; // Convert to array if not already
+    const userRoles = roleIds.map((roleId) => ({
       userId: newUser.id,
       roleId: roleId,
     }));
     await UserRole.bulkCreate(userRoles);
-    res.status(201).json({ message: "User created successfully", user: newUser });
+    res.status(200).json({ message: "User created successfully", user: newUser });
   } catch (error) {
     console.error("Error creating user:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
 
 const GetAllUsersWithRoles = async (req, res) => {
   try {
@@ -320,7 +336,7 @@ const SnedInvitationLink = async (req, res) => {
   
       // **Find User**
       const user = await User.findByPk(id, {
-        attributes: ["id", "name", "email", "username", "invite_token", "invite_expires_at"],
+        attributes: ["id", "name", "email", "username","password", "invite_token","invitation_status", "invite_expires_at"],
       });
   
       if (!user) {
@@ -334,9 +350,7 @@ const SnedInvitationLink = async (req, res) => {
       let inviteToken = user.invite_token;
       let inviteExpiresAt = user.invite_expires_at ? new Date(user.invite_expires_at) : null;
       const now = new Date();
-  
-      // **Check if Token is Expired or Doesn't Exist**
-      if (!inviteToken || !inviteExpiresAt || inviteExpiresAt < now) {
+        if (!inviteToken || !inviteExpiresAt || inviteExpiresAt < now) {
         inviteToken = crypto.randomBytes(64).toString("hex");
         inviteExpiresAt = new Date();
         inviteExpiresAt.setHours(inviteExpiresAt.getHours() + 48); // 48 hours expiry
@@ -345,7 +359,7 @@ const SnedInvitationLink = async (req, res) => {
         await user.update({
           invite_token: inviteToken,
           invite_expires_at: inviteExpiresAt,
-          invitation_status: "pending",
+          invitation_status: "sent",
         });
       }
   
