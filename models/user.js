@@ -45,6 +45,14 @@ User.init(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    login_at: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    logout_at: {
+      type: DataTypes.DATE,
+      allowNull: true
+    }
   },
   {
     sequelize,

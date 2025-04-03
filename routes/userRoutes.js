@@ -1,6 +1,6 @@
 const express = require("express");
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
-const { getCurrentUser } = require("../controllers/authController");
+const { getCurrentUser,CreateAdminLogout } = require("../controllers/authController");
 const {CreateRoles,GetAllRoles,GetRoleById,CreateAdmin, UpdateRoles} = require("../controllers/SuperAdmin/rolesController")
 const router = express.Router();
 
@@ -15,6 +15,9 @@ const {GetAllUsersToken, CreateUserLogin,GetAllUsersWithRoles,GetuserById,Update
  * @returns {Function} - Middleware with checkAuth, checkRole, and the handler.
  */
 const withAuthAndRole = (handler, role = "admin") => [authenticateUser, authorizeRoles(role), handler];
+
+
+router.post('/admin-logout', ...withAuthAndRole(CreateAdminLogout));
 
 router.post('/create-new-user', ...withAuthAndRole(CreateUserLogin));
 router.get('/get-user', ...withAuthAndRole(GetAllUsersWithRoles));
