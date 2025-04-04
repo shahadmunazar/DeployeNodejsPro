@@ -102,42 +102,69 @@ const CreateUserLogin = async (req, res) => {
 };
 
 const GetAllUsersWithRoles = async (req, res) => {
-    try {
+  try {
+      // Extract filters from request query
+      const { role, status, startDate, endDate } = req.query;
+
+      let whereConditions = {};
+      let roleCondition = {};
+
+      // 🔹 Filter by Status (Active/Inactive)
+      if (status) {
+          whereConditions.user_status = status.toLowerCase() === "active" ? "active" : "inactive";
+      }
+
+      // 🔹 Filter by Created Date Range
+      if (startDate && endDate) {
+          whereConditions.createdAt = {
+              [Op.between]: [new Date(startDate), new Date(endDate)],
+          };
+      }
+
+      // 🔹 Filter by Role Name (if provided)
+      if (role) {
+          roleCondition.name = role;
+      }
+
       const users = await User.findAll({
-        include: [
-          {
-            model: Role, // Directly include Role through UserRole
-            attributes: ["id", "name"], // Fetch only role ID & name
-            through: { attributes: [] }, // Exclude UserRole table fields
-          },
-        ],
-        attributes: ["id", "name", "email", "username","user_status", "createdAt", "updatedAt"],
+          where: whereConditions,
+          include: [
+              {
+                  model: Role,
+                  attributes: ["id", "name"],
+                  through: { attributes: [] },
+                  where: Object.keys(roleCondition).length ? roleCondition : undefined, // Apply role filter if provided
+              },
+          ],
+          attributes: ["id", "name", "email", "username","invitation_status", "user_status", "createdAt", "updatedAt"],
       });
-  
-      // Format Data Inline
+
+      // 🔹 Format Data Inline
       const formattedUsers = users.map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        username: user.username,
-        user_status: user.user_status,
-        createdAt: user.createdAt
-          ? `${String(user.createdAt.getDate()).padStart(2, "0")}-${String(user.createdAt.getMonth() + 1).padStart(2, "0")}-${user.createdAt.getFullYear()} ${String(user.createdAt.getHours()).padStart(2, "0")}:${String(user.createdAt.getMinutes()).padStart(2, "0")}`
-          : null,
-        updatedAt: user.updatedAt
-          ? `${String(user.updatedAt.getDate()).padStart(2, "0")}-${String(user.updatedAt.getMonth() + 1).padStart(2, "0")}-${user.updatedAt.getFullYear()} ${String(user.updatedAt.getHours()).padStart(2, "0")}:${String(user.updatedAt.getMinutes()).padStart(2, "0")}`
-          : null,
-        roles: user.Roles.map((role) => ({
-          id: role.id,
-          name: role.name,
-        })),
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          username: user.username,
+          user_status: user.user_status,
+          invitation_status: user.invitation_status,
+          createdAt: user.createdAt
+              ? `${String(user.createdAt.getDate()).padStart(2, "0")}-${String(user.createdAt.getMonth() + 1).padStart(2, "0")}-${user.createdAt.getFullYear()} ${String(user.createdAt.getHours()).padStart(2, "0")}:${String(user.createdAt.getMinutes()).padStart(2, "0")}`
+              : null,
+          updatedAt: user.updatedAt
+              ? `${String(user.updatedAt.getDate()).padStart(2, "0")}-${String(user.updatedAt.getMonth() + 1).padStart(2, "0")}-${user.updatedAt.getFullYear()} ${String(user.updatedAt.getHours()).padStart(2, "0")}:${String(user.updatedAt.getMinutes()).padStart(2, "0")}`
+              : null,
+          roles: user.Roles.map((role) => ({
+              id: role.id,
+              name: role.name,
+          })),
       }));
+
       res.status(200).json({ message: "User List Retrieved Successfully", data: formattedUsers });
-    } catch (error) {
+  } catch (error) {
       console.error("Error:", error);
       res.status(500).json({ message: "Internal Server Error", error: error.message });
-    }
-  };
+  }
+};
   
   
 
@@ -197,17 +224,11 @@ const GetAllUsersWithRoles = async (req, res) => {
     try {
       console.log("Request Params:", req.params); // Debugging
       console.log("Request Body:", req.body); // Debugging
-  
-      // **Get User ID from params or body**
       const id = req.params.id || req.body.id;
-  
       if (!id) {
         return res.status(400).json({ message: "User ID is required" });
       }
-  
-      const { name, email, username, user_status, role } = req.body; // Expecting a single role ID
-  
-      // **Find User**
+      const { name, email, username, user_status, role } = req.body;
       const user = await User.findByPk(id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -300,94 +321,117 @@ const GetAllRolesListing = async (req, res) => {
     }
 };
 
-const   SnedInvitationLink = async (req, res) => {
-    try {
-      const { id } = req.body;
-      if (!id) {
-        return res.status(400).json({ message: "User ID is required" });
-      }
-  
-      // **Find User**
-      const user = await User.findByPk(id, {
-        attributes: ["id", "name", "email", "username", "invite_token", "invite_expires_at"],
-      });
-  
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-  
-      if (!user.email) {
-        return res.status(400).json({ message: "User does not have an email" });
-      }
-  
-      let inviteToken = user.invite_token;
-      let inviteExpiresAt = user.invite_expires_at ? new Date(user.invite_expires_at) : null;
-      const now = new Date();
-  
-      // **Check if Token is Expired or Doesn't Exist**
-      if (!inviteToken || !inviteExpiresAt || inviteExpiresAt < now) {
-        inviteToken = crypto.randomBytes(64).toString("hex");
-        inviteExpiresAt = new Date();
-        inviteExpiresAt.setHours(inviteExpiresAt.getHours() + 48); // 48 hours expiry
-  
-        // **Update User with New Token & Expiry**
-        await user.update({
-          invite_token: inviteToken,
-          invite_expires_at: inviteExpiresAt,
-          invitation_status: "pending",
-        });
-      }
-  
-      // **Generate a Temporary Password**
-      const tempPassword = Math.random().toString(36).slice(-8); // Example: "xk9Bz7qP"
-  
-      // **Hash the Password Before Storing**
-      const hashedPassword = await bcrypt.hash(tempPassword, 10);
-      await user.update({ password: hashedPassword });
-  
-      // **Generate Invitation Link**
-      const inviteLink = `http://192.168.68.142:5173/invite/${inviteToken}`;
-  
-      // **Send Email with Login Credentials**
-      const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-          user: process.env.EMAIL_USER, // Use environment variables
-          pass: process.env.EMAIL_PASS,
-        },
-      });
-  
-      const mailOptions = {
-        from: "shahadmunazar@gmail.com",
-        to: user.email,
-        subject: "You're Invited! Your Login Details",
-        html: `
-          <p>Hello ${user.name},</p>
-          <p>You have been invited to join our platform. Here are your login details:</p>
-          <ul>
-            <li><strong>Username:</strong> ${user.username}</li>
-            <li><strong>Email:</strong> ${user.email}</li>
-            <li><strong>Temporary Password:</strong> ${tempPassword}</li>
-          </ul>
-          <p>We recommend changing your password after logging in.</p>
-          <p>To accept the invitation, click here: <a href="${inviteLink}">${inviteLink}</a></p>
-          <p>This invitation will expire in 48 hours.</p>
-          <p>Thank you!</p>
-        `,
-      };
-  
-      await transporter.sendMail(mailOptions);
-  
-      return res.status(200).json({ message: "Invitation email sent with login details" });
-  
-    } catch (error) {
-      console.error("Error sending invitation:", error);
-      return res.status(500).json({ message: "Internal Server Error", error: error.message });
+const SnedInvitationLink = async (req, res) => {
+  try {
+    const { id } = req.body;
+    if (!id) {
+      return res.status(400).json({ message: "User ID is required" });
     }
-  };
 
-//   /avdesh
-// shahad
+    // *Find User*
+    const user = await User.findByPk(id, {
+      attributes: ["id", "name", "email", "username", "invite_token","invitation_status", "invite_expires_at"],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.email) {
+      return res.status(400).json({ message: "User does not have an email" });
+    }
+
+    let inviteToken = user.invite_token;
+    let inviteExpiresAt = user.invite_expires_at ? new Date(user.invite_expires_at) : null;
+    const now = new Date();
+
+    // *Check if Token is Expired or Doesn't Exist*
+    if (!inviteToken || !inviteExpiresAt || inviteExpiresAt < now) {
+      inviteToken = crypto.randomBytes(64).toString("hex");
+      inviteExpiresAt = new Date();
+      inviteExpiresAt.setHours(inviteExpiresAt.getHours() + 48); // 48 hours expiry
+
+      // *Update User with New Token & Expiry*
+      await user.update({
+        invite_token: inviteToken,
+        invite_expires_at: inviteExpiresAt,
+        invitation_status: "sent",
+      });
+    }
+
+    // *Generate a Temporary Password*
+    const tempPassword = Math.random().toString(36).slice(-8); // Example: "xk9Bz7qP"
+
+    // *Hash the Password Before Storing*
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    await user.update({ password: hashedPassword });
+
+    // *Generate Invitation Link*
+    const inviteLink = `http://192.168.68.142:5173/invite/${inviteToken}`;
+
+    // *Send Email with Login Credentials*
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER, // Use environment variables
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: "mailto:shahadmunazar@gmail.com",
+      to: user.email,
+      subject: "You're Invited! Your Login Details",
+      html: `
+        <p>Hello ${user.name},</p>
+        <p>You have been invited to join our platform. Here are your login details:</p>
+        <ul>
+          <li><strong>Username:</strong> ${user.username}</li>
+          <li><strong>Email:</strong> ${user.email}</li>
+          <li><strong>Temporary Password:</strong> ${tempPassword}</li>
+        </ul>
+        <p>We recommend changing your password after logging in.</p>
+        <p>To accept the invitation, click here: <a href="${inviteLink}">${inviteLink}</a></p>
+        <p>This invitation will expire in 48 hours.</p>
+        <p>Thank you!</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({ message: "Invitation email sent with login details" });
+
+  } catch (error) {
+    console.error("Error sending invitation:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
+
+const UpdateUsersStatus = async (req, res) => {
+  try {
+    const { id, user_status } = req.body;
+    if (!id || !user_status) {
+      return res.status(400).json({ message: "User ID and status are required" });
+    }
+    const user = await User.findByPk(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (!["active", "inactive"].includes(user_status)) {
+      return res.status(400).json({ message: "Invalid status. Use 'active' or 'inactive'." });
+    }
+    await user.update({ user_status });
+    return res.status(200).json({
+      message: `User status updated to ${user_status}`,
+      data: { id: user.id, name: user.name, user_status: user.user_status },
+    });
+  } catch (error) {
+    console.error("Error updating user status:", error);
+    return res.status(500).json({ message: "Internal Server Error", error: error.message });
+  }
+};
 
 
-module.exports = { CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink};
+
+
+module.exports = { CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink,UpdateUsersStatus};

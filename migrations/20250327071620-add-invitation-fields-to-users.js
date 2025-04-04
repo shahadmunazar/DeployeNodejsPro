@@ -1,7 +1,7 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.addColumn("Users", "invitation_status", {
-      type: Sequelize.ENUM("pending", "accepted", "expired"),
+      type: Sequelize.ENUM("pending", "accepted", "expired","sent"),
       allowNull: false,
       defaultValue: "pending",
     });
