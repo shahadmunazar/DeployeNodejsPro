@@ -3,15 +3,22 @@ const bcrypt = require("bcrypt");
 const { Op } = require("sequelize");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
-
+const moment = require("moment");
+const requestIp = require("request-ip");
+const useragent = require("useragent");
 const User = require("../models/user");
 const UserRole = require("../models/userrole");
 const Role = require("../models/role");
-
-
+const sequelize = require("../config/database"); // adjust path if needed
+const { DataTypes } = require("sequelize");
+const RefreshToken = require("../models/refreshToken")(sequelize, DataTypes);
+const UserLogin = require("../models/user_logins");
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
+
+const blacklist = new Set(); // Temporary blacklist (or use Redis for persistence)
+
 
 // ========================== LOGIN FUNCTION ==========================
 const login = async (req, res) => {
@@ -125,8 +132,29 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // Clear OTP after successful verification
-    await user.update({ otp: null, otpExpiresAt: null });
+    // Capture login details
+    const clientIp = requestIp.getClientIp(req) || "Unknown IP";
+    const agent = useragent.parse(req.headers["user-agent"]);
+    const device = agent.device.toString() || "Unknown Device";
+    const browser = agent.family || "Unknown Browser";
+    const loginTime = moment().format("YYYY-MM-DD HH:mm:ss");
+    console.log("Login Ip", clientIp);
+    // Update last_login timestamp
+    await user.update({
+      login_at: loginTime,
+      otp: null,
+      otpExpiresAt: null,
+    });
+
+    // Insert login record
+    await UserLogin.create({
+      user_id: user.id,
+      ip_address: clientIp,
+      device: device,
+      browser: browser,
+      user_agent: req.headers["user-agent"],
+      login_at: loginTime,
+    });
 
     // Fetch user roles
     const userRoles = await UserRole.findAll({ where: { userId: user.id } });
@@ -144,15 +172,32 @@ const verifyOtp = async (req, res) => {
       { expiresIn: "30d" }
     );
 
+    
+    
+    const refreshToken = jwt.sign(
+      { id: user.id, username: user.username, roles },
+      "your_secret_key",
+      { expiresIn: "30d" } // Longer-lived refresh token
+    );
+    
+    // Save refresh token in DB
+    await RefreshToken.create({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 7 days
+    });
+
     res.json({
       message: "OTP verified successfully. Logged In!",
       status: 200,
       token,
+      refreshToken,
       user: {
         id: user.id,
         name: user.name,
         username: user.username,
         email: user.email,
+        last_login: loginTime, // Return last login time
       },
       roles,
     });
@@ -195,5 +240,57 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
+const CreateAdminLogout = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized: Token missing' });
+    }
+
+    // Verify the token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
+    } catch (err) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    }
+
+    // Find the user
+    const admin = await User.findByPk(decoded.id);
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin user not found' });
+    }
+
+    // Delete refresh token from DB
+    const deleted = await RefreshToken.destroy({
+      where: {
+        userId: admin.id,
+        token: token
+      }
+    });
+
+    // Update logout timestamp
+    await admin.update({
+      logout_at: new Date(),
+      login_at: null
+    });
+
+
+    return res.status(200).json({
+      message: deleted
+        ? 'Admin successfully logged out, refresh token deleted'
+        : 'Admin logged out, but no matching refresh token found',
+    });
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
+
 // ========================== EXPORT FUNCTIONS ==========================
-module.exports = { login, verifyOtp, getCurrentUser };
+module.exports = { login, verifyOtp, getCurrentUser,CreateAdminLogout };

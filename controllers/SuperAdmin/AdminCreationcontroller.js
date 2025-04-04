@@ -1,13 +1,16 @@
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const User = require("../../models/user");
+const jwt = require("jsonwebtoken");
 const Role = require("../../models/role");
 const UserRole = require("../../models/userrole");
 require("dotenv").config();
+const { onlineUsers } = require("../socket");
+
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
-
+const activeTokens = new Set(); // Store active tokens temporarily
 
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
@@ -19,7 +22,7 @@ const CreateUserLogin = async (req, res) => {
       body("email")
         .notEmpty().withMessage("Email is required")
         .isEmail().withMessage("Invalid email format")
-        .custom(async (email)=>{
+        .custom(async (email) => {
           const existingEmail = await User.findOne({ where: { email } });
           if (existingEmail) {
             throw new Error("Email already registered");
@@ -93,7 +96,6 @@ const CreateUserLogin = async (req, res) => {
       roleId: roleId,
     }));
     await UserRole.bulkCreate(userRoles);
-
     res.status(200).json({ message: "User created successfully", user: newUser });
   } catch (error) {
     console.error("Error creating user:", error);
@@ -103,7 +105,7 @@ const CreateUserLogin = async (req, res) => {
 
 const GetAllUsersWithRoles = async (req, res) => {
   try {
-      // Extract filters from request query
+      // 🔹 Extract filters from request query
       const { role, status, startDate, endDate } = req.query;
 
       let whereConditions = {};
@@ -126,6 +128,7 @@ const GetAllUsersWithRoles = async (req, res) => {
           roleCondition.name = role;
       }
 
+      // 🔹 Fetch Users with Roles
       const users = await User.findAll({
           where: whereConditions,
           include: [
@@ -133,20 +136,20 @@ const GetAllUsersWithRoles = async (req, res) => {
                   model: Role,
                   attributes: ["id", "name"],
                   through: { attributes: [] },
-                  where: Object.keys(roleCondition).length ? roleCondition : undefined, // Apply role filter if provided
+                  where: Object.keys(roleCondition).length ? roleCondition : undefined,
               },
           ],
-          attributes: ["id", "name", "email", "username","invitation_status", "user_status", "createdAt", "updatedAt"],
+          attributes: ["id", "name", "email", "username", "user_status", "createdAt", "updatedAt"],
       });
 
-      // 🔹 Format Data Inline
+      // 🔹 Format Data with Online Status
       const formattedUsers = users.map((user) => ({
           id: user.id,
           name: user.name,
           email: user.email,
           username: user.username,
           user_status: user.user_status,
-          invitation_status: user.invitation_status,
+          is_online: onlineUsers.hasOwnProperty(user.id), // 🔥 Check real-time online status
           createdAt: user.createdAt
               ? `${String(user.createdAt.getDate()).padStart(2, "0")}-${String(user.createdAt.getMonth() + 1).padStart(2, "0")}-${user.createdAt.getFullYear()} ${String(user.createdAt.getHours()).padStart(2, "0")}:${String(user.createdAt.getMinutes()).padStart(2, "0")}`
               : null,
@@ -165,6 +168,7 @@ const GetAllUsersWithRoles = async (req, res) => {
       res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
+
   
   
 
@@ -250,7 +254,7 @@ const GetAllUsersWithRoles = async (req, res) => {
         console.log("✅ UserRole Updated Successfully");
       }
   
-      // **Fetch Updated User with Role**
+      // *Fetch Updated User with Role*
       const updatedUser = await User.findByPk(id, {
         include: [
           {
@@ -322,89 +326,103 @@ const GetAllRolesListing = async (req, res) => {
 };
 
 const SnedInvitationLink = async (req, res) => {
-  try {
-    const { id } = req.body;
-    if (!id) {
-      return res.status(400).json({ message: "User ID is required" });
-    }
-
-    // *Find User*
-    const user = await User.findByPk(id, {
-      attributes: ["id", "name", "email", "username", "invite_token","invitation_status", "invite_expires_at"],
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    if (!user.email) {
-      return res.status(400).json({ message: "User does not have an email" });
-    }
-
-    let inviteToken = user.invite_token;
-    let inviteExpiresAt = user.invite_expires_at ? new Date(user.invite_expires_at) : null;
-    const now = new Date();
-
-    // *Check if Token is Expired or Doesn't Exist*
-    if (!inviteToken || !inviteExpiresAt || inviteExpiresAt < now) {
-      inviteToken = crypto.randomBytes(64).toString("hex");
-      inviteExpiresAt = new Date();
-      inviteExpiresAt.setHours(inviteExpiresAt.getHours() + 48); // 48 hours expiry
-
-      // *Update User with New Token & Expiry*
-      await user.update({
-        invite_token: inviteToken,
-        invite_expires_at: inviteExpiresAt,
-        invitation_status: "sent",
+    try {
+      const { id } = req.body;
+      if (!id) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+  
+      // *Find User*
+      const user = await User.findByPk(id, {
+        attributes: ["id", "name", "email", "username","password", "invite_token","invitation_status", "invite_expires_at"],
       });
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (!user.email) {
+        return res.status(400).json({ message: "User does not have an email" });
+      }
+      let inviteToken = user.invite_token;
+      let inviteExpiresAt = user.invite_expires_at ? new Date(user.invite_expires_at) : null;
+      const now = new Date();
+        if (!inviteToken || !inviteExpiresAt || inviteExpiresAt < now) {
+        inviteToken = crypto.randomBytes(64).toString("hex");
+        inviteExpiresAt = new Date();
+        inviteExpiresAt.setHours(inviteExpiresAt.getHours() + 48); // 48 hours expiry
+  
+        // *Update User with New Token & Expiry*
+        await user.update({
+          invite_token: inviteToken,
+          invite_expires_at: inviteExpiresAt,
+          invitation_status: "sent",
+        });
+      }
+  
+      // *Generate a Temporary Password*
+      const tempPassword = Math.random().toString(36).slice(-8); // Example: "xk9Bz7qP"
+  
+      // *Hash the Password Before Storing*
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      await user.update({ password: hashedPassword });
+  
+      // *Generate Invitation Link*
+      const inviteLink = `http://192.168.68.142:5173/invite/${inviteToken}`;
+  
+      // *Send Email with Login Credentials*
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER, // Use environment variables
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+  
+      const mailOptions = {
+        from: "mailto:shahadmunazar@gmail.com",
+        to: user.email,
+        subject: "You're Invited! Your Login Details",
+        html: `
+          <p>Hello ${user.name},</p>
+          <p>You have been invited to join our platform. Here are your login details:</p>
+          <ul>
+            <li><strong>Username:</strong> ${user.username}</li>
+            <li><strong>Email:</strong> ${user.email}</li>
+            <li><strong>Temporary Password:</strong> ${tempPassword}</li>
+          </ul>
+          <p>We recommend changing your password after logging in.</p>
+          <p>To accept the invitation, click here: <a href="${inviteLink}">${inviteLink}</a></p>
+          <p>This invitation will expire in 48 hours.</p>
+          <p>Thank you!</p>
+        `,
+      };
+  
+      await transporter.sendMail(mailOptions);
+  
+      return res.status(200).json({ message: "Invitation email sent with login details" });
+  
+    } catch (error) {
+      console.error("Error sending invitation:", error);
+      return res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
+  };
+
+
+  const checkTokenMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ message: "Unauthorized, token required" });
     }
 
-    // *Generate a Temporary Password*
-    const tempPassword = Math.random().toString(36).slice(-8); // Example: "xk9Bz7qP"
+    const token = authHeader.split(" ")[1];
 
-    // *Hash the Password Before Storing*
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
-    await user.update({ password: hashedPassword });
-
-    // *Generate Invitation Link*
-    const inviteLink = `http://192.168.68.142:5173/invite/${inviteToken}`;
-
-    // *Send Email with Login Credentials*
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER, // Use environment variables
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: "mailto:shahadmunazar@gmail.com",
-      to: user.email,
-      subject: "You're Invited! Your Login Details",
-      html: `
-        <p>Hello ${user.name},</p>
-        <p>You have been invited to join our platform. Here are your login details:</p>
-        <ul>
-          <li><strong>Username:</strong> ${user.username}</li>
-          <li><strong>Email:</strong> ${user.email}</li>
-          <li><strong>Temporary Password:</strong> ${tempPassword}</li>
-        </ul>
-        <p>We recommend changing your password after logging in.</p>
-        <p>To accept the invitation, click here: <a href="${inviteLink}">${inviteLink}</a></p>
-        <p>This invitation will expire in 48 hours.</p>
-        <p>Thank you!</p>
-      `,
-    };
-
-    await transporter.sendMail(mailOptions);
-
-    return res.status(200).json({ message: "Invitation email sent with login details" });
-
-  } catch (error) {
-    console.error("Error sending invitation:", error);
-    return res.status(500).json({ message: "Internal Server Error", error: error.message });
-  }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        activeTokens.add(token); // Track active tokens
+        req.user = decoded; // Attach user info to request
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: "Invalid or expired token" });
+    }
 };
 
 const UpdateUsersStatus = async (req, res) => {
@@ -431,7 +449,45 @@ const UpdateUsersStatus = async (req, res) => {
   }
 };
 
+const GetAllUsersToken = async (req, res) => {
+  try {
+      // Fetch all users with their tokens
+      const users = await User.findAll({
+          attributes: ["id", "name", "email", "token"],
+      });
+
+      // Process user tokens
+      const userTokens = users.map((user) => {
+          let isTokenValid = false;
+          let decodedToken = null;
+          let tokenExpiry = null;
+
+          if (user.token) {
+              try {
+                  decodedToken = jwt.verify(user.token, process.env.JWT_SECRET);
+                  isTokenValid = decodedToken.exp > Math.floor(Date.now() / 1000);
+                  tokenExpiry = new Date(decodedToken.exp * 1000);
+              } catch (err) {
+                  isTokenValid = false;
+              }
+          }
+
+          return {
+              id: user.id,
+              name: user.name,
+              email: user.email,
+              token: user.token,
+              token_valid: isTokenValid,
+              token_expiry: tokenExpiry,
+          };
+      });
+
+      res.status(200).json({ message: "Fetched all users' tokens", data: userTokens });
+  } catch (error) {
+      console.error("Error fetching users' tokens:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 
-
-module.exports = { CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink,UpdateUsersStatus};
+module.exports = { GetAllUsersToken,CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink,UpdateUsersStatus};
