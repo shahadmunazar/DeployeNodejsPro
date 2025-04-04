@@ -4,6 +4,10 @@ const User = require("../../models/user");
 const jwt = require("jsonwebtoken");
 const Role = require("../../models/role");
 const UserRole = require("../../models/userrole");
+const fs = require('fs');
+const path = require('path');
+const ExcelJS = require('exceljs');
+const { Parser } = require('json2csv');
 require("dotenv").config();
 const { onlineUsers } = require("../socket");
 
@@ -115,7 +119,7 @@ const GetAllUsersWithRoles = async (req, res) => {
 
       // 🔹 Filter by Status (Active/Inactive)
       if (status) {
-          whereConditions.user_status = status.toLowerCase() === "active" ? "active" : "inactive";
+          whereConditions.user_status = status.toLowerCase() === true ? true : false;
       }
 
       // 🔹 Filter by Created Date Range
@@ -492,4 +496,64 @@ const GetAllUsersToken = async (req, res) => {
 };
 
 
-module.exports = { GetAllUsersToken,CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink,UpdateUsersStatus};
+const exportAllUsers = async (req, res) => {
+  try {
+    const { status, role } = req.query;
+
+    // 🔍 Build filter conditions
+    const userWhereClause = {};
+    if (status) userWhereClause.user_status = status;
+
+    // 📦 Fetch users with optional role filter
+    const users = await User.findAll({
+      where: userWhereClause,
+      attributes: ['name', 'email', 'user_status', 'login_at', 'createdAt'],
+      include: [
+        {
+          model: Role,
+          attributes: ['name'],
+          through: { attributes: [] },
+          where: role ? { name: role } : undefined,
+        },
+      ],
+    });
+
+    // 🧹 Format output
+    const formattedUsers = users.map(user => ({
+      Name: user.name,
+      Email: user.email,
+      Role: user.Roles.map(r => r.name).join(', '),
+      Status: user.user_status,
+      'Last Login': user.login_at,
+      'Created Date': user.createdAt,
+    }));
+
+    if (formattedUsers.length === 0) {
+      return res.status(404).json({ message: 'No users found to export.' });
+    }
+
+    // 📘 Generate Excel file
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Users');
+
+    worksheet.columns = Object.keys(formattedUsers[0]).map(key => ({
+      header: key,
+      key,
+      width: 20,
+    }));
+
+    worksheet.addRows(formattedUsers);
+
+    // 📥 Send Excel file as downloadable response
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=users.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error('Export error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+module.exports = {exportAllUsers, GetAllUsersToken,CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing ,SnedInvitationLink,UpdateUsersStatus};

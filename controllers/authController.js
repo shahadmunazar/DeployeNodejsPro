@@ -34,7 +34,7 @@ const login = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    if (user.user_status === "locked") {
+    if (user.user_status === false) {
       return res.status(403).json({ message: "Account locked due to too many failed attempts." });
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -109,15 +109,16 @@ const verifyOtp = async (req, res) => {
     const user = await User.findOne({ where: whereClause });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(400).json({ message: "User not found" });
     }
+    if (user.user_status === false) {
+      return res.status(400).json({ 
+        message: "Account Locked Due to Too Many Failed Attempts. Please Contact Admin" 
+      });
+    }
+    
 
-    console.log("User found:", user.username);
-    console.log("Stored OTP:", user.otp, typeof user.otp);
-    console.log("Entered OTP:", otp, typeof otp);
-    console.log("OTP Expiry:", user.otpExpiresAt);
-
-    // Validate OTP presence & expiration
+    
     if (!user.otp || !user.otpExpiresAt) {
       return res.status(400).json({ message: "OTP is missing or invalid" });
     }
@@ -126,13 +127,13 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "OTP has expired" });
     }
 
-    // Compare OTP
+    
     const storedOtp = parseInt(user.otp, 10);
     if (storedOtp !== otp) {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // Capture login details
+    //
     const clientIp = requestIp.getClientIp(req) || "Unknown IP";
     const agent = useragent.parse(req.headers["user-agent"]);
     const device = agent.device.toString() || "Unknown Device";
