@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const userRoutes = require("./routes/userRoutes");
-const { initSocket } = require("./controllers/socket"); // Import socket.io setup
+const { initSocket } = require("./controllers/socket");
 const http = require("http");
 const LoginRoutes = require("./routes/authRoutes");
 const app = express();
@@ -11,10 +11,7 @@ app.use(cors({
     allowedHeaders: "*",
 }));
 const server = http.createServer(app);
-
-const io = initSocket(server); // Initialize WebSocket
-
-
+const io = initSocket(server); 
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", userRoutes);
