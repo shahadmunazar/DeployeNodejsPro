@@ -117,20 +117,20 @@ const verifyOtp = async (req, res) => {
     console.log("Entered OTP:", otp, typeof otp);
     console.log("OTP Expiry:", user.otpExpiresAt);
 
-    // // Validate OTP presence & expiration
-    // if (!user.otp || !user.otpExpiresAt) {
-    //   return res.status(400).json({ message: "OTP is missing or invalid" });
-    // }
+    // Validate OTP presence & expiration
+    if (!user.otp || !user.otpExpiresAt) {
+      return res.status(400).json({ message: "OTP is missing or invalid" });
+    }
 
-    // if (user.otpExpiresAt < new Date()) {
-    //   return res.status(400).json({ message: "OTP has expired" });
-    // }
+    if (user.otpExpiresAt < new Date()) {
+      return res.status(400).json({ message: "OTP has expired" });
+    }
 
-    // // Compare OTP
-    // const storedOtp = parseInt(user.otp, 10);
-    // if (storedOtp !== otp) {
-    //   return res.status(400).json({ message: "Invalid OTP" });
-    // }
+    // Compare OTP
+    const storedOtp = parseInt(user.otp, 10);
+    if (storedOtp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
 
     // Capture login details
     const clientIp = requestIp.getClientIp(req) || "Unknown IP";
