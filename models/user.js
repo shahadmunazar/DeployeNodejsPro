@@ -24,9 +24,9 @@ User.init(
       defaultValue: 0,
     },
     user_status: {
-      type: DataTypes.ENUM("active", "inactive"),
+      type: DataTypes.BOOLEAN,
       allowNull: false,
-      defaultValue: "active",
+      defaultValue: true, // true = active, false = inactive
     },
     deletedAt: {
       type: DataTypes.DATE,

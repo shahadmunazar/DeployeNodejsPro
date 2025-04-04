@@ -9,9 +9,9 @@ module.exports = {
     });
 
     await queryInterface.addColumn("Users", "user_status", {
-      type: Sequelize.ENUM("active", "inactive"),
+      type: Sequelize.BOOLEAN,
       allowNull: false,
-      defaultValue: "active",
+      defaultValue: true, // true = active, false = inactive
     });
   },
 

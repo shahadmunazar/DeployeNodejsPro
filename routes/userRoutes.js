@@ -4,7 +4,7 @@ const { getCurrentUser,CreateAdminLogout } = require("../controllers/authControl
 const {CreateRoles,GetAllRoles,GetRoleById,CreateAdmin, UpdateRoles} = require("../controllers/SuperAdmin/rolesController")
 const router = express.Router();
 
-const {GetAllUsersToken, CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink,UpdateUsersStatus} = require("../controllers/SuperAdmin/AdminCreationcontroller");
+const {GetAllUsersToken,exportAllUsers, CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink,UpdateUsersStatus} = require("../controllers/SuperAdmin/AdminCreationcontroller");
 
 
 /**
@@ -27,6 +27,7 @@ router.get('/get-all-roles', ...withAuthAndRole(GetAllRolesListing));
 router.post('/send-invitation-link', ...withAuthAndRole(SnedInvitationLink));
 router.put('/update-user-status', ...withAuthAndRole(UpdateUsersStatus));
 router.get('/check-all-users-token', ...withAuthAndRole(GetAllUsersToken));
+router.get('/export-all-users-into-csv', ...withAuthAndRole(exportAllUsers));
 
 
 // router.post('/rolse-create', ...withAuthAndRole(CreateRoles));
