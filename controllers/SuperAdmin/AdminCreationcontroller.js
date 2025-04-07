@@ -145,7 +145,7 @@ const GetAllUsersWithRoles = async (req, res) => {
                   where: Object.keys(roleCondition).length ? roleCondition : undefined,
               },
           ],
-          attributes: ["id", "name", "email", "username", "user_status", "createdAt", "updatedAt"],
+          attributes: ["id", "name", "email", "username", "user_status", "createdAt","temp_password_used","login_at","logout_at", "updatedAt"],
       });
 
       // 🔹 Format Data with Online Status
@@ -155,6 +155,9 @@ const GetAllUsersWithRoles = async (req, res) => {
           email: user.email,
           username: user.username,
           user_status: user.user_status,
+          temp_password_used:user.temp_password_used,
+          login_at:user.login_at,
+          logout_at:user.logout_at,
           is_online: onlineUsers.hasOwnProperty(user.id), // 🔥 Check real-time online status
           createdAt: user.createdAt
               ? `${String(user.createdAt.getDate()).padStart(2, "0")}-${String(user.createdAt.getMonth() + 1).padStart(2, "0")}-${user.createdAt.getFullYear()} ${String(user.createdAt.getHours()).padStart(2, "0")}:${String(user.createdAt.getMinutes()).padStart(2, "0")}`
@@ -500,11 +503,10 @@ const exportAllUsers = async (req, res) => {
   try {
     const { status, role } = req.query;
 
-    // 🔍 Build filter conditions
+    // Build where clause
     const userWhereClause = {};
-    if (status) userWhereClause.user_status = status;
+    if (status) userWhereClause.user_status = status === 'true'; // 'true' or 'false'
 
-    // 📦 Fetch users with optional role filter
     const users = await User.findAll({
       where: userWhereClause,
       attributes: ['name', 'email', 'user_status', 'login_at', 'createdAt'],
@@ -518,36 +520,36 @@ const exportAllUsers = async (req, res) => {
       ],
     });
 
-    // 🧹 Format output
+    if (users.length === 0) {
+      return res.status(404).json({ message: 'No users found to export.' });
+    }
+
     const formattedUsers = users.map(user => ({
       Name: user.name,
       Email: user.email,
       Role: user.Roles.map(r => r.name).join(', '),
-      Status: user.user_status,
-      'Last Login': user.login_at,
-      'Created Date': user.createdAt,
+      Status: user.user_status ? 'active' : 'inactive',
+      'Last Login': user.login_at ? user.login_at.toISOString() : '',
+      'Created Date': user.createdAt.toISOString(),
     }));
 
-    if (formattedUsers.length === 0) {
-      return res.status(404).json({ message: 'No users found to export.' });
-    }
-
-    // 📘 Generate Excel file
+    // Create Excel Workbook
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Users');
 
     worksheet.columns = Object.keys(formattedUsers[0]).map(key => ({
       header: key,
       key,
-      width: 20,
+      width: 25,
     }));
 
     worksheet.addRows(formattedUsers);
 
-    // 📥 Send Excel file as downloadable response
+    // Set response headers for Excel
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=users.xlsx');
 
+    // Write Excel to response stream
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
