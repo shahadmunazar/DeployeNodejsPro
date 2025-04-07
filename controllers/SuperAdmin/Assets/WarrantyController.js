@@ -76,7 +76,7 @@ const CreateWarranty = async (req, res) => {
     });
 
     // Send a success response
-    res.status(201).json({
+    res.status(200).json({
       message: "Warranty Maintenance Insurance record created successfully",
       data: newWarranty
     });
