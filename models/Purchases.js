@@ -1,42 +1,39 @@
-// models/purchase.js
-
 'use strict';
-
 module.exports = (sequelize, DataTypes) => {
   const Purchase = sequelize.define('Purchase', {
     vendor_name: {
       type: DataTypes.STRING(255),
-      allowNull: false,  // Vendor name is required
+      allowNull: false,
     },
     po_number: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      unique: true,  // PO Number must be unique
+      unique: true,  
     },
     invoice_date: {
-      type: DataTypes.DATEONLY,  // Use DATEONLY for Date format (yyyy-mm-dd)
-      allowNull: false,  // Invoice date is required
+      type: DataTypes.DATEONLY,  
+      allowNull: false,
     },
     invoice_no: {
       type: DataTypes.STRING(100),
-      allowNull: false,  // Invoice number is required
+      allowNull: false,
     },
     purchase_date: {
-      type: DataTypes.DATEONLY,  // Use DATEONLY for Date format (yyyy-mm-dd)
-      allowNull: false,  // Purchase date is required
+      type: DataTypes.DATEONLY,  
+      allowNull: false,
     },
     purchase_price: {
-      type: DataTypes.DECIMAL(10, 2),  // Decimal type with 2 decimal places
-      allowNull: false,  // Purchase price is required
+      type: DataTypes.DECIMAL(10, 2),  
+      allowNull: false,  
     },
     ownership_type: {
-      type: DataTypes.ENUM('Self-Owned', 'Partner'),  // Enum type for ownership
-      allowNull: false,  // Ownership type is required
+      type: DataTypes.ENUM('Self-Owned', 'Partner'),  
+      allowNull: false, 
     },
   }, {
-    tableName: 'Purchases',  // Ensure table name is plural and matches your DB
-    timestamps: true,  // Automatically creates `created_at` and `updated_at` fields
-    underscored: true,  // Use snake_case for column names (e.g., created_at)
+    tableName: 'Purchases',  
+    timestamps: true,  
+    underscored: true,  
   });
 
   // Add any associations if needed (e.g., with another model)

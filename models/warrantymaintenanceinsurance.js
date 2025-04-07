@@ -33,9 +33,19 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
+    status: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true, // true means active, false means deleted
+    },
+    deletedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   }, {
     tableName: 'WarrantyMaintenanceInsurances',
     timestamps: true,
+    paranoid: true,    // Enable soft delete by tracking `deletedAt`
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   });

@@ -9,33 +9,33 @@ module.exports = {
         autoIncrement: true,
       },
       capitalization_price: {
-        type: Sequelize.DECIMAL(10, 2),  // Numeric type with 2 decimal places
+        type: Sequelize.DECIMAL(10, 2), 
         allowNull: false,
       },
       end_of_life_date: {
-        type: Sequelize.DATEONLY,  // Date-only type (yyyy-mm-dd)
+        type: Sequelize.DATEONLY, 
         allowNull: false,
       },
       capitalization_date: {
-        type: Sequelize.DATEONLY,  // Date-only type (yyyy-mm-dd)
+        type: Sequelize.DATEONLY,  
         allowNull: false,
       },
       depreciation_percentage: {
-        type: Sequelize.FLOAT,  // Percentage value as float
+        type: Sequelize.FLOAT,  
         allowNull: false,
       },
       accumulated_depreciation: {
-        type: Sequelize.DECIMAL(10, 2),  // Numeric type with 2 decimal places
+        type: Sequelize.DECIMAL(10, 2), 
         allowNull: false,
         defaultValue: 0.00,
       },
       scrap_value: {
-        type: Sequelize.DECIMAL(10, 2),  // Numeric type with 2 decimal places
+        type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
         defaultValue: 0.00,
       },
       income_tax_depreciation_percentage: {
-        type: Sequelize.FLOAT,  // Percentage value as float
+        type: Sequelize.FLOAT,
         allowNull: false,
       },
       created_at: {

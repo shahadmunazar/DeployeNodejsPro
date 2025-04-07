@@ -17,10 +17,10 @@ module.exports = {
       po_number: {
         type: Sequelize.STRING(100),
         allowNull: false,
-        unique: true,  // Ensuring each PO Number is unique
+        unique: true,
       },
       invoice_date: {
-        type: Sequelize.DATEONLY, // Date-only type (yyyy-mm-dd)
+        type: Sequelize.DATEONLY, 
         allowNull: false,
       },
       invoice_no: {
@@ -28,15 +28,15 @@ module.exports = {
         allowNull: false,
       },
       purchase_date: {
-        type: Sequelize.DATEONLY, // Date-only type (yyyy-mm-dd)
+        type: Sequelize.DATEONLY,
         allowNull: false,
       },
       purchase_price: {
-        type: Sequelize.DECIMAL(10, 2), // Numeric type with 2 decimal places
+        type: Sequelize.DECIMAL(10, 2),
         allowNull: false,
       },
       ownership_type: {
-        type: Sequelize.ENUM('Self-Owned', 'Partner'), // Enum with two possible values
+        type: Sequelize.ENUM('Self-Owned', 'Partner'),
         allowNull: false,
       },
       created_at: {

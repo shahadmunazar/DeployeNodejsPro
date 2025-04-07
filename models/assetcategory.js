@@ -1,7 +1,4 @@
-// models/AssetCategory.js
-
 'use strict';
-
 module.exports = (sequelize, DataTypes) => {
   const AssetCategory = sequelize.define('AssetCategory', {
     name: {
@@ -20,16 +17,14 @@ module.exports = (sequelize, DataTypes) => {
     },
   }, {
     tableName: 'AssetCategories',
-    timestamps: true,  // This will include `createdAt` and `updatedAt`
-    paranoid: true,    // Enable soft delete by tracking `deletedAt`
+    timestamps: true,  
+    paranoid: true, 
   });
-
   AssetCategory.associate = function(models) {
     AssetCategory.hasMany(models.Asset, {
       foreignKey: 'category_id',
       as: 'assets',
     });
   };
-
   return AssetCategory;
 };

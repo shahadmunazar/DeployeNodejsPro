@@ -18,7 +18,7 @@ async function CreateRoles(req, res) {
             return res.status(400).json({ errors: "Role already exists" });
         }
         const role = await Role.create({ name: req.body.name });
-        res.status(201).json({ message: "Role created successfully", role });
+        res.status(200).json({ message: "Role created successfully", role });
     } catch (error) {
         console.error("Error creating role:", error);
         res.status(500).json({ error: "Internal Server Error" });

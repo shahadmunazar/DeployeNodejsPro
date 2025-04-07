@@ -8,8 +8,8 @@ const {CreateCategory,GetAllCategory,GetCategoryById,UpdateCategory,StatusUpdate
 
 const {GetAllUsersToken,exportAllUsers, CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink,UpdateUsersStatus} = require("../controllers/SuperAdmin/AdminCreationcontroller");
 
-
-const {CreateWarranty,GetAllCategoryListing} = require("../controllers/SuperAdmin/Assets/WarrantyController");
+const {CreateFinancial,GetFinancialList,GetFinancialListById,UpdateFinancial} = require('../controllers/SuperAdmin/Assets/FinancialController')
+const {CreateWarranty,GetAllCategoryListing,GetWarrantyById,UpdateWarranty,DeleteWarranty,WarrantyStatusUpdate} = require("../controllers/SuperAdmin/Assets/WarrantyController");
 
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
@@ -47,6 +47,19 @@ router.delete('/category-delete/:id' ,...withAuthAndRole(CategoryDelete));
 // make for routes for Admin
 router.post('/create-warranty-asset', ...withAuthAndRole(CreateWarranty));
 router.get('/get-warranty-asset-list', ...withAuthAndRole(GetAllCategoryListing));
+router.get('/get-warranty-asset-list-by-id/:id' , ...withAuthAndRole(GetWarrantyById));
+router.put('/update-warranty-asset/:id', ...withAuthAndRole(UpdateWarranty));
+router.delete('/delete-warranty/:id', ...withAuthAndRole(DeleteWarranty));
+router.put('/warranty-status-update', ...withAuthAndRole(WarrantyStatusUpdate));
+
+
+//make routes for Financial -information 
+
+router.post('/create-financial-asset', ...withAuthAndRole(CreateFinancial));
+router.get('/get-all-financial-list-asset', ...withAuthAndRole(GetFinancialList))
+router.get('/get-finacial-list-by-id/:id', ...withAuthAndRole(GetFinancialListById));
+router.put('/update-finacial-asset/:id', ...withAuthAndRole(UpdateFinancial));
+
 // router.post('/rolse-create', ...withAuthAndRole(CreateRoles));
 // // GetAllRoles
 // router.get('/roles-get', ...withAuthAndRole(GetAllRoles));
