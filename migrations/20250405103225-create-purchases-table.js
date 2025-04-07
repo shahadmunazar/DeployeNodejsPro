@@ -6,16 +6,16 @@ module.exports = (sequelize, DataTypes) => {
   const Purchase = sequelize.define('Purchase', {
     vendor_name: {
       type: DataTypes.STRING(255),
-      allowNull: false,  // Vendor name is required
+      allowNull: false,
     },
     po_number: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      unique: true,  // PO Number must be unique
+      unique: true,
     },
     invoice_date: {
-      type: DataTypes.DATEONLY,  // Date-only type for invoice date
-      allowNull: false,  // Invoice date is required
+      type: DataTypes.DATEONLY,
+      allowNull: false,
     },
     invoice_no: {
       type: DataTypes.STRING(100),
