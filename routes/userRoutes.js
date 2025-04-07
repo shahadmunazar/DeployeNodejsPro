@@ -8,6 +8,7 @@ const {CreateCategory,GetAllCategory,GetCategoryById,UpdateCategory,StatusUpdate
 
 const {GetAllUsersToken,exportAllUsers, CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink,UpdateUsersStatus} = require("../controllers/SuperAdmin/AdminCreationcontroller");
 
+
 const {CreateWarranty,GetAllCategoryListing} = require("../controllers/SuperAdmin/Assets/WarrantyController");
 
 /**
@@ -53,14 +54,11 @@ router.get('/get-warranty-asset-list', ...withAuthAndRole(GetAllCategoryListing)
 // router.get('/roles-details', ...withAuthAndRole(GetRoleById));
 // router.post('/create-admins', ...withAuthAndRole(CreateAdmin));
 
-
 router.get("/admin", authenticateUser, authorizeRoles("admin"), (req, res) => {
     res.json({ message: "Welcome Admin!" });
 });
 
-
 router.get("/user", authenticateUser, getCurrentUser);
-
 
 router.get("/user", authenticateUser, authorizeRoles("user"), (req, res) => {
     res.json({ message: "Welcome User!" });

@@ -14,7 +14,6 @@ const { onlineUsers } = require("../socket");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 
-
 const activeTokens = new Set(); // Store active tokens temporarily
 
 const EMAIL_USER = process.env.EMAIL_USER;
@@ -107,7 +106,6 @@ const CreateUserLogin = async (req, res) => {
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
-
 
 const GetAllUsersWithRoles = async (req, res) => {
   try {
@@ -263,7 +261,7 @@ const GetAllUsersWithRoles = async (req, res) => {
         console.log("✅ UserRole Updated Successfully");
       }
   
-      // **Fetch Updated User with Role**
+      // *Fetch Updated User with Role*
       const updatedUser = await User.findByPk(id, {
         include: [
           {
@@ -341,7 +339,7 @@ const SnedInvitationLink = async (req, res) => {
         return res.status(400).json({ message: "User ID is required" });
       }
   
-      // **Find User**
+      // *Find User*
       const user = await User.findByPk(id, {
         attributes: ["id", "name", "email", "username","password", "invite_token","invitation_status", "invite_expires_at"],
       });
@@ -359,7 +357,7 @@ const SnedInvitationLink = async (req, res) => {
         inviteExpiresAt = new Date();
         inviteExpiresAt.setHours(inviteExpiresAt.getHours() + 48); // 48 hours expiry
   
-        // **Update User with New Token & Expiry**
+        // *Update User with New Token & Expiry*
         await user.update({
           invite_token: inviteToken,
           invite_expires_at: inviteExpiresAt,
@@ -367,17 +365,17 @@ const SnedInvitationLink = async (req, res) => {
         });
       }
   
-      // **Generate a Temporary Password**
+      // *Generate a Temporary Password*
       const tempPassword = Math.random().toString(36).slice(-8); // Example: "xk9Bz7qP"
   
-      // **Hash the Password Before Storing**
+      // *Hash the Password Before Storing*
       const hashedPassword = await bcrypt.hash(tempPassword, 10);
       await user.update({ password: hashedPassword });
   
-      // **Generate Invitation Link**
+      // *Generate Invitation Link*
       const inviteLink = `http://192.168.68.142:5173/invite/${inviteToken}`;
   
-      // **Send Email with Login Credentials**
+      // *Send Email with Login Credentials*
       const transporter = nodemailer.createTransport({
         service: "gmail",
         auth: {
@@ -387,7 +385,7 @@ const SnedInvitationLink = async (req, res) => {
       });
   
       const mailOptions = {
-        from: "shahadmunazar@gmail.com",
+        from: "mailto:shahadmunazar@gmail.com",
         to: user.email,
         subject: "You're Invited! Your Login Details",
         html: `
