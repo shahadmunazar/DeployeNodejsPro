@@ -1,43 +1,58 @@
-// models/purchase.js
+// migrations/YYYYMMDDHHMMSS-create-purchases-table.js
 
 'use strict';
 
-module.exports = (sequelize, DataTypes) => {
-  const Purchase = sequelize.define('Purchase', {
-    vendor_name: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
-    po_number: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      unique: true,
-    },
-    invoice_date: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
-    invoice_no: {
-      type: DataTypes.STRING(100),
-      allowNull: false,  // Invoice number is required
-    },
-    purchase_date: {
-      type: DataTypes.DATEONLY,  // Date-only type for purchase date
-      allowNull: false,  // Purchase date is required
-    },
-    purchase_price: {
-      type: DataTypes.DECIMAL(10, 2),  // Numeric type with 2 decimal places
-      allowNull: false,  // Purchase price is required
-    },
-    ownership_type: {
-      type: DataTypes.ENUM('Self-Owned', 'Partner'),  // Enum with two options
-      allowNull: false,  // Ownership type is required
-    },
-  }, {
-    tableName: 'Purchases',  // Table name in the database
-    timestamps: true,  // Automatically creates created_at and updated_at columns
-    underscored: true,  // Use snake_case for column names (e.g., created_at)
-  });
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    await queryInterface.createTable('Purchases', {
+      id: {
+        type: Sequelize.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      vendor_name: {
+        type: Sequelize.STRING(255),
+        allowNull: false,
+      },
+      po_number: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+        unique: true,  // Ensuring each PO Number is unique
+      },
+      invoice_date: {
+        type: Sequelize.DATEONLY, // Date-only type (yyyy-mm-dd)
+        allowNull: false,
+      },
+      invoice_no: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+      },
+      purchase_date: {
+        type: Sequelize.DATEONLY, // Date-only type (yyyy-mm-dd)
+        allowNull: false,
+      },
+      purchase_price: {
+        type: Sequelize.DECIMAL(10, 2), // Numeric type with 2 decimal places
+        allowNull: false,
+      },
+      ownership_type: {
+        type: Sequelize.ENUM('Self-Owned', 'Partner'), // Enum with two possible values
+        allowNull: false,
+      },
+      created_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+      updated_at: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW,
+      },
+    });
+  },
 
-  return Purchase;
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.dropTable('Purchases');
+  },
 };
