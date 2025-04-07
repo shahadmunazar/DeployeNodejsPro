@@ -291,7 +291,42 @@ const CreateAdminLogout = async (req, res) => {
   }
 };
 
+const GetUserProfile = async (req, res) => {
+  try {
+    // Assuming req.user is set from auth middleware
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: Token is missing or invalid" });
+    }
+
+    // Fetch user details along with roles
+    const user = await User.findOne({
+      where: { id: userId },
+      attributes: { exclude: ['password'] }, // exclude sensitive data
+      include: [
+        {
+          model: Role,
+          attributes: ['id', 'name'],
+          through: { attributes: [] },
+        },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "User profile fetched successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 
 // ========================== EXPORT FUNCTIONS ==========================
-module.exports = { login, verifyOtp, getCurrentUser,CreateAdminLogout };
+module.exports = { login, verifyOtp, getCurrentUser,CreateAdminLogout,GetUserProfile };

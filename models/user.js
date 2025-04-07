@@ -37,6 +37,16 @@ User.init(
       allowNull: false,
       defaultValue: "pending",
     },
+    onboarding_email_sent: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
+    temp_password_used: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
     invite_token: {
       type: DataTypes.STRING,
       allowNull: true,

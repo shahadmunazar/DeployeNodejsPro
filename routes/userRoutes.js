@@ -1,8 +1,10 @@
 const express = require("express");
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
-const { getCurrentUser,CreateAdminLogout } = require("../controllers/authController");
+const { getCurrentUser,CreateAdminLogout,GetUserProfile } = require("../controllers/authController");
 const {CreateRoles,GetAllRoles,GetRoleById,CreateAdmin, UpdateRoles} = require("../controllers/SuperAdmin/rolesController")
 const router = express.Router();
+
+const {CreateCategory,GetAllCategory,GetCategoryById,UpdateCategory,StatusUpdate,CategoryDelete} = require("../controllers/SuperAdmin/CategoryController");
 
 const {GetAllUsersToken,exportAllUsers, CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink,UpdateUsersStatus} = require("../controllers/SuperAdmin/AdminCreationcontroller");
 
@@ -20,6 +22,7 @@ router.post('/admin-logout', ...withAuthAndRole(CreateAdminLogout));
 
 router.post('/create-new-user', ...withAuthAndRole(CreateUserLogin));
 router.get('/get-user', ...withAuthAndRole(GetAllUsersWithRoles));
+router.get('/get-user-profile', ...withAuthAndRole(GetUserProfile));
 router.get('/get-user-by-id/:id', ...withAuthAndRole(GetuserById));
 router.put('/update-user', ...withAuthAndRole(UpdateUsers));
 router.delete('/delete-user', ...withAuthAndRole(DeleteUser));
@@ -29,6 +32,14 @@ router.put('/update-user-status', ...withAuthAndRole(UpdateUsersStatus));
 router.get('/check-all-users-token', ...withAuthAndRole(GetAllUsersToken));
 router.get('/export-all-users-into-csv', ...withAuthAndRole(exportAllUsers));
 
+//Crud For Category Added By Admin Only 
+
+router.post('/create-category', ...withAuthAndRole(CreateCategory));
+router.get('/get-category', ...withAuthAndRole(GetAllCategory));
+router.get('/get-category-by-id/:id', ...withAuthAndRole(GetCategoryById));
+router.put('/update-category/:id', ...withAuthAndRole(UpdateCategory));
+router.put('/category-status-update', ...withAuthAndRole(StatusUpdate));
+router.delete('/category-delete/:id' ,...withAuthAndRole(CategoryDelete));
 
 // router.post('/rolse-create', ...withAuthAndRole(CreateRoles));
 // // GetAllRoles
