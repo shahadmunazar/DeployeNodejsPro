@@ -1,15 +1,40 @@
 const express = require("express");
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
-const { getCurrentUser,CreateAdminLogout,GetUserProfile } = require("../controllers/authController");
-const {CreateRoles,GetAllRoles,GetRoleById,CreateAdmin, UpdateRoles} = require("../controllers/SuperAdmin/rolesController")
+const { getCurrentUser, CreateAdminLogout, GetUserProfile } = require("../controllers/authController");
+const { CreateRoles, GetAllRoles, GetRoleById, CreateAdmin, UpdateRoles } = require("../controllers/SuperAdmin/rolesController");
 const router = express.Router();
 
-const {CreateCategory,GetAllCategory,GetCategoryById,UpdateCategory,StatusUpdate,CategoryDelete} = require("../controllers/SuperAdmin/CategoryController");
+const { CreateCategory, GetAllCategory, GetCategoryById, UpdateCategory, StatusUpdate, CategoryDelete } = require("../controllers/SuperAdmin/CategoryController");
 
-const {GetAllUsersToken,exportAllUsers, CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink,UpdateUsersStatus} = require("../controllers/SuperAdmin/AdminCreationcontroller");
+const {
+  GetAllUsersToken,
+  exportAllUsers,
+  CreateUserLogin,
+  GetAllUsersWithRoles,
+  GetuserById,
+  UpdateUsers,
+  DeleteUser,
+  GetAllRolesListing,
+  SnedInvitationLink,
+  UpdateUsersStatus,
+} = require("../controllers/SuperAdmin/AdminCreationcontroller");
 
-const {CreateFinancial,GetFinancialList,GetFinancialListById,UpdateFinancial} = require('../controllers/SuperAdmin/Assets/FinancialController')
-const {CreateWarranty,GetAllCategoryListing,GetWarrantyById,UpdateWarranty,DeleteWarranty,WarrantyStatusUpdate} = require("../controllers/SuperAdmin/Assets/WarrantyController");
+const {
+  CreateFinancial,
+  GetFinancialList,
+  GetFinancialListById,
+  UpdateFinancial,
+  DeleteFinancial,
+  UpdateFinancialStatus,
+} = require("../controllers/SuperAdmin/Assets/FinancialController");
+const {
+  CreateWarranty,
+  GetAllCategoryListing,
+  GetWarrantyById,
+  UpdateWarranty,
+  DeleteWarranty,
+  WarrantyStatusUpdate,
+} = require("../controllers/SuperAdmin/Assets/WarrantyController");
 
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
@@ -19,46 +44,45 @@ const {CreateWarranty,GetAllCategoryListing,GetWarrantyById,UpdateWarranty,Delet
  */
 const withAuthAndRole = (handler, role = "admin") => [authenticateUser, authorizeRoles(role), handler];
 
+router.post("/admin-logout", ...withAuthAndRole(CreateAdminLogout));
 
-router.post('/admin-logout', ...withAuthAndRole(CreateAdminLogout));
+router.post("/create-new-user", ...withAuthAndRole(CreateUserLogin));
+router.get("/get-user", ...withAuthAndRole(GetAllUsersWithRoles));
+router.get("/get-user-profile", ...withAuthAndRole(GetUserProfile));
+router.get("/get-user-by-id/:id", ...withAuthAndRole(GetuserById));
+router.put("/update-user", ...withAuthAndRole(UpdateUsers));
+router.delete("/delete-user", ...withAuthAndRole(DeleteUser));
+router.get("/get-all-roles", ...withAuthAndRole(GetAllRolesListing));
+router.post("/send-invitation-link", ...withAuthAndRole(SnedInvitationLink));
+router.put("/update-user-status", ...withAuthAndRole(UpdateUsersStatus));
+router.get("/check-all-users-token", ...withAuthAndRole(GetAllUsersToken));
+router.get("/export-all-users-into-csv", ...withAuthAndRole(exportAllUsers));
 
-router.post('/create-new-user', ...withAuthAndRole(CreateUserLogin));
-router.get('/get-user', ...withAuthAndRole(GetAllUsersWithRoles));
-router.get('/get-user-profile', ...withAuthAndRole(GetUserProfile));
-router.get('/get-user-by-id/:id', ...withAuthAndRole(GetuserById));
-router.put('/update-user', ...withAuthAndRole(UpdateUsers));
-router.delete('/delete-user', ...withAuthAndRole(DeleteUser));
-router.get('/get-all-roles', ...withAuthAndRole(GetAllRolesListing));
-router.post('/send-invitation-link', ...withAuthAndRole(SnedInvitationLink));
-router.put('/update-user-status', ...withAuthAndRole(UpdateUsersStatus));
-router.get('/check-all-users-token', ...withAuthAndRole(GetAllUsersToken));
-router.get('/export-all-users-into-csv', ...withAuthAndRole(exportAllUsers));
+//Crud For Category Added By Admin Only
 
-//Crud For Category Added By Admin Only 
-
-router.post('/create-category', ...withAuthAndRole(CreateCategory));
-router.get('/get-category', ...withAuthAndRole(GetAllCategory));
-router.get('/get-category-by-id/:id', ...withAuthAndRole(GetCategoryById));
-router.put('/update-category/:id', ...withAuthAndRole(UpdateCategory));
-router.put('/category-status-update', ...withAuthAndRole(StatusUpdate));
-router.delete('/category-delete/:id' ,...withAuthAndRole(CategoryDelete));
-
+router.post("/create-category", ...withAuthAndRole(CreateCategory));
+router.get("/get-category", ...withAuthAndRole(GetAllCategory));
+router.get("/get-category-by-id/:id", ...withAuthAndRole(GetCategoryById));
+router.put("/update-category/:id", ...withAuthAndRole(UpdateCategory));
+router.put("/category-status-update", ...withAuthAndRole(StatusUpdate));
+router.delete("/category-delete/:id", ...withAuthAndRole(CategoryDelete));
 
 // make for routes for Admin
-router.post('/create-warranty-asset', ...withAuthAndRole(CreateWarranty));
-router.get('/get-warranty-asset-list', ...withAuthAndRole(GetAllCategoryListing));
-router.get('/get-warranty-asset-list-by-id/:id' , ...withAuthAndRole(GetWarrantyById));
-router.put('/update-warranty-asset/:id', ...withAuthAndRole(UpdateWarranty));
-router.delete('/delete-warranty/:id', ...withAuthAndRole(DeleteWarranty));
-router.put('/warranty-status-update', ...withAuthAndRole(WarrantyStatusUpdate));
+router.post("/create-warranty-asset", ...withAuthAndRole(CreateWarranty));
+router.get("/get-warranty-asset-list", ...withAuthAndRole(GetAllCategoryListing));
+router.get("/get-warranty-asset-list-by-id/:id", ...withAuthAndRole(GetWarrantyById));
+router.put("/update-warranty-asset/:id", ...withAuthAndRole(UpdateWarranty));
+router.delete("/delete-warranty/:id", ...withAuthAndRole(DeleteWarranty));
+router.put("/warranty-status-update", ...withAuthAndRole(WarrantyStatusUpdate));
 
+//make routes for Financial -information
 
-//make routes for Financial -information 
-
-router.post('/create-financial-asset', ...withAuthAndRole(CreateFinancial));
-router.get('/get-all-financial-list-asset', ...withAuthAndRole(GetFinancialList))
-router.get('/get-finacial-list-by-id/:id', ...withAuthAndRole(GetFinancialListById));
-router.put('/update-finacial-asset/:id', ...withAuthAndRole(UpdateFinancial));
+router.post("/create-financial-asset", ...withAuthAndRole(CreateFinancial));
+router.get("/get-all-financial-list-asset", ...withAuthAndRole(GetFinancialList));
+router.get("/get-finacial-list-by-id/:id", ...withAuthAndRole(GetFinancialListById));
+router.put("/update-finacial-asset/:id", ...withAuthAndRole(UpdateFinancial));
+router.delete("/delete-financial-asset/:id", ...withAuthAndRole(DeleteFinancial));
+router.put("/update-financial-status", ...withAuthAndRole(UpdateFinancialStatus));
 
 // router.post('/rolse-create', ...withAuthAndRole(CreateRoles));
 // // GetAllRoles
@@ -68,34 +92,32 @@ router.put('/update-finacial-asset/:id', ...withAuthAndRole(UpdateFinancial));
 // router.post('/create-admins', ...withAuthAndRole(CreateAdmin));
 
 router.get("/admin", authenticateUser, authorizeRoles("admin"), (req, res) => {
-    res.json({ message: "Welcome Admin!" });
+  res.json({ message: "Welcome Admin!" });
 });
 
 router.get("/user", authenticateUser, getCurrentUser);
 
 router.get("/user", authenticateUser, authorizeRoles("user"), (req, res) => {
-    res.json({ message: "Welcome User!" });
+  res.json({ message: "Welcome User!" });
 });
 
-
 router.get("/manager", authenticateUser, authorizeRoles("manager"), (req, res) => {
-    res.json({ message: "Welcome Manager!" });
+  res.json({ message: "Welcome Manager!" });
 });
 
 // ✅ Officer Route
 router.get("/officer", authenticateUser, authorizeRoles("officer"), (req, res) => {
-    res.json({ message: "Welcome Officer!" });
+  res.json({ message: "Welcome Officer!" });
 });
 
 // ✅ Technician Route
 router.get("/technician", authenticateUser, authorizeRoles("technician"), (req, res) => {
-    res.json({ message: "Welcome Technician!" });
+  res.json({ message: "Welcome Technician!" });
 });
 
 // ✅ Compliance Route
 router.get("/compliance", authenticateUser, authorizeRoles("compliance"), (req, res) => {
-    res.json({ message: "Welcome Compliance Officer!" });
+  res.json({ message: "Welcome Compliance Officer!" });
 });
 
 module.exports = router;
-

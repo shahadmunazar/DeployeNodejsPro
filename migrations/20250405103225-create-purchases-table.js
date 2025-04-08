@@ -1,10 +1,10 @@
 // migrations/YYYYMMDDHHMMSS-create-purchases-table.js
 
-'use strict';
+"use strict";
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('Purchases', {
+    await queryInterface.createTable("Purchases", {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
@@ -20,7 +20,7 @@ module.exports = {
         unique: true,
       },
       invoice_date: {
-        type: Sequelize.DATEONLY, 
+        type: Sequelize.DATEONLY,
         allowNull: false,
       },
       invoice_no: {
@@ -36,7 +36,7 @@ module.exports = {
         allowNull: false,
       },
       ownership_type: {
-        type: Sequelize.ENUM('Self-Owned', 'Partner'),
+        type: Sequelize.ENUM("Self-Owned", "Partner"),
         allowNull: false,
       },
       created_at: {
@@ -51,8 +51,8 @@ module.exports = {
       },
     });
   },
- 
+
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('Purchases');
+    await queryInterface.dropTable("Purchases");
   },
 };
