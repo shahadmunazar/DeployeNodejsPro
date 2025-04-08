@@ -1,5 +1,3 @@
-// migrations/YYYYMMDDHHMMSS-create-purchases-table.js
-
 'use strict';
 
 module.exports = {
@@ -17,10 +15,10 @@ module.exports = {
       po_number: {
         type: Sequelize.STRING(100),
         allowNull: false,
-        unique: true,
+        unique: true,  // Ensuring each PO Number is unique
       },
       invoice_date: {
-        type: Sequelize.DATEONLY, 
+        type: Sequelize.DATEONLY, // Date-only type (yyyy-mm-dd)
         allowNull: false,
       },
       invoice_no: {
@@ -28,15 +26,15 @@ module.exports = {
         allowNull: false,
       },
       purchase_date: {
-        type: Sequelize.DATEONLY,
+        type: Sequelize.DATEONLY, // Date-only type (yyyy-mm-dd)
         allowNull: false,
       },
       purchase_price: {
-        type: Sequelize.DECIMAL(10, 2),
+        type: Sequelize.DECIMAL(10, 2), // Numeric type with 2 decimal places
         allowNull: false,
       },
       ownership_type: {
-        type: Sequelize.ENUM('Self-Owned', 'Partner'),
+        type: Sequelize.ENUM('Self-Owned', 'Partner'), // Enum with two possible values
         allowNull: false,
       },
       created_at: {

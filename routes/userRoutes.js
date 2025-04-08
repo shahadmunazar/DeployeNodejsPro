@@ -8,8 +8,10 @@ const {CreateCategory,GetAllCategory,GetCategoryById,UpdateCategory,StatusUpdate
 
 const {GetAllUsersToken,exportAllUsers, CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink,UpdateUsersStatus} = require("../controllers/SuperAdmin/AdminCreationcontroller");
 
-const {CreateFinancial,GetFinancialList,GetFinancialListById,UpdateFinancial} = require('../controllers/SuperAdmin/Assets/FinancialController')
-const {CreateWarranty,GetAllCategoryListing,GetWarrantyById,UpdateWarranty,DeleteWarranty,WarrantyStatusUpdate} = require("../controllers/SuperAdmin/Assets/WarrantyController");
+
+const {CreateWarranty,GetAllCategoryListing} = require("../controllers/SuperAdmin/Assets/WarrantyController");
+const {CreatePurchase,GetAllPurchase } = require("../controllers/SuperAdmin/Assets/PurchasesController");
+
 
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
@@ -42,6 +44,10 @@ router.get('/get-category-by-id/:id', ...withAuthAndRole(GetCategoryById));
 router.put('/update-category/:id', ...withAuthAndRole(UpdateCategory));
 router.put('/category-status-update', ...withAuthAndRole(StatusUpdate));
 router.delete('/category-delete/:id' ,...withAuthAndRole(CategoryDelete));
+
+// Purchases////////////
+router.post('/create-purchase', ...withAuthAndRole(CreatePurchase));
+router.get('/get-purchase', ...withAuthAndRole(GetAllPurchase));
 
 
 // make for routes for Admin
