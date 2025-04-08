@@ -8,8 +8,8 @@ const {CreateCategory,GetAllCategory,GetCategoryById,UpdateCategory,StatusUpdate
 
 const {GetAllUsersToken,exportAllUsers, CreateUserLogin,GetAllUsersWithRoles,GetuserById,UpdateUsers,DeleteUser,GetAllRolesListing,SnedInvitationLink,UpdateUsersStatus} = require("../controllers/SuperAdmin/AdminCreationcontroller");
 
-
-const {CreateWarranty,GetAllCategoryListing} = require("../controllers/SuperAdmin/Assets/WarrantyController");
+const {CreateFinancial,GetFinancialList,GetFinancialListById,UpdateFinancial} = require('../controllers/SuperAdmin/Assets/FinancialController')
+const {CreateWarranty,GetAllCategoryListing,GetWarrantyById,UpdateWarranty,WarrantyStatusUpdate,DeleteWarranty} = require("../controllers/SuperAdmin/Assets/WarrantyController");
 const {CreatePurchase,GetAllPurchase } = require("../controllers/SuperAdmin/Assets/PurchasesController");
 
 
