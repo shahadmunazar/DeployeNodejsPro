@@ -10,6 +10,7 @@ module.exports = {
       defaultValue: true,
     });
    
+    
   },
 
    down: async (queryInterface, Sequelize) =>{
