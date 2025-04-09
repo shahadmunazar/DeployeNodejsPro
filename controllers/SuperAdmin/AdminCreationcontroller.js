@@ -442,12 +442,13 @@ const UpdateUsersStatus = async (req, res) => {
     if (!id || !user_status) {
       return res.status(400).json({ message: "User ID and status are required" });
     }
+    console.log('req body',req.body)
     const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    if (!["active", "inactive"].includes(user_status)) {
-      return res.status(400).json({ message: "Invalid status. Use 'active' or 'inactive'." });
+    if (![true, false].includes(user_status)) {
+      return res.status(400).json({ message: "Invalid status. Use 'True' or 'False'." });
     }
     await user.update({ user_status });
     return res.status(200).json({

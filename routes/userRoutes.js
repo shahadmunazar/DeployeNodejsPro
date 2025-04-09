@@ -6,6 +6,10 @@ const router = express.Router();
 
 const { CreateCategory, GetAllCategory, GetCategoryById, UpdateCategory, StatusUpdate, CategoryDelete } = require("../controllers/SuperAdmin/CategoryController");
 
+const {CreateDepartment,GetDepartmentList,GetDepartmentListById,UpdateDepartment,DeleteDepartment,UpdateDepartmentStatus} = require("../controllers/SuperAdmin/Assets/DepartmentController")
+
+const {CreateBrands,GetBrandsList,GetBrandsListById,UpdateBrands,DeleteBrands,UpdateBrandsStatus} = require("../controllers/SuperAdmin/Assets/BrandController")
+
 const {
   GetAllUsersToken,
   exportAllUsers,
@@ -36,6 +40,7 @@ const {
   WarrantyStatusUpdate,
 } = require("../controllers/SuperAdmin/Assets/WarrantyController");
 
+const {CreateVendor,GetVendorList,GetVendorListById,UpdateVendor,DeleteVendor,UpdateVendorStatus} = require("../controllers/SuperAdmin/Assets/VendorController");
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
  * @param {Function} handler - The route handler function.
@@ -84,6 +89,33 @@ router.put("/update-finacial-asset/:id", ...withAuthAndRole(UpdateFinancial));
 router.delete("/delete-financial-asset/:id", ...withAuthAndRole(DeleteFinancial));
 router.put("/update-financial-status", ...withAuthAndRole(UpdateFinancialStatus));
 
+
+// for brands Core Settings 
+router.post("/create-brands-asset", ...withAuthAndRole(CreateBrands));
+router.get("/get-all-brands-list-asset", ...withAuthAndRole(GetBrandsList));
+router.get("/get-brands-list-by-id/:id", ...withAuthAndRole(GetBrandsListById));
+router.put("/update-brands-asset/:id", ...withAuthAndRole(UpdateBrands));
+router.delete("/delete-brands-asset/:id", ...withAuthAndRole(DeleteBrands));
+router.put("/update-brands-status", ...withAuthAndRole(UpdateBrandsStatus));
+
+// for department Core Settings
+router.post("/create-department-asset", ...withAuthAndRole(CreateDepartment));
+router.get("/get-all-department-list-asset", ...withAuthAndRole(GetDepartmentList));
+router.get("/get-department-list-by-id/:id", ...withAuthAndRole(GetDepartmentListById));
+router.put("/update-department-asset/:id", ...withAuthAndRole(UpdateDepartment));
+router.delete("/delete-department-asset/:id", ...withAuthAndRole(DeleteDepartment));
+router.put("/update-department-status", ...withAuthAndRole(UpdateDepartmentStatus));
+
+//for vendor added 
+
+router.post("/create-vendor-asset", ...withAuthAndRole(CreateVendor));
+router.get("/get-all-vendor-list-asset", ...withAuthAndRole(GetVendorList));
+router.get("/get-vendor-list-by-id/:id", ...withAuthAndRole(GetVendorListById));
+router.put("/update-vendor-asset/:id", ...withAuthAndRole(UpdateVendor));
+router.delete("/delete-vendor-asset/:id", ...withAuthAndRole(DeleteVendor));
+router.put("/update-vendor-status", ...withAuthAndRole(UpdateVendorStatus));
+
+//
 // router.post('/rolse-create', ...withAuthAndRole(CreateRoles));
 // // GetAllRoles
 // router.get('/roles-get', ...withAuthAndRole(GetAllRoles));
