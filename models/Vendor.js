@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = (sequelize, DataTypes) => {
@@ -50,10 +50,13 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  // Define associations (if necessary)
+  // Define associations (Vendor to Asset relationship)
   Vendor.associate = function (models) {
-    // You can define relationships if needed, for example:
-    // Vendor.hasMany(models.Asset, { foreignKey: 'vendor_id' });
+    // One vendor can supply many assets, so defining the relationship
+    Vendor.hasMany(models.Asset, {
+      foreignKey: 'vendor_id',
+      onDelete: 'SET NULL', // If the vendor is deleted, set the vendor_id in the asset to NULL
+    });
   };
 
   return Vendor;

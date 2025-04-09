@@ -1,4 +1,5 @@
 'use strict';
+
 module.exports = (sequelize, DataTypes) => {
   const Purchase = sequelize.define('Purchase', {
     vendor_name: {
@@ -36,10 +37,20 @@ module.exports = (sequelize, DataTypes) => {
     underscored: true,  
   });
 
-  // Add any associations if needed (e.g., with another model)
-  // Purchase.associate = function(models) {
-  //   Purchase.belongsTo(models.Vendor, { foreignKey: 'vendor_id' });
-  // };
+  // Associations with Vendor and Asset models
+  Purchase.associate = function(models) {
+    // Adding relationship between Purchase and Vendor
+    Purchase.belongsTo(models.Vendor, { 
+      foreignKey: 'vendor_id',
+      onDelete: 'SET NULL', // If the vendor is deleted, set the vendor_id to NULL in Purchase
+    });
+
+    // Adding relationship between Purchase and Asset
+    Purchase.belongsTo(models.Asset, {
+      foreignKey: 'asset_id',
+      onDelete: 'SET NULL', // If the asset is deleted, set the asset_id to NULL in Purchase
+    });
+  };
 
   return Purchase;
 };
