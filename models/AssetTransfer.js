@@ -33,22 +33,22 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(500),
       allowNull: true, // Optional field for remarks or any additional info
     },
-    created_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     }
   }, {
     tableName: 'asset_transfers',
-    timestamps: true,  // Ensures that `created_at` and `updated_at` fields are included
+    timestamps: true,  // Ensures that `createdAt` and `updatedAt` fields are included
     paranoid: false,   // Soft delete is not applied here, as asset transfer records will be deleted permanently
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
   });
 
   // Define associations

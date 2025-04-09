@@ -38,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: true, // Default value for active status
       },
-      deleted_at: {
+      deletedAt: {
         type: DataTypes.DATE,
         allowNull: true, // Can be null to indicate the record is not deleted
         defaultValue: null, // Default value is null
@@ -48,8 +48,8 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "FinancialInformations",
       timestamps: true,
       paranoid: true,
-      createdAt: "created_at",
-      updatedAt: "updated_at",
+      createdAt: "updatedAt",
+      updatedAt: "updatedAt",
     }
   );
 

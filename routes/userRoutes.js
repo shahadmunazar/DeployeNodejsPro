@@ -40,6 +40,7 @@ const {
   WarrantyStatusUpdate,
 } = require("../controllers/SuperAdmin/Assets/WarrantyController");
 
+const {CreateAsset} = require("../controllers/SuperAdmin/Assets/AssetController");
 const {CreateVendor,GetVendorList,GetVendorListById,UpdateVendor,DeleteVendor,UpdateVendorStatus} = require("../controllers/SuperAdmin/Assets/VendorController");
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
@@ -64,6 +65,12 @@ router.get("/check-all-users-token", ...withAuthAndRole(GetAllUsersToken));
 router.get("/export-all-users-into-csv", ...withAuthAndRole(exportAllUsers));
 
 //Crud For Category Added By Admin Only
+
+//  Asset Routes Start
+router.post("/create-asset", ...withAuthAndRole(CreateAsset));
+
+
+// End Asset Routes Here
 
 router.post("/create-category", ...withAuthAndRole(CreateCategory));
 router.get("/get-category", ...withAuthAndRole(GetAllCategory));

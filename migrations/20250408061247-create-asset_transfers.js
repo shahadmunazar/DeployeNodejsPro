@@ -40,12 +40,12 @@ module.exports = {
         type: Sequelize.STRING(500),
         allowNull: true, // Optional field for any notes on the transfer
       },
-      created_at: {
+      createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.fn("now"),
       },
-      updated_at: {
+      updatedAt: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.fn("now"),

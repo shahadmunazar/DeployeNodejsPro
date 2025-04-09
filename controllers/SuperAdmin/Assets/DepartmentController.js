@@ -71,8 +71,8 @@ const GetDepartmentList = async (req, res) => {
     const formattedDepartments = departments.map(department => {
       return {
         ...department.toJSON(),
-        created_at: moment(department.created_at).format("DD/MM/YYYY"),
-        updated_at: moment(department.updated_at).format("DD/MM/YYYY"),
+        createdAt: moment(department.createdAt).format("DD/MM/YYYY"),
+        updatedAt: moment(department.updatedAt).format("DD/MM/YYYY"),
       };
     });
 
@@ -103,8 +103,8 @@ const GetDepartmentListById = async (req, res) => {
     // Format the date fields
     const formattedDepartment = {
       ...department.toJSON(),
-      created_at: moment(department.created_at).format("DD/MM/YYYY"),
-      updated_at: moment(department.updated_at).format("DD/MM/YYYY"),
+      createdAt: moment(department.createdAt).format("DD/MM/YYYY"),
+      updatedAt: moment(department.updatedAt).format("DD/MM/YYYY"),
     };
 
     // Return the department information with formatted dates

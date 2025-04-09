@@ -79,8 +79,8 @@ const GetVendorList = async (req, res) => {
     const formattedVendors = vendors.map(vendor => {
       return {
         ...vendor.toJSON(),
-        created_at: moment(vendor.created_at).format("DD/MM/YYYY"),
-        updated_at: moment(vendor.updated_at).format("DD/MM/YYYY"),
+        createdAt: moment(vendor.createdAt).format("DD/MM/YYYY"),
+        updatedAt: moment(vendor.updatedAt).format("DD/MM/YYYY"),
       };
     });
 
@@ -111,8 +111,8 @@ const GetVendorListById = async (req, res) => {
     // Format the date fields
     const formattedVendor = {
       ...vendor.toJSON(),
-      created_at: moment(vendor.created_at).format("DD/MM/YYYY"),
-      updated_at: moment(vendor.updated_at).format("DD/MM/YYYY"),
+      createdAt: moment(vendor.createdAt).format("DD/MM/YYYY"),
+      updatedAt: moment(vendor.updatedAt).format("DD/MM/YYYY"),
     };
 
     // Return the vendor information with formatted dates

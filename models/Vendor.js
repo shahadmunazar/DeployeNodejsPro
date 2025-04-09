@@ -30,12 +30,12 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: true, // Default is active (true)
       },
-      created_at: {
+      updatedAt: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW, // Set default to current time
       },
-      updated_at: {
+      updatedAt: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: DataTypes.NOW, // Set default to current time
@@ -43,10 +43,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       tableName: "vendors",
-      timestamps: true, // Ensures `created_at` and `updated_at` fields are included
+      timestamps: true, // Ensures `createdAt` and `updatedAt` fields are included
       paranoid: false, // Soft delete is not used here, records will be deleted permanently
-      createdAt: "created_at",
-      updatedAt: "updated_at",
+      createdAt: "createdAt",
+      updatedAt: "updatedAt",
     }
   );
 

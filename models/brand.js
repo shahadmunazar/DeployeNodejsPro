@@ -26,12 +26,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(500), // Up to 500 characters for the description
       allowNull: true, // Optional field
     },
-    created_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,

@@ -47,7 +47,7 @@ module.exports = {
             type: Sequelize.DATE,
             allowNull: true, // Initially null until user logs out
         },
-          createdAt: {
+        createdAt: {
               type: Sequelize.DATE,
               allowNull: false,
               defaultValue: Sequelize.NOW

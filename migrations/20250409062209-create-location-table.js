@@ -39,17 +39,17 @@ module.exports = {
         type: Sequelize.STRING(255),
         allowNull: true, // Level can be optional
       },
-      created_at: {
+      createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.NOW,
       },
-      updated_at: {
+      updatedAt: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.NOW,
       },
-      deleted_at: {
+      deletedAt: {
         type: Sequelize.DATE,
         allowNull: true, // Nullable to support soft delete (null means it's not deleted)
       }

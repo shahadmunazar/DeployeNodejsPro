@@ -11,7 +11,7 @@ const sendPendingOnboardingEmails = async () => {
   try {
     const users = await User.findAll({
       where: {
-        onboarding_email_sent: false,
+        onboarding_email_sent: true,
       },
       include: [
         {

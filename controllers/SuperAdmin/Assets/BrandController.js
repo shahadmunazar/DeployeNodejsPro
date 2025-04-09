@@ -58,8 +58,8 @@ const GetBrandsList = async (req, res) => {
     const formattedBrands = brands.map(brand => {
       return {
         ...brand.toJSON(),
-        created_at: moment(brand.created_at).format("DD/MM/YYYY"),
-        updated_at: moment(brand.updated_at).format("DD/MM/YYYY"),
+        createdAt: moment(brand.createdAt).format("DD/MM/YYYY"),
+        updatedAt: moment(brand.updatedAt).format("DD/MM/YYYY"),
       };
     });
 
@@ -86,11 +86,11 @@ const GetBrandsListById = async (req, res) => {
       return res.status(404).json({ message: "Brand not found" });
     }
 
-    // Format the date fields (optional, but useful if you want to format the `created_at` and `updated_at` dates)
+    // Format the date fields (optional, but useful if you want to format the `createdAt` and `updatedAt` dates)
     const formattedBrand = {
       ...brand.toJSON(),
-      created_at: moment(brand.created_at).format("DD/MM/YYYY"),
-      updated_at: moment(brand.updated_at).format("DD/MM/YYYY"),
+      createdAt: moment(brand.createdAt).format("DD/MM/YYYY"),
+      updatedAt: moment(brand.updatedAt).format("DD/MM/YYYY"),
     };
 
     // Return the brand information with formatted dates

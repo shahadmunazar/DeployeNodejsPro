@@ -20,7 +20,7 @@ module.exports = {
         allowNull: false,
         defaultValue: true,
       },
-      deleted_at: {
+      deletedAt: {
         type: Sequelize.DATE,
         allowNull: true,
         defaultValue: null, // Null means not deleted
@@ -29,12 +29,12 @@ module.exports = {
         type: Sequelize.STRING(500), // Up to 500 characters for the description
         allowNull: true, // Description is optional
       },
-      created_at: {
+      createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.fn("now"),
       },
-      updated_at: {
+      updatedAt: {
         type: Sequelize.DATE,
         allowNull: false,
         defaultValue: Sequelize.fn("now"),

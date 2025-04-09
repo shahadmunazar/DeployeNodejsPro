@@ -17,17 +17,17 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: true, // True indicates active status
     },
-    deleted_at: {
+    deletedAt: {
       type: DataTypes.DATE,
       allowNull: true, // Soft delete functionality, allowing null
       defaultValue: null, // Default value is null
     },
-    created_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW, // Auto-generated timestamp
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW, // Auto-generated timestamp for updates
@@ -36,8 +36,8 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'departments',
     timestamps: true, // Enables Sequelize's default timestamp fields
     paranoid: true, // Enables soft delete functionality using `deleted_at`
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    createdAt: 'updatedAt',
+    updatedAt: 'updatedAt',
   });
 
   // You can add associations here (if needed)

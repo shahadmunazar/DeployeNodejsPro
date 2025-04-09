@@ -57,8 +57,8 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'WarrantyMaintenanceInsurances',
     timestamps: true,
     paranoid: true,    // Enable soft delete by tracking `deletedAt`
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
   });
 
   // Define the relationship with the Asset model
