@@ -50,6 +50,16 @@ const {CreateVendor,GetVendorList,GetVendorListById,UpdateVendor,DeleteVendor,Up
  */
 const withAuthAndRole = (handler, role = "admin") => [authenticateUser, authorizeRoles(role), handler];
 
+
+//for SuperAdmin Define Authentication And Authorization Variable 
+
+const WithSuperAdminAndRole = (handler, role = "superadmin") => {
+  return [authenticateUser, authorizeRoles(role), handler];
+};
+
+
+// Start For Routes SuperAdmin
+
 router.post("/admin-logout", ...withAuthAndRole(CreateAdminLogout));
 
 router.post("/create-new-user", ...withAuthAndRole(CreateUserLogin));

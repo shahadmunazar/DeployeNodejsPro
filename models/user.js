@@ -62,7 +62,16 @@ User.init(
     logout_at: {
       type: DataTypes.DATE,
       allowNull: true
-    }
+    },
+    lastActivity: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    passwordChanged: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+    },
   },
   {
     sequelize,

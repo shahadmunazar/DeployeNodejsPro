@@ -9,7 +9,8 @@ module.exports = {
     const roleMap = Object.fromEntries(roles[0].map(role => [role.name, role.id]));
 
     return queryInterface.bulkInsert("UserRoles", [
-      { userId: userMap["admin@example.com"], roleId: roleMap["admin"], createdAt: new Date(), updatedAt: new Date() },
+      {userId: userMap['shahadmunazar@gmail.com'],roleId: roleMap['superadmin'],createdAt: new Date(), updatedAt: new Date()},
+      { userId: userMap["shahad1932@gmail.com"], roleId: roleMap["admin"], createdAt: new Date(), updatedAt: new Date() },
       { userId: userMap["manager@example.com"], roleId: roleMap["manager"], createdAt: new Date(), updatedAt: new Date() },
       { userId: userMap["officer@example.com"], roleId: roleMap["officer"], createdAt: new Date(), updatedAt: new Date() },
       { userId: userMap["technician@example.com"], roleId: roleMap["technician"], createdAt: new Date(), updatedAt: new Date() },

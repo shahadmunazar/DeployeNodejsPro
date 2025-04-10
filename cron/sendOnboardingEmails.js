@@ -1,17 +1,21 @@
 // cron/sendOnboardingEmails.js
+
 const User = require('../models/user');
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-
 const Role = require("../models/role");
-const sendOnboardingEmail = require('../utils/sendOnboardingEmail'); // You'll define this function
+const sendOnboardingEmail = require('../utils/sendOnboardingEmail');
+const PasswordChangesEmail = require('../utils/PasswordChangesEmail');
 const { Op } = require('sequelize');
 
 const sendPendingOnboardingEmails = async () => {
   try {
     const users = await User.findAll({
       where: {
-        onboarding_email_sent: false,
+        [Op.or]: [
+          { onboarding_email_sent: false },
+          { passwordChanged: true }
+        ]
       },
       include: [
         {
@@ -24,43 +28,69 @@ const sendPendingOnboardingEmails = async () => {
 
     for (const user of users) {
       const tempPassword = generateTempPassword();
-      const activationToken = generateActivationToken(user.email); // Custom token logic
+      const activationToken = generateActivationToken(user.email);
 
-      // Store hashed password and token expiration (24 hrs)
-      await user.update({
-        password: await bcrypt.hash(tempPassword, 10),
-        activation_token: activationToken,
-        activation_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      });
+      if (!user.onboarding_email_sent) {
+        await user.update({
+          password: await bcrypt.hash(tempPassword, 10),
+          activation_token: activationToken,
+          activation_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        });
+        const emailSent = await sendOnboardingEmail({
+          email: user.email,
+          name: user.name,
+          tempPassword,
+          activationLink: `https://naaticcl.visionlanguageexperts.in/user-login`,
+        });
 
-      // Send email
-      const emailSent = await sendOnboardingEmail({
-        email: user.email,
-        name: user.name,
-        tempPassword,
-        activationLink: `https://naaticcl.visionlanguageexperts.in/user-login`,
-      });
+        if (emailSent) {
+          await user.update({ onboarding_email_sent: true });
+          console.log(`✅ Onboarding email sent to ${user.email}`);
+        } else {
+          console.warn(`⚠️ Failed to send onboarding email to ${user.email}`);
+        }
 
-      if (emailSent) {
-        await user.update({ onboarding_email_sent: true });
-        console.log(`✅ Onboarding email sent to ${user.email}`);
-      } else {
-        console.warn(`⚠️ Failed to send email to ${user.email}`);
+      } else if (user.passwordChanged === true) {
+       
+        const emailSent = await PasswordChangesEmail({
+          email: user.email,
+          name: user.name,
+          type: 'passwordChanged'
+        });
+
+        if (emailSent) {
+          await user.update({ passwordChanged: false });
+          console.log(`✅ Password change email sent to ${user.email}`);
+        } else {
+          console.warn(`⚠️ Failed to send password change email to ${user.email}`);
+        }
       }
     }
-
   } catch (error) {
     console.error('❌ Error in onboarding cron job:', error);
   }
 };
 
-// Helper functions
 function generateTempPassword(length = 10) {
-  return Math.random().toString(36).slice(-length);
+  const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lower = 'abcdefghijklmnopqrstuvwxyz';
+  const number = '0123456789';
+  const special = '@$!%*?&';
+  const all = upper + lower + number + special;
+  let password = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    number[Math.floor(Math.random() * number.length)],
+    special[Math.floor(Math.random() * special.length)],
+  ];
+  for (let i = password.length; i < length; i++) {
+    password.push(all[Math.floor(Math.random() * all.length)]);
+  }
+  return password.sort(() => 0.5 - Math.random()).join('');
 }
 
 function generateActivationToken(email) {
-  return require('crypto').createHash('sha256').update(email + Date.now()).digest('hex');
+  return crypto.createHash('sha256').update(email + Date.now()).digest('hex');
 }
 
 module.exports = sendPendingOnboardingEmails;
