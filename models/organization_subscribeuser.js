@@ -1,11 +1,10 @@
-'use strict';
 module.exports = (sequelize, DataTypes) => {
   const OrganizationSubscribeUser = sequelize.define('OrganizationSubscribeUser', {
     user_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'users', // Should match the actual table name in DB
+        model: 'users', // Assuming this is the table name for User model
         key: 'id',
       },
       onUpdate: 'CASCADE',
@@ -15,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'organizations', // Should match your organizations table
+        model: 'organizations', // This should match the table name of the Organization model
         key: 'id',
       },
       onUpdate: 'CASCADE',
@@ -25,51 +24,37 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'plans', // Make sure this matches your plans table
+        model: 'plans', // Assuming this is the table name for Plan model
         key: 'id',
       },
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
     },
-    validity_start_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    validity_end_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
-    },
-    createdAt: {
-        type: DataTypes.DATE,
-        field: 'createdAt'
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        field: 'updatedAt'
-      },
-      deletedAt: {
-        type: DataTypes.DATE,
-        field: 'deletedAt'
-      }
+    validity_start_date: DataTypes.DATE,
+    validity_end_date: DataTypes.DATE,
   }, {
-    tableName: 'organization_subscribeuser', // Explicit table name
-    timestamps: true,   // Adds created_at and updated_at
-    paranoid: true      // Adds deleted_at for soft deletes
+    tableName: 'organization_subscribeuser',
+    timestamps: true,
+    paranoid: true
   });
 
-  // Associations
-  OrganizationSubscribeUser.associate = function(models) {
-    OrganizationSubscribeUser.belongsTo(models.User, {
-      foreignKey: 'user_id',
-      as: 'user'
-    });
+  // ✅ Associations go here
+  OrganizationSubscribeUser.associate = (models) => {
+    // Association to Organization (backlink from OrganizationSubscribeUser to Organization)
     OrganizationSubscribeUser.belongsTo(models.Organization, {
       foreignKey: 'org_id',
-      as: 'organization'
+      as: 'organization',
     });
+
+    // Other associations
+    OrganizationSubscribeUser.belongsTo(models.User, {
+      foreignKey: 'user_id',
+      as: 'user',
+    });
+
     OrganizationSubscribeUser.belongsTo(models.Plan, {
       foreignKey: 'plan_id',
-      as: 'plan'
+      as: 'plan',
     });
   };
 

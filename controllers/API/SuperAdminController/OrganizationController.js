@@ -4,9 +4,12 @@ const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
 const Organization = require("../../../models/organization")(sequelize, DataTypes);
 const User = require("../../../models/user");
-const OrganizationSubscriber = require('../../../models/organization_subscribeuser')(sequelize, DataTypes);
+const OrganizationSubscribeUser = require('../../../models/organization_subscribeuser')(sequelize, DataTypes);
 const UserRoles = require('../../../models/userrole');
 const Roles = require('../../../models/role');
+
+const Industry = require('../../../models/industry')(sequelize, DataTypes);
+const Plan = require('../../../models/AllPlans')(sequelize, DataTypes);
 
 // ✅ Validation
 const validateOrganization = [
@@ -76,6 +79,7 @@ const CreateOrganization = async (req, res) => {
         contact_phone_number,
         number_of_employees,
         logo: logoPath,
+        plan_id,plan_id,
         agreement_paper: agreementPaperPath
       });
   
@@ -94,7 +98,7 @@ const CreateOrganization = async (req, res) => {
         roleId: role_id
       });
   
-      const newSubscription = await OrganizationSubscriber.create({
+      const newSubscription = await OrganizationSubscribeUser.create({
         user_id: newUser.id,
         org_id: newOrganization.id,
         plan_id: plan_id,
@@ -102,7 +106,7 @@ const CreateOrganization = async (req, res) => {
         validity_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
       });
   
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
         message: 'Organization, admin user, and subscription created successfully',
         organization: newOrganization,
@@ -146,7 +150,125 @@ function generateTempPassword(length = 10) {
 
   return password.sort(() => 0.5 - Math.random()).join('');
 }
+const GetAllOrganization = async (req, res) => {
+    try {
+      const organizations = await Organization.findAll();
+  
+      if (!organizations || organizations.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No organizations found',
+        });
+      }
+  
+      const orgSubscribersPromises = organizations.map(async (organization) => {
+        // Fetch subscribers
+        const subscribers = await OrganizationSubscribeUser.findAll({
+          where: { org_id: organization.id },
+        });
+  
+        // Get users
+        const userPromises = subscribers.map(async (subscriber) => {
+          const user = await User.findOne({
+            where: { id: subscriber.user_id },
+          });
+          if (!user) return null;
+  
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            username: user.username,
+          };
+        });
+  
+        const users = await Promise.all(userPromises);
+        const filteredUsers = users.filter((user) => user !== null);
+  
+        // Get roles
+        const rolesPromises = subscribers.map(async (subscriber) => {
+          const user = await User.findOne({ where: { id: subscriber.user_id } });
+          if (!user) return null;
+  
+          const userRoles = await UserRoles.findAll({
+            where: { userId: user.id },
+          });
+  
+          const rolePromises = userRoles.map(async (userRole) => {
+            const role = await Roles.findOne({
+              where: { id: userRole.roleId },
+            });
+            return role ? role.name : null;
+          });
+  
+          const roles = await Promise.all(rolePromises);
+          return roles.filter((role) => role !== null);
+        });
+  
+        const roles = await Promise.all(rolesPromises);
+        const flattenedRoles = roles.flat().filter((role) => role);
+  
+        // ✅ Get Industry name
+        let industryName = null;
+        if (organization.industryId) {
+          const industry = await Industry.findOne({
+            where: { id: organization.industryId },
+            attributes: ['name'],
+          });
+          industryName = industry ? industry.name : null;
+        }
+  
+        // ✅ Get Plan name
+        let planName = null;
+        if (organization.plan_id) {
+          const plan = await Plan.findOne({
+            where: { id: organization.plan_id },
+            attributes: ['name'],
+          });
+          planName = plan ? plan.name : null;
+        }
+  
+        return {
+          id: organization.id,
+          organization_name: organization.organization_name,
+          industryId: organization.industryId,
+          industry_name: industryName,       // ✅ Added industry name
+          plan_id: organization.plan_id,
+          plan_name: planName,               // ✅ Added plan name
+          organization_address: organization.organization_address,
+          city: organization.city,
+          state: organization.state,
+          postal_code: organization.postal_code,
+          users: filteredUsers,
+          roles: flattenedRoles,
+        };
+      });
+  
+      const orgWithSubscribers = await Promise.all(orgSubscribersPromises);
+  
+      return res.status(200).json({
+        success: true,
+        message: 'Organizations and related data fetched successfully',
+        data: orgWithSubscribers,
+      });
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message,
+      });
+    }
+  };
+  
+  
+  
+  
+  
+  
+  
+  
 
 module.exports = {
-  CreateOrganization
+  CreateOrganization,GetAllOrganization
 };

@@ -1,72 +1,54 @@
+'use strict';
 module.exports = (sequelize, DataTypes) => {
-    const Organization = sequelize.define('Organization', {
-      id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true
-      },
-      organization_name: {
-        type: DataTypes.STRING,
-        field: 'organization_name'
-      },
-      industryId: {
-        type: DataTypes.INTEGER,
-        field: 'industryId'
-      },
-      organization_address: {
-        type: DataTypes.STRING,
-        field: 'organization_address'
-      },
-      city: {
-        type: DataTypes.STRING,
-        field: 'city'
-      },
-      state: {
-        type: DataTypes.STRING,
-        field: 'state'
-      },
-      postal_code: {
-        type: DataTypes.STRING,
-        field: 'postal_code'
-      },
-      registration_id: {
-        type: DataTypes.STRING,
-        field: 'registration_id'
-      },
-      contact_phone_number: {
-        type: DataTypes.STRING,
-        field: 'contact_phone_number'
-      },
-      number_of_employees: {
-        type: DataTypes.STRING,
-        field: 'number_of_employees'
-      },
-      logo: {
-        type: DataTypes.STRING,
-        field: 'logo'
-      },
-      agreement_paper: {
-        type: DataTypes.STRING,
-        field: 'agreement_paper'
-      },
-      createdAt: {
-        type: DataTypes.DATE,
-        field: 'createdAt'
-      },
-      updatedAt: {
-        type: DataTypes.DATE,
-        field: 'updatedAt'
-      },
-      deletedAt: {
-        type: DataTypes.DATE,
-        field: 'deletedAt'
-      }
-    }, {
-      tableName: 'organizations', // 👈 use your actual table name here
-      timestamps: true,
-      paranoid: true // enables soft delete (if you're using `deletedAt`)
+  const Organization = sequelize.define('Organization', {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+    },
+    organization_name: DataTypes.STRING,
+    industryId: DataTypes.INTEGER,
+    organization_address: DataTypes.STRING,
+    city: DataTypes.STRING,
+    state: DataTypes.STRING,
+    postal_code: DataTypes.STRING,
+    registration_id: DataTypes.STRING,
+    contact_phone_number: DataTypes.STRING,
+    number_of_employees: DataTypes.STRING,
+    logo: DataTypes.STRING,
+    agreement_paper: DataTypes.STRING,
+    user_id: DataTypes.INTEGER,
+    plan_id: DataTypes.INTEGER,
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE,
+    deletedAt: DataTypes.DATE
+  }, {
+    tableName: 'organizations',
+    timestamps: true,
+    paranoid: true
+  });
+
+  // ✅ Associations should be defined here
+  Organization.associate = (models) => {
+    Organization.hasMany(models.OrganizationSubscribeUser, {
+      foreignKey: 'org_id',
+      as: 'subscribers'
     });
-  
-    return Organization;
+
+    Organization.belongsTo(models.User, {
+      foreignKey: 'user_id',
+      as: 'user'
+    });
+
+    Organization.belongsTo(models.Plan, {
+      foreignKey: 'plan_id',
+      as: 'plan'
+    });
+    Organization.belongsTo(models.Industry, {
+        foreignKey: 'industryId',
+        as: 'industry'
+      });
   };
-  
+
+  return Organization;
+};
