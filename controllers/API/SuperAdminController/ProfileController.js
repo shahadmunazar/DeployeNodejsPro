@@ -1,8 +1,8 @@
 const User = require("../../../models/user");
-const Role = require("../../../models/role");
 const UserRole = require("../../../models/userrole");
 const { body, validationResult } = require("express-validator");
 const moment = require("moment");
+const Role = require('../../../models/role'); // adjust the path if needed
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
@@ -198,4 +198,26 @@ const UpdatePassword = async (req, res) => {
   }
 };
 
-module.exports = { SuperAdminProfile, CheckPingSessionActivity, ForgetPassword, UpdatePassword };
+
+const GetAllRoles = async (req, res) => {
+  try {
+    const roles = await Role.findAll({
+      attributes: ['id', 'name'], // include only needed columns
+      order: [['id', 'ASC']] // optional: sort roles by ID
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Roles fetched successfully',
+      data: roles
+    });
+  } catch (error) {
+    console.error('Error fetching roles:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+module.exports = { SuperAdminProfile, CheckPingSessionActivity, ForgetPassword, UpdatePassword,GetAllRoles };
