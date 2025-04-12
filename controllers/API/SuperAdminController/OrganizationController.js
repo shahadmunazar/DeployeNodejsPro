@@ -386,16 +386,34 @@ const GetAllOrganization = async (req, res) => {
     }
   };
 
+
+
+  const validateOrganizationUpdate = [
+    body('organization_name').optional(),
+    body('industryId').optional().isInt(),
+    body('organization_address').optional(),
+    body('city').optional(),
+    body('state').optional(),
+    body('postal_code').optional().isLength({ max: 10 }),
+    body('registration_id').optional(),
+    body('contact_phone_number').optional().matches(/^[0-9+\-\s()]{7,20}$/),
+    body('number_of_employees').optional().isIn(['1-10', '11-50', '51-200', '201-500', '500+']),
+    body('name').optional(),
+    body('email').optional().isEmail(),
+    body('user_name').optional(),
+    body('plan_id').optional(),
+    body('role_id').optional(),
+  ];
+  
   const UpdateOrginzation = async (req, res) => {
     try {
       const { id } = req.params;
-  
       const organization = await Organization.findByPk(id);
       if (!organization) {
         return res.status(404).json({ success: false, message: 'Organization not found' });
       }
   
-      await Promise.all(validateOrganization.map(validation => validation.run(req)));
+      await Promise.all(validateOrganizationUpdate.map(validation => validation.run(req)));
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ success: false, errors: errors.array() });
@@ -412,26 +430,22 @@ const GetAllOrganization = async (req, res) => {
         contact_phone_number,
         number_of_employees,
         plan_id,
-        name,             // user fields
+        name,
         email,
         user_name,
         role_id
       } = req.body;
   
-      // 1️⃣ Handle updated files
-      let logoPath = organization.logo;
-      let agreementPaperPath = organization.agreement_paper;
-  
+      // 🖼️ Update only if new files provided
       if (req.files?.logo) {
-        logoPath = req.files.logo[0].path;
+        organization.logo = req.files.logo[0].path;
       }
-  
       if (req.files?.agreement_paper) {
-        agreementPaperPath = req.files.agreement_paper[0].path;
+        organization.agreement_paper = req.files.agreement_paper[0].path;
       }
   
-      // 2️⃣ Update Organization
-      await organization.update({
+      // 📦 Dynamically update only provided fields for organization
+      const updatableFields = {
         organization_name,
         industryId,
         organization_address,
@@ -441,36 +455,47 @@ const GetAllOrganization = async (req, res) => {
         registration_id,
         contact_phone_number,
         number_of_employees,
-        logo: logoPath,
-        agreement_paper: agreementPaperPath,
-        plan_id,
+        plan_id
+      };
+  
+      Object.entries(updatableFields).forEach(([key, value]) => {
+        if (value !== undefined) {
+          organization[key] = value;
+        }
       });
   
-      // 3️⃣ Update User (admin)
+      await organization.save();
+  
+      // 👤 Update user if exists
       const adminUser = await User.findByPk(organization.user_id);
-      if (!adminUser) {
-        return res.status(404).json({ success: false, message: 'Admin user not found' });
+      if (adminUser) {
+        const userFields = { name, email, user_name };
+  
+        Object.entries(userFields).forEach(([key, value]) => {
+          if (value !== undefined) {
+            adminUser[key] = value;
+          }
+        });
+  
+        await adminUser.save();
       }
   
-      await adminUser.update({
-        name,
-        email,
-        user_name
-      });
+      // 🧑‍⚖️ Update user role only if role_id is provided
+      let newUserRole = null;
+      if (role_id) {
+        await UserRoles.destroy({ where: { userId: adminUser.id } });
+        newUserRole = await UserRoles.create({
+          userId: adminUser.id,
+          roleId: role_id
+        });
+      }
   
-      // 4️⃣ Update User Role
-      await UserRoles.destroy({ where: { userId: adminUser.id } }); // remove old role
-      const newUserRole = await UserRoles.create({
-        userId: adminUser.id,
-        roleId: role_id
-      });
-  
-      // 5️⃣ Update Subscription
-      const subscription = await OrganizationSubscribeUser.findOne({
+      // 📅 Update subscription only if plan_id is provided
+      let subscription = await OrganizationSubscribeUser.findOne({
         where: { user_id: adminUser.id, org_id: organization.id }
       });
   
-      if (subscription) {
+      if (subscription && plan_id) {
         await subscription.update({
           plan_id,
           validity_start_date: new Date(),
@@ -480,7 +505,7 @@ const GetAllOrganization = async (req, res) => {
   
       return res.status(200).json({
         success: true,
-        message: 'Organization, user, role, and subscription updated successfully',
+        message: 'Organization updated successfully',
         organization,
         user: adminUser,
         user_role: newUserRole,
@@ -496,6 +521,7 @@ const GetAllOrganization = async (req, res) => {
       });
     }
   };
+  
   
   
   
