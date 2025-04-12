@@ -541,7 +541,15 @@ const ManagmentOrginazation = async (req, res) => {
 
     if (registration_from && registration_to) {
       whereClause.createdAt = {
-        [Op.between]: [new Date(registration_from), new Date(registration_to)],
+        [Op.between]: [startOfDay(registration_from), endOfDay(registration_to)],
+      };
+    } else if (registration_from) {
+      whereClause.createdAt = {
+        [Op.between]: [startOfDay(registration_from), endOfDay(registration_from)],
+      };
+    } else if (registration_to) {
+      whereClause.createdAt = {
+        [Op.between]: [startOfDay(registration_to), endOfDay(registration_to)],
       };
     }
 
