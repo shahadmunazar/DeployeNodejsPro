@@ -19,6 +19,7 @@ module.exports = (sequelize, DataTypes) => {
     agreement_paper: DataTypes.STRING,
     user_id: DataTypes.INTEGER,
     plan_id: DataTypes.INTEGER,
+    status: DataTypes.BOOLEAN,
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
     deletedAt: DataTypes.DATE

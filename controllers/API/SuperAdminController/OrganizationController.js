@@ -2,8 +2,8 @@ const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
-const Organization = require("../../../models/organization")(sequelize, DataTypes);
 const User = require("../../../models/user");
+const Organization = require("../../../models/organization")(sequelize, DataTypes);
 const OrganizationSubscribeUser = require('../../../models/organization_subscribeuser')(sequelize, DataTypes);
 const UserRoles = require('../../../models/userrole');
 const Roles = require('../../../models/role');
@@ -179,6 +179,7 @@ const GetAllOrganization = async (req, res) => {
             name: user.name,
             email: user.email,
             username: user.username,
+            invitation_status:user.invitation_status,
           };
         });
   
