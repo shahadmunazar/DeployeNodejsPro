@@ -68,8 +68,10 @@ const CreateOrganization = async (req, res) => {
       return res.status(400).json({ success: false, message: "Either email or username is required." });
     }
 
-    const logoPath = req.files.logo[0].path;
-    const agreementPaperPath = req.files.agreement_paper[0].path;
+    const logoPath = req.files.logo[0].filename;
+    console.log("logo Path",logoPath);
+    const agreementPaperPath = req.files.agreement_paper[0].filename;
+    console.log("PDF File Name ",agreementPaperPath);
 
     // Step 1: Create Organization (without user_id for now)
     const newOrganization = await Organization.create({
@@ -635,6 +637,7 @@ if (organization.plan_id) {
   return null;
 }
 
+const baseUrl = `${req.protocol}://${req.get('host')}`; // e.g. http://localhost:3000
       return {
         id: organization.id,
         organization_name: organization.organization_name,
@@ -646,6 +649,12 @@ if (organization.plan_id) {
         city: organization.city,
         state: organization.state,
         status: organization.status,
+        logo_url: organization.logo
+        ? `${baseUrl}/uploads/organization/logo/${organization.logo}`
+        : null,
+        agreement_url: organization.agreement_paper
+    ? `${baseUrl}/uploads/organization/agreement_paper/${organization.agreement_paper}`
+    : null,
         postal_code: organization.postal_code,
         createdAt: formatDate(organization.createdAt),
         updatedAt: formatDate(organization.updatedAt),

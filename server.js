@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const cron = require('node-cron');
 const sendPendingOnboardingEmails = require('./cron/sendOnboardingEmails');
 const LoginRoutes = require("./routes/authRoutes");
+const path = require('path');
 const SuperAdminRoutes = require("./routes/SuperAdminRoutes");
 const app = express();
 app.use(cors({
@@ -18,6 +19,10 @@ app.use(cors({
 
 app.use(bodyParser.json()); // For parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
+
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 cron.schedule('* * * * *', async () => {
     console.log('🔁 Running onboarding email cron job...');
