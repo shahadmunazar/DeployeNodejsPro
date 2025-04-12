@@ -527,13 +527,7 @@ const UpdateOrginzation = async (req, res) => {
 
 const ManagmentOrginazation = async (req, res) => {
   try {
-    const {
-      status,
-      plan_type,
-      registration_from,
-      registration_to,
-      organization_name,
-    } = req.query;
+    const { status, plan_type, registration_from, registration_to, organization_name } = req.query;
 
     const whereClause = {};
 
@@ -571,12 +565,12 @@ const ManagmentOrginazation = async (req, res) => {
       });
     }
 
-    const orgSubscribersPromises = organizations.map(async (organization) => {
+    const orgSubscribersPromises = organizations.map(async organization => {
       const subscribers = await OrganizationSubscribeUser.findAll({
         where: { org_id: organization.id },
       });
 
-      const userPromises = subscribers.map(async (subscriber) => {
+      const userPromises = subscribers.map(async subscriber => {
         const user = await User.findOne({
           where: { id: subscriber.user_id },
         });
@@ -591,26 +585,26 @@ const ManagmentOrginazation = async (req, res) => {
         };
       });
 
-      const users = (await Promise.all(userPromises)).filter((u) => u !== null);
+      const users = (await Promise.all(userPromises)).filter(u => u !== null);
 
-      const rolesPromises = subscribers.map(async (subscriber) => {
+      const rolesPromises = subscribers.map(async subscriber => {
         const user = await User.findOne({ where: { id: subscriber.user_id } });
         if (!user) return null;
 
         const userRoles = await UserRoles.findAll({ where: { userId: user.id } });
 
         const roleNames = await Promise.all(
-          userRoles.map(async (userRole) => {
+          userRoles.map(async userRole => {
             const role = await Roles.findOne({ where: { id: userRole.roleId } });
             return role ? role.name : null;
           })
         );
 
-        return roleNames.filter((r) => r !== null);
+        return roleNames.filter(r => r !== null);
       });
 
       const roles = await Promise.all(rolesPromises);
-      const flattenedRoles = roles.flat().filter((role) => role);
+      const flattenedRoles = roles.flat().filter(role => role);
 
       // ✅ Industry
       let industryName = null;
@@ -623,25 +617,25 @@ const ManagmentOrginazation = async (req, res) => {
       }
 
       // ✅ Plan (fixing mismatched plan_name)
-  // ✅ Plan
-let planName = null;
+      // ✅ Plan
+      let planName = null;
 
-if (organization.plan_id) {
-  console.log(`🔍 Org ID: ${organization.id} - Plan ID: ${organization.plan_id}`);
-  const plan = await Plan.findOne({
-    where: { id: organization.plan_id },
-    attributes: ["id", "name"],
-  });
-  planName = plan ? plan.name : null;
-  console.log(`✅ Org ID: ${organization.id} → Plan Name: ${planName}`);
-  if (plan_type && planName !== plan_type) {
-    console.log(`❌ Skipping Org ID: ${organization.id} - Plan mismatch`);
-    return null;
-  }
-} else if (plan_type) {
-  console.log(`❌ Skipping Org ID: ${organization.id} - No plan, but filter applied`);
-  return null;
-}
+      if (organization.plan_id) {
+        console.log(`🔍 Org ID: ${organization.id} - Plan ID: ${organization.plan_id}`);
+        const plan = await Plan.findOne({
+          where: { id: organization.plan_id },
+          attributes: ["id", "name"],
+        });
+        planName = plan ? plan.name : null;
+        console.log(`✅ Org ID: ${organization.id} → Plan Name: ${planName}`);
+        if (plan_type && planName !== plan_type) {
+          console.log(`❌ Skipping Org ID: ${organization.id} - Plan mismatch`);
+          return null;
+        }
+      } else if (plan_type) {
+        console.log(`❌ Skipping Org ID: ${organization.id} - No plan, but filter applied`);
+        return null;
+      }
 
       return {
         id: organization.id,
@@ -688,10 +682,56 @@ const formatDate = date => {
   return `${day}-${month}-${year}`;
 };
 
+const ToogleStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { status } = req.body;
+    if (status === true || status === 1) {
+      status = 1;
+    } else if (status === false || status === 0) {
+      status = 0;
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be either true/false or 1/0",
+      });
+    }
+
+    const organization = await Organization.findByPk(id);
+
+    if (!organization) {
+      return res.status(404).json({
+        success: false,
+        message: "Organization not found",
+      });
+    }
+
+    await organization.update({ status });
+
+    return res.status(200).json({
+      success: true,
+      message: `Organization status updated successfully.`,
+      data: {
+        id: organization.id,
+        status: Boolean(status), // respond with true/false,
+      },
+    });
+  } catch (error) {
+    console.error("Error in ToogleStatus:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   CreateOrganization,
   GetAllOrganization,
   GetOrgnizationById,
   UpdateOrginzation,
   ManagmentOrginazation,
+  ToogleStatus
 };
