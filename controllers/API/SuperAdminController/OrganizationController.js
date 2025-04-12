@@ -274,6 +274,228 @@ const GetAllOrganization = async (req, res) => {
   
   
   
+  const GetOrgnizationById = async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      const organization = await Organization.findOne({ where: { id } });
+  
+      if (!organization) {
+        return res.status(404).json({
+          success: false,
+          message: 'Organization not found',
+        });
+      }
+  
+      // Fetch subscribers
+      const subscribers = await OrganizationSubscribeUser.findAll({
+        where: { org_id: organization.id },
+      });
+  
+      // Get users
+      const userPromises = subscribers.map(async (subscriber) => {
+        const user = await User.findOne({
+          where: { id: subscriber.user_id },
+        });
+        if (!user) return null;
+  
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          username: user.username,
+          invitation_status: user.invitation_status,
+        };
+      });
+  
+      const users = await Promise.all(userPromises);
+      const filteredUsers = users.filter((user) => user !== null);
+  
+      // Get roles
+      const rolesPromises = subscribers.map(async (subscriber) => {
+        const user = await User.findOne({ where: { id: subscriber.user_id } });
+        if (!user) return null;
+  
+        const userRoles = await UserRoles.findAll({
+          where: { userId: user.id },
+        });
+  
+        const rolePromises = userRoles.map(async (userRole) => {
+          const role = await Roles.findOne({
+            where: { id: userRole.roleId },
+          });
+          return role ? role.name : null;
+        });
+  
+        const roles = await Promise.all(rolePromises);
+        return roles.filter((role) => role !== null);
+      });
+  
+      const roles = await Promise.all(rolesPromises);
+      const flattenedRoles = roles.flat().filter((role) => role);
+  
+      // ✅ Get Industry name
+      let industryName = null;
+      if (organization.industryId) {
+        const industry = await Industry.findOne({
+          where: { id: organization.industryId },
+          attributes: ['name'],
+        });
+        industryName = industry ? industry.name : null;
+      }
+  
+      // ✅ Get Plan name
+      let planName = null;
+      if (organization.plan_id) {
+        const plan = await Plan.findOne({
+          where: { id: organization.plan_id },
+          attributes: ['name'],
+        });
+        planName = plan ? plan.name : null;
+      }
+  
+      // Final response
+      const result = {
+        id: organization.id,
+        organization_name: organization.organization_name,
+        industryId: organization.industryId,
+        industry_name: industryName,
+        plan_id: organization.plan_id,
+        plan_name: planName,
+        organization_address: organization.organization_address,
+        city: organization.city,
+        state: organization.state,
+        postal_code: organization.postal_code,
+        users: filteredUsers,
+        roles: flattenedRoles,
+      };
+  
+      return res.status(200).json({
+        success: true,
+        message: 'Organization fetched successfully',
+        data: result,
+      });
+  
+    } catch (error) {
+      console.error('Error fetching organization by ID:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message,
+      });
+    }
+  };
+
+  const UpdateOrginzation = async (req, res) => {
+    try {
+      const { id } = req.params;
+  
+      const organization = await Organization.findByPk(id);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found' });
+      }
+  
+      await Promise.all(validateOrganization.map(validation => validation.run(req)));
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ success: false, errors: errors.array() });
+      }
+  
+      const {
+        organization_name,
+        industryId,
+        organization_address,
+        city,
+        state,
+        postal_code,
+        registration_id,
+        contact_phone_number,
+        number_of_employees,
+        plan_id,
+        name,             // user fields
+        email,
+        user_name,
+        role_id
+      } = req.body;
+  
+      // 1️⃣ Handle updated files
+      let logoPath = organization.logo;
+      let agreementPaperPath = organization.agreement_paper;
+  
+      if (req.files?.logo) {
+        logoPath = req.files.logo[0].path;
+      }
+  
+      if (req.files?.agreement_paper) {
+        agreementPaperPath = req.files.agreement_paper[0].path;
+      }
+  
+      // 2️⃣ Update Organization
+      await organization.update({
+        organization_name,
+        industryId,
+        organization_address,
+        city,
+        state,
+        postal_code,
+        registration_id,
+        contact_phone_number,
+        number_of_employees,
+        logo: logoPath,
+        agreement_paper: agreementPaperPath,
+        plan_id,
+      });
+  
+      // 3️⃣ Update User (admin)
+      const adminUser = await User.findByPk(organization.user_id);
+      if (!adminUser) {
+        return res.status(404).json({ success: false, message: 'Admin user not found' });
+      }
+  
+      await adminUser.update({
+        name,
+        email,
+        user_name
+      });
+  
+      // 4️⃣ Update User Role
+      await UserRoles.destroy({ where: { userId: adminUser.id } }); // remove old role
+      const newUserRole = await UserRoles.create({
+        userId: adminUser.id,
+        roleId: role_id
+      });
+  
+      // 5️⃣ Update Subscription
+      const subscription = await OrganizationSubscribeUser.findOne({
+        where: { user_id: adminUser.id, org_id: organization.id }
+      });
+  
+      if (subscription) {
+        await subscription.update({
+          plan_id,
+          validity_start_date: new Date(),
+          validity_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+        });
+      }
+  
+      return res.status(200).json({
+        success: true,
+        message: 'Organization, user, role, and subscription updated successfully',
+        organization,
+        user: adminUser,
+        user_role: newUserRole,
+        subscription
+      });
+  
+    } catch (error) {
+      console.error('❌ Error in UpdateOrganization:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error',
+        error: error.message
+      });
+    }
+  };
   
   
   
@@ -281,5 +503,5 @@ const GetAllOrganization = async (req, res) => {
   
 
 module.exports = {
-  CreateOrganization,GetAllOrganization
+  CreateOrganization,GetAllOrganization,GetOrgnizationById,UpdateOrginzation
 };
