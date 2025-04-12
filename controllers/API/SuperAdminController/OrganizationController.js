@@ -408,6 +408,7 @@ const GetAllOrganization = async (req, res) => {
   const UpdateOrginzation = async (req, res) => {
     try {
       const { id } = req.params;
+  
       const organization = await Organization.findByPk(id);
       if (!organization) {
         return res.status(404).json({ success: false, message: 'Organization not found' });
@@ -436,7 +437,7 @@ const GetAllOrganization = async (req, res) => {
         role_id
       } = req.body;
   
-      // 🖼️ Update only if new files provided
+      // 🖼️ Handle updated files
       if (req.files?.logo) {
         organization.logo = req.files.logo[0].path;
       }
@@ -444,8 +445,8 @@ const GetAllOrganization = async (req, res) => {
         organization.agreement_paper = req.files.agreement_paper[0].path;
       }
   
-      // 📦 Dynamically update only provided fields for organization
-      const updatableFields = {
+      // 📦 Update organization fields conditionally
+      const orgFields = {
         organization_name,
         industryId,
         organization_address,
@@ -458,49 +459,55 @@ const GetAllOrganization = async (req, res) => {
         plan_id
       };
   
-      Object.entries(updatableFields).forEach(([key, value]) => {
-        if (value !== undefined) {
-          organization[key] = value;
-        }
+      Object.entries(orgFields).forEach(([key, value]) => {
+        if (value !== undefined) organization[key] = value;
       });
   
       await organization.save();
   
       // 👤 Update user if exists
-      const adminUser = await User.findByPk(organization.user_id);
-      if (adminUser) {
-        const userFields = { name, email, user_name };
-  
-        Object.entries(userFields).forEach(([key, value]) => {
-          if (value !== undefined) {
-            adminUser[key] = value;
-          }
-        });
-  
-        await adminUser.save();
-      }
-  
-      // 🧑‍⚖️ Update user role only if role_id is provided
+      let adminUser = null;
       let newUserRole = null;
-      if (role_id) {
-        await UserRoles.destroy({ where: { userId: adminUser.id } });
-        newUserRole = await UserRoles.create({
-          userId: adminUser.id,
-          roleId: role_id
-        });
-      }
+      let subscription = null;
   
-      // 📅 Update subscription only if plan_id is provided
-      let subscription = await OrganizationSubscribeUser.findOne({
-        where: { user_id: adminUser.id, org_id: organization.id }
-      });
+      if (organization.user_id) {
+        adminUser = await User.findByPk(organization.user_id);
   
-      if (subscription && plan_id) {
-        await subscription.update({
-          plan_id,
-          validity_start_date: new Date(),
-          validity_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-        });
+        if (adminUser) {
+          const userFields = { name, email, user_name };
+  
+          Object.entries(userFields).forEach(([key, value]) => {
+            if (value !== undefined) {
+              adminUser[key] = value;
+            }
+          });
+  
+          await adminUser.save();
+  
+          // 🧑‍⚖️ Update user role
+          if (role_id) {
+            await UserRoles.destroy({ where: { userId: adminUser.id } });
+            newUserRole = await UserRoles.create({
+              userId: adminUser.id,
+              roleId: role_id
+            });
+          }
+  
+          // 📅 Update subscription
+          if (plan_id) {
+            subscription = await OrganizationSubscribeUser.findOne({
+              where: { user_id: adminUser.id, org_id: organization.id }
+            });
+  
+            if (subscription) {
+              await subscription.update({
+                plan_id,
+                validity_start_date: new Date(),
+                validity_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+              });
+            }
+          }
+        }
       }
   
       return res.status(200).json({
@@ -521,7 +528,6 @@ const GetAllOrganization = async (req, res) => {
       });
     }
   };
-  
   
   
   
