@@ -4,6 +4,9 @@ const User = require('../models/user');
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const Role = require("../models/role");
+const sequelize = require("../config/database");
+const { DataTypes } = require("sequelize");
+const Organization = require("../models/organization")(sequelize, DataTypes);
 const sendOnboardingEmail = require('../utils/sendOnboardingEmail');
 const PasswordChangesEmail = require('../utils/PasswordChangesEmail');
 const { Op } = require('sequelize');
@@ -38,11 +41,22 @@ const sendPendingOnboardingEmails = async () => {
       const tempPassword = generateTempPassword();
       const activationToken = generateActivationToken(user.email);
 
+      // 🔍 Fetch organization using user_id
+      const organization = await Organization.findOne({
+        where: { user_id: user.id },
+        attributes: ['organization_name'],
+      });
+
+      const orgName = organization?.organization_name?.replace(/\s+/g, '-').toLowerCase() || 'user-login'; // fallback if not found
+
+      const activationLink = `https://naaticcl.visionlanguageexperts.in/${orgName}`;
+
       // If onboarding email has not been sent
       if (!user.onboarding_email_sent) {
         await user.update({
           password: await bcrypt.hash(tempPassword, 10),
           activation_token: activationToken,
+          invitation_status:'sent',
           activation_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
         });
 
@@ -50,7 +64,7 @@ const sendPendingOnboardingEmails = async () => {
           email: user.email,
           name: user.name,
           tempPassword,
-          activationLink: `https://naaticcl.visionlanguageexperts.in/user-login`,
+          activationLink,
         });
 
         if (emailSent) {
@@ -107,7 +121,7 @@ function generateTempPassword(length = 10) {
 function generateActivationToken(email) {
   return crypto
     .createHash('sha256')
-    .update(String(email) + Date.now()) // Ensures the data is a string
+    .update(String(email) + Date.now())
     .digest('hex');
 }
 

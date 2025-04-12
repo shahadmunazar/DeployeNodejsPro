@@ -31,102 +31,112 @@ const validateOrganization = [
 
 // ✅ Controller
 const CreateOrganization = async (req, res) => {
-    try {
-      console.log('Files:', req.files);
-  
-      if (!req.files?.logo || !req.files?.agreement_paper) {
-        return res.status(400).json({ success: false, message: 'Both logo and agreement paper are required' });
-      }
-  
-      await Promise.all(validateOrganization.map(validation => validation.run(req)));
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ success: false, errors: errors.array() });
-      }
-  
-      const {
-        organization_name,
-        industryId,
-        organization_address,
-        city,
-        state,
-        postal_code,
-        registration_id,
-        contact_phone_number,
-        number_of_employees,
-        name,
-        email,
-        user_name,
-        plan_id,
-        role_id,
-      } = req.body;
-  
-      if (!email && !user_name) {
-        return res.status(400).json({ success: false, message: 'Either email or username is required.' });
-      }
-  
-      const logoPath = req.files.logo[0].path;
-      const agreementPaperPath = req.files.agreement_paper[0].path;
-  
-      const newOrganization = await Organization.create({
-        organization_name,
-        industryId,
-        organization_address,
-        city,
-        state,
-        postal_code,
-        registration_id,
-        contact_phone_number,
-        number_of_employees,
-        logo: logoPath,
-        plan_id,plan_id,
-        agreement_paper: agreementPaperPath
-      });
-  
-      const tempPassword = generateTempPassword();
-      const hashedPassword = await bcrypt.hash(tempPassword, 10);
-  
-      const newUser = await User.create({
-        name,
-        email,
-        user_name,
-        password: hashedPassword
-      });
-  
-      const newUserRole = await UserRoles.create({
-        userId: newUser.id,
-        roleId: role_id
-      });
-  
-      const newSubscription = await OrganizationSubscribeUser.create({
-        user_id: newUser.id,
-        org_id: newOrganization.id,
-        plan_id: plan_id,
-        validity_start_date: new Date(),
-        validity_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
-      });
-  
-      return res.status(200).json({
-        success: true,
-        message: 'Organization, admin user, and subscription created successfully',
-        organization: newOrganization,
-        user: {
-          ...newUser.toJSON(),
-          plain_password: tempPassword
-        },
-        user_role: newUserRole,
-        subscription: newSubscription
-      });
-  
-    } catch (error) {
-      console.error('Error in CreateOrganization:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Internal server error',
-        error: error.message
-      });
+  try {
+    console.log('Files:', req.files);
+
+    if (!req.files?.logo || !req.files?.agreement_paper) {
+      return res.status(400).json({ success: false, message: 'Both logo and agreement paper are required' });
     }
-  };
+
+    await Promise.all(validateOrganization.map(validation => validation.run(req)));
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const {
+      organization_name,
+      industryId,
+      organization_address,
+      city,
+      state,
+      postal_code,
+      registration_id,
+      contact_phone_number,
+      number_of_employees,
+      name,
+      email,
+      user_name,
+      plan_id,
+      role_id,
+    } = req.body;
+
+    if (!email && !user_name) {
+      return res.status(400).json({ success: false, message: 'Either email or username is required.' });
+    }
+
+    const logoPath = req.files.logo[0].path;
+    const agreementPaperPath = req.files.agreement_paper[0].path;
+
+    // Step 1: Create Organization (without user_id for now)
+    const newOrganization = await Organization.create({
+      organization_name,
+      industryId,
+      organization_address,
+      city,
+      state,
+      postal_code,
+      registration_id,
+      contact_phone_number,
+      number_of_employees,
+      logo: logoPath,
+      agreement_paper: agreementPaperPath,
+      plan_id
+    });
+
+    // Step 2: Create User
+    const tempPassword = generateTempPassword();
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    const newUser = await User.create({
+      name,
+      email,
+      user_name,
+      password: hashedPassword
+    });
+
+    // ✅ Step 3: Update Organization with user_id
+    await newOrganization.update({
+      user_id: newUser.id
+    });
+
+    // Step 4: Assign Role
+    const newUserRole = await UserRoles.create({
+      userId: newUser.id,
+      roleId: role_id
+    });
+
+    // Step 5: Create Organization Subscription
+    const newSubscription = await OrganizationSubscribeUser.create({
+      user_id: newUser.id,
+      org_id: newOrganization.id,
+      plan_id: plan_id,
+      validity_start_date: new Date(),
+      validity_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1))
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Organization, admin user, and subscription created successfully',
+      organization: newOrganization,
+      user: {
+        ...newUser.toJSON(),
+        plain_password: tempPassword
+      },
+      user_role: newUserRole,
+      subscription: newSubscription
+    });
+
+  } catch (error) {
+    console.error('Error in CreateOrganization:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
   
 
 // ✅ Password Generator
