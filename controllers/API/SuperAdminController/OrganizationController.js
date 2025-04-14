@@ -697,10 +697,187 @@ const formatDate = date => {
   return `${day}-${month}-${year}`;
 };
 
+const ToogleStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    let { status } = req.body;
+    if (status === true || status === 1) {
+      status = 1;
+    } else if (status === false || status === 0) {
+      status = 0;
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be either true/false or 1/0",
+      });
+    }
+
+    const organization = await Organization.findByPk(id);
+
+    if (!organization) {
+      return res.status(404).json({
+        success: false,
+        message: "Organization not found",
+      });
+    }
+
+    await organization.update({ status });
+
+    return res.status(200).json({
+      success: true,
+      message: `Organization status updated successfully.`,
+      data: {
+        id: organization.id,
+        status: Boolean(status),
+      },
+    });
+  } catch (error) {
+    console.error("Error in ToogleStatus:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+
+const GetOrginazationDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const organization = await Organization.findOne({
+      where: { id },
+    });
+
+    if (!organization) {
+      return res.status(404).json({
+        success: false,
+        message: "Organization not found",
+      });
+    }
+
+    // Subscribers
+    const subscribers = await OrganizationSubscribeUser.findAll({
+      where: { org_id: organization.id },
+    });
+
+    // Users info
+    const userPromises = subscribers.map(async subscriber => {
+      const user = await User.findOne({
+        where: { id: subscriber.user_id },
+      });
+      if (!user) return null;
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        username: user.username,
+        invitation_status: user.invitation_status,
+        isActive: user.isActive,
+      };
+    });
+
+    const users = (await Promise.all(userPromises)).filter(Boolean);
+
+    // Roles
+    const rolesPromises = subscribers.map(async subscriber => {
+      const user = await User.findOne({ where: { id: subscriber.user_id } });
+      if (!user) return null;
+
+      const userRoles = await UserRoles.findAll({ where: { userId: user.id } });
+
+      const roleNames = await Promise.all(
+        userRoles.map(async userRole => {
+          const role = await Roles.findOne({ where: { id: userRole.roleId } });
+          return role ? role.name : null;
+        })
+      );
+
+      return roleNames.filter(Boolean);
+    });
+
+    const roles = await Promise.all(rolesPromises);
+    const flattenedRoles = roles.flat().filter(role => role);
+
+    // Industry
+    let industryName = null;
+    if (organization.industryId) {
+      const industry = await Industry.findOne({
+        where: { id: organization.industryId },
+        attributes: ["name"],
+      });
+      industryName = industry ? industry.name : null;
+    }
+
+    // Plan
+    let planName = null;
+    if (organization.plan_id) {
+      const plan = await Plan.findOne({
+        where: { id: organization.plan_id },
+        attributes: ["id", "name"],
+      });
+      planName = plan ? plan.name : null;
+    }
+
+    // Role Summary
+    const roleSummary = flattenedRoles.reduce((summary, role) => {
+      summary[role] = (summary[role] || 0) + 1;
+      return summary;
+    }, {});
+
+    const activeUserCount = users.filter(u => u.isActive).length;
+    const baseUrl = `${req.protocol}://${req.get('host')}`; // e.g. http://localhost:3000
+
+    return res.status(200).json({
+      success: true,
+      message: "Organization details fetched successfully",
+      data: {
+        id: organization.id,
+        organization_name: organization.organization_name,
+        industryId: organization.industryId,
+        industry_name: industryName,
+        plan_id: organization.plan_id,
+        plan_name: planName,
+        organization_address: organization.organization_address,
+        city: organization.city,
+        state: organization.state,
+        status: organization.status,
+        postal_code: organization.postal_code,
+        logo_url: organization.logo
+        ? `${baseUrl}/uploads/organization/logo/${organization.logo}`
+        : null,
+        agreement_url: organization.agreement_paper
+    ? `${baseUrl}/uploads/organization/agreement_paper/${organization.agreement_paper}`
+    : null,
+        createdAt: formatDate(organization.createdAt),
+        updatedAt: formatDate(organization.updatedAt),
+        users,
+        roles: flattenedRoles,
+        activeUserCount,
+        roleSummary,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching organization by ID:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+
+
+
 module.exports = {
   CreateOrganization,
   GetAllOrganization,
   GetOrgnizationById,
   UpdateOrginzation,
   ManagmentOrginazation,
+  ToogleStatus,
+  GetOrginazationDetails
 };
