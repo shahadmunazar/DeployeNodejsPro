@@ -725,6 +725,7 @@ const ToogleStatus = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      status:200,
       message: `Organization status updated successfully.`,
       data: {
         id: organization.id,
