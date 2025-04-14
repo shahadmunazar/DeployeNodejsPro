@@ -26,7 +26,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     price: {
       type: DataTypes.DECIMAL(10, 2),
-      allowNull: false
+      allowNull: true
     },
     billing_cycle: {
       type: DataTypes.STRING,
@@ -36,6 +36,28 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.BOOLEAN,  // The newly added 'status' field (active or inactive)
       allowNull: false,
       defaultValue: true, // Default value is set to true (active)
+    },
+    tier:{
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    price_monthly:{
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    price_yearly:{
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },price_custom:{
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
+    asset_limit:{
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },additional_info:{
+      type:DataTypes.TEXT,
+      allowNull:true
     },
     deletedAt: {
       type: DataTypes.DATE,
