@@ -3,10 +3,10 @@ const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 const router = require("./userRoutes");
 const { Op } = require("sequelize");
 
-const { SuperAdminProfile,GetAllRoles, CheckPingSessionActivity, ForgetPassword, UpdatePassword } = require("../controllers/API/SuperAdminController/ProfileController");
+const { SuperAdminProfile, GetAllRoles, CheckPingSessionActivity, ForgetPassword, UpdatePassword } = require("../controllers/API/SuperAdminController/ProfileController");
 const { CreateIndustry, SoftDeleteIndustry, UpdateIndustry, GetIndustryById, GetAllIndustries } = require("../controllers/API/SuperAdminController/IndustryController");
 const { CreatePlans, GetPlans, GetPlanById, UpdatePlan, DeletePlan, TogglePlanStatus } = require("../controllers/API/SuperAdminController/PlansController");
-const { CreateOrganization,GetAllOrganization,GetOrgnizationById,UpdateOrginzation ,ManagmentOrginazation,ToogleStatus,GetOrginazationDetails} = require("../controllers/API/SuperAdminController/OrganizationController");
+const { CreateOrganization, GetAllOrganization, GetOrgnizationById, UpdateOrginzation, ManagmentOrginazation, ToogleStatus, GetOrginazationDetails } = require("../controllers/API/SuperAdminController/OrganizationController");
 const uploadFiles = require("../middleware/uploadOrganizationFiles");
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
@@ -22,10 +22,10 @@ const WithSuperAdminAndRole = (handler, role = "superadmin") => {
 };
 
 
-router.post("/create-organization", uploadFiles,...WithSuperAdminAndRole(CreateOrganization));
+router.post("/create-organization", uploadFiles, ...WithSuperAdminAndRole(CreateOrganization));
 router.get("/get-organization", ...WithSuperAdminAndRole(GetAllOrganization));
 router.get("/get-organization-by-id/:id", ...WithSuperAdminAndRole(GetOrgnizationById));
-router.put("/update-organization/:id",uploadFiles, ...WithSuperAdminAndRole(UpdateOrginzation));
+router.put("/update-organization/:id", uploadFiles, ...WithSuperAdminAndRole(UpdateOrginzation));
 
 router.get('/managment-orginzation', ...WithSuperAdminAndRole(ManagmentOrginazation));
 router.get('/get-orginazation-subscription-details/:id', ...WithSuperAdminAndRole(GetOrginazationDetails));
