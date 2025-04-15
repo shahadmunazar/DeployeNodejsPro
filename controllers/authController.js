@@ -25,24 +25,28 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1. Validate input
+    // 1. Input validation
     if (!email) {
       return res.status(403).json({ status: 403, message: "Email or username is required." });
     }
-
     if (!password) {
       return res.status(403).json({ status: 403, message: "Password is required." });
     }
 
-    // 2. Check both email and username using Op.or
-    const user = await User.findOne({
+    // 2. Get user(s) where either email or username matches
+    const potentialUsers = await User.findAll({
       where: {
         [Op.or]: [
           { email: email },
-          { username: email }  // reusing `email` field for input
+          { username: email }
         ]
       }
     });
+
+    // 3. Case-sensitive match (exact match to username or email)
+    const user = potentialUsers.find(u =>
+      u.email === email || u.username === email
+    );
 
     if (!user) {
       return res.status(403).json({
@@ -51,22 +55,22 @@ const login = async (req, res) => {
       });
     }
 
-    // 3. Check if account is locked
-    if (user.user_status === false) {
+    // 4. Check if account is locked
+    if (!user.user_status) {
       return res.status(403).json({
         status: 403,
         message: "Account is locked. Contact support."
       });
     }
 
-    // 4. Check password
+    // 5. Check password (bcrypt is case-sensitive)
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       await user.increment("loginAttemptCount");
-      await user.reload(); // get updated loginAttemptCount
+      await user.reload();
 
       if (user.loginAttemptCount >= 5) {
-        await user.update({ loginAttemptCount: 0, user_status: false }); // Lock account
+        await user.update({ loginAttemptCount: 0, user_status: false });
         return res.status(403).json({
           status: 403,
           message: "Too many failed attempts. Account is now locked."
@@ -84,18 +88,17 @@ const login = async (req, res) => {
       return res.status(403).json({ status: 403, message: "Incorrect password." });
     }
 
-    // 5. Password is valid
+    // 6. Reset login attempts
     await user.update({ loginAttemptCount: 0 });
 
-    // 6. Generate and store OTP
+    // 7. Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000);
-    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
     await user.update({ otp, otpExpiresAt });
 
-    // 7. Send OTP
+    // 8. Send OTP email
     await sendOtpEmail(user.email, otp);
 
-    // 8. Success response
     return res.status(200).json({
       status: 200,
       message: "OTP has been sent to your email. Please verify to complete login.",
@@ -111,7 +114,6 @@ const login = async (req, res) => {
     });
   }
 };
-
 
 // ========================== OTP EMAIL FUNCTION ==========================
 const sendOtpEmail = async (userEmail, otp) => {
