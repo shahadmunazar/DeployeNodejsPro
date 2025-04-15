@@ -4,19 +4,22 @@ const Sequelize = require('sequelize');
 const sequelize = require('../config/database');
 
 const db = {};
+const basename = path.basename(__filename);
 
-// Load models dynamically
+// Dynamically read all model files and initialize them
 fs.readdirSync(__dirname)
-  .filter(file => file !== 'index.js' && file.endsWith('.js'))
+  .filter(file => {
+    return file.indexOf('.') !== 0 && file !== basename && file.slice(-3) === '.js';
+  })
   .forEach(file => {
     const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
     db[model.name] = model;
   });
 
-// Set up model associations
+// Set up associations (if defined)
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
-    db[modelName].associate(db);
+    db[modelName].associate(db); // Pass all models for relationship mapping
   }
 });
 
