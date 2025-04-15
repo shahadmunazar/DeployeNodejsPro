@@ -23,45 +23,79 @@ const blacklist = new Set(); // Temporary blacklist (or use Redis for persistenc
 // ========================== LOGIN FUNCTION ==========================
 const login = async (req, res) => {
   try {
-    const { email, username, password } = req.body;
-    if (!email && !username) {
-      return res.status(403).json({ status:403, message: "Email or username is required." });
+    const { email, password } = req.body;
+
+    // 1. Validate input
+    if (!email) {
+      return res.status(403).json({ status: 403, message: "Email or username is required." });
     }
+
     if (!password) {
-      return res.status(403).json({ status:403,message: "Password is required." });
+      return res.status(403).json({ status: 403, message: "Password is required." });
     }
-    const whereClause = {};
-    if (email) whereClause.email = email;
-    if (username) whereClause.username = username;
-    const user = await User.findOne({ where: whereClause });
+
+    // 2. Check both email and username using Op.or
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: email },
+          { username: email }  // reusing `email` field for input
+        ]
+      }
+    });
+
     if (!user) {
-      return res.status(403).json({status:403, message: "No account found with the provided email or username." });
+      return res.status(403).json({
+        status: 403,
+        message: "No account found with the provided email or username."
+      });
     }
+
+    // 3. Check if account is locked
     if (user.user_status === false) {
-      return res.status(403).json({ status:403,message: "Account is locked. Contact support." });
+      return res.status(403).json({
+        status: 403,
+        message: "Account is locked. Contact support."
+      });
     }
+
+    // 4. Check password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       await user.increment("loginAttemptCount");
-      await user.reload(); // Refresh latest value
+      await user.reload(); // get updated loginAttemptCount
+
       if (user.loginAttemptCount >= 5) {
-        await user.update({ loginAttemptCount: 0, user_status: false });
-        return res.status(403).json({ status:403, message: "Too many failed attempts. Account is now locked." });
+        await user.update({ loginAttemptCount: 0, user_status: false }); // Lock account
+        return res.status(403).json({
+          status: 403,
+          message: "Too many failed attempts. Account is now locked."
+        });
       }
+
       if (user.loginAttemptCount >= 3) {
         return res.status(403).json({
           showcaptcha: true,
-          status:403,
+          status: 403,
           message: "Too many failed attempts. Please verify the Captcha."
         });
       }
-      return res.status(403).json({status:403, message: "Incorrect password." });
+
+      return res.status(403).json({ status: 403, message: "Incorrect password." });
     }
+
+    // 5. Password is valid
     await user.update({ loginAttemptCount: 0 });
+
+    // 6. Generate and store OTP
     const otp = Math.floor(100000 + Math.random() * 900000);
     const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
     await user.update({ otp, otpExpiresAt });
+
+    // 7. Send OTP
     await sendOtpEmail(user.email, otp);
+
+    // 8. Success response
     return res.status(200).json({
       status: 200,
       message: "OTP has been sent to your email. Please verify to complete login.",
