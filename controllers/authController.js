@@ -25,39 +25,56 @@ const login = async (req, res) => {
   try {
     const { email, username, password } = req.body;
     if (!email && !username) {
-      return res.status(400).json({ message: "Email or username is required" });
+      return res.status(403).json({ status:403, message: "Email or username is required." });
+    }
+    if (!password) {
+      return res.status(403).json({ status:403,message: "Password is required." });
     }
     const whereClause = {};
     if (email) whereClause.email = email;
     if (username) whereClause.username = username;
     const user = await User.findOne({ where: whereClause });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(403).json({status:403, message: "No account found with the provided email or username." });
     }
     if (user.user_status === false) {
-      return res.status(403).json({ message: "Account locked due to too many failed attempts." });
+      return res.status(403).json({ status:403,message: "Account is locked. Contact support." });
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       await user.increment("loginAttemptCount");
-      await user.reload();
+      await user.reload(); // Refresh latest value
       if (user.loginAttemptCount >= 5) {
-        await user.update({ loginAttemptCount: 0, user_status: "locked" });
-        return res.status(403).json({ message: "Too many failed attempts. Your account is locked." });
+        await user.update({ loginAttemptCount: 0, user_status: false });
+        return res.status(403).json({ status:403, message: "Too many failed attempts. Account is now locked." });
       }
       if (user.loginAttemptCount >= 3) {
-        return res.status(200).json({ showcaptcha: true, message: "Show Captcha" });
+        return res.status(403).json({
+          showcaptcha: true,
+          status:403,
+          message: "Too many failed attempts. Please verify the Captcha."
+        });
       }
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(403).json({status:403, message: "Incorrect password." });
     }
     await user.update({ loginAttemptCount: 0 });
     const otp = Math.floor(100000 + Math.random() * 900000);
-    await user.update({ otp, otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000) });
+    const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    await user.update({ otp, otpExpiresAt });
     await sendOtpEmail(user.email, otp);
-    res.json({ message: "OTP sent. Please verify to complete login.", status: 200 });
+    return res.status(200).json({
+      status: 200,
+      message: "OTP has been sent to your email. Please verify to complete login.",
+      requiresOtp: true,
+      userId: user.id
+    });
+
   } catch (error) {
     console.error("Login Error:", error);
-    res.status(500).json({ message: "Internal server error", error: error.message });
+    return res.status(500).json({
+      message: "Internal server error.",
+      error: error.message
+    });
   }
 };
 

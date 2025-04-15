@@ -6,7 +6,7 @@ const { Op } = require("sequelize");
 const { SuperAdminProfile, GetAllRoles, CheckPingSessionActivity, ForgetPassword, UpdatePassword } = require("../controllers/API/SuperAdminController/ProfileController");
 const { CreateIndustry, SoftDeleteIndustry, UpdateIndustry, GetIndustryById, GetAllIndustries } = require("../controllers/API/SuperAdminController/IndustryController");
 const { CreatePlans, GetPlans, GetPlanById, UpdatePlan, DeletePlan, TogglePlanStatus } = require("../controllers/API/SuperAdminController/PlansController");
-const { CreateOrganization, GetAllOrganization, GetOrgnizationById, UpdateOrginzation, ManagmentOrginazation, ToogleStatus, GetOrginazationDetails } = require("../controllers/API/SuperAdminController/OrganizationController");
+const { CreateOrganization, GetAllOrganization, GetOrgnizationById, UpdateOrginzation, ManagmentOrginazation, GetUserSubscriptionList,ToogleStatus, GetOrginazationDetails } = require("../controllers/API/SuperAdminController/OrganizationController");
 const uploadFiles = require("../middleware/uploadOrganizationFiles");
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
@@ -46,6 +46,11 @@ router.put("/industries/:id", ...WithSuperAdminAndRole(UpdateIndustry));
 router.delete("/industries/:id", ...WithSuperAdminAndRole(SoftDeleteIndustry));
 
 //Create For Plan's
+
+
+//Subscription List 
+
+router.get('/get-subscription-user-list',...WithSuperAdminAndRole(GetUserSubscriptionList));
 
 router.post("/create-plans", ...WithSuperAdminAndRole(CreatePlans));
 router.get("/plans", ...WithSuperAdminAndRole(GetPlans));

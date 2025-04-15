@@ -20,6 +20,21 @@ module.exports = (sequelize, DataTypes) => {
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE',
     },
+    payment_status: {
+  type: DataTypes.ENUM('Paid', 'Due', 'Overdue'),
+  defaultValue: 'Due',
+  allowNull: false,
+},
+renewal_date: {
+  type: DataTypes.DATE,
+  allowNull: true,
+},
+subscription_status: {
+  type: DataTypes.ENUM('Active', 'Expired', 'Canceled'),
+  defaultValue: 'Active',
+  allowNull: false,
+},
+
     plan_id: {
       type: DataTypes.INTEGER,
       allowNull: false,

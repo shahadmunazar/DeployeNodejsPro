@@ -57,7 +57,7 @@ const GetPlans = async (req, res) => {
       max_price,
       from_date,
       to_date,
-      sort_by = 'updatedAt',
+      sort_by = 'createdAt',
       sort_order = 'DESC' // ASC or DESC
     } = req.query;
 
