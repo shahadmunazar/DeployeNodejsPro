@@ -2,7 +2,7 @@ const express = require("express");
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 const router = require("./userRoutes");
 const { Op } = require("sequelize");
-
+const {GetAllEnquiry,GetEnquiryById} = require("../controllers/API/EnquirySection/enquiryController");
 const { SuperAdminProfile, GetAllRoles, CheckPingSessionActivity, ForgetPassword, UpdatePassword } = require("../controllers/API/SuperAdminController/ProfileController");
 const { CreateIndustry, SoftDeleteIndustry, UpdateIndustry, GetIndustryById, GetAllIndustries } = require("../controllers/API/SuperAdminController/IndustryController");
 const { CreatePlans, GetPlans, GetPlanById, UpdatePlan, DeletePlan, TogglePlanStatus } = require("../controllers/API/SuperAdminController/PlansController");
@@ -58,6 +58,12 @@ router.get("/plans/:id", ...WithSuperAdminAndRole(GetPlanById));
 router.put("/update-plans/:id", ...WithSuperAdminAndRole(UpdatePlan));
 router.delete("/plans/:id", ...WithSuperAdminAndRole(DeletePlan));
 router.put("/plans/:id/toggle-status", ...WithSuperAdminAndRole(TogglePlanStatus));
+
+
+//Enquiry Routes Start
+router.get("/get-all-enquiry", ...WithSuperAdminAndRole(GetAllEnquiry));
+router.get("/get-enquiry-by-id/:id", ...WithSuperAdminAndRole(GetEnquiryById));
+
 
 
 router.get("/all-roles", ...WithSuperAdminAndRole(GetAllRoles));

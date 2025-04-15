@@ -6,6 +6,8 @@ const sequelize = require('../config/database');
 const db = {};
 const basename = path.basename(__filename);
 
+
+
 // Dynamically read all model files and initialize them
 fs.readdirSync(__dirname)
   .filter(file => {
