@@ -4,6 +4,8 @@ const { Op } = require("sequelize");
 const nodemailer = require("nodemailer");
 require("dotenv").config();
 const moment = require("moment");
+const emailQueue = require('../queues/emailQueue');
+
 const requestIp = require("request-ip");
 const useragent = require("useragent");
 const User = require("../models/user");
@@ -118,24 +120,15 @@ const login = async (req, res) => {
 // ========================== OTP EMAIL FUNCTION ==========================
 const sendOtpEmail = async (userEmail, otp) => {
   try {
-    let transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: EMAIL_USER,
-        pass: EMAIL_PASS,
-      },
-    });
-    let mailOptions = {
-      from: `"Node SaaS BackEnd" <${EMAIL_USER}>`,
+    await emailQueue.add('send-otp', {
       to: userEmail,
-      subject: "Your OTP Code",
+      subject: 'Your OTP Code',
       text: `Your OTP for login is: ${otp}`,
       html: `<p>Your OTP for login is: <strong>${otp}</strong></p>`,
-    };
-    await transporter.sendMail(mailOptions);
-    console.log(`OTP sent to ${userEmail}`);
+    });
+    console.log(`OTP job added to queue for ${userEmail}`);
   } catch (error) {
-    console.error("Error sending OTP email:", error.message);
+    console.error("Failed to add email job to queue:", error.message);
   }
 };
 
