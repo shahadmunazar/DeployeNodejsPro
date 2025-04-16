@@ -3,9 +3,9 @@ const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 const router = require("./userRoutes");
 const { Op } = require("sequelize");
 const {GetAllEnquiry,GetEnquiryById,UpdateInquiry} = require("../controllers/API/EnquirySection/enquiryController");
-const { SuperAdminProfile, GetAllRoles, CheckPingSessionActivity, ForgetPassword, UpdatePassword,SuperAdminLogout } = require("../controllers/API/SuperAdminController/ProfileController");
+const { SuperAdminProfile, GetAllRoles, CheckPingSessionActivity, ForgetPassword, UpdatePassword,SuperAdminLogout,SendEmailForgetPassword,UpdatePasswordBySuperAdmin } = require("../controllers/API/SuperAdminController/ProfileController");
 const { CreateIndustry, SoftDeleteIndustry, UpdateIndustry, GetIndustryById, GetAllIndustries } = require("../controllers/API/SuperAdminController/IndustryController");
-const { CreatePlans, GetPlans, GetPlanById, UpdatePlan, DeletePlan, TogglePlanStatus } = require("../controllers/API/SuperAdminController/PlansController");
+const { CreatePlans, GetPlans, GetPlanById, UpdatePlan, DeletePlan, TogglePlanStatus} = require("../controllers/API/SuperAdminController/PlansController");
 const { CreateOrganization, GetAllOrganization, GetOrgnizationById, UpdateOrginzation, ManagmentOrginazation, GetUserSubscriptionList,ToogleStatus, GetOrginazationDetails } = require("../controllers/API/SuperAdminController/OrganizationController");
 const uploadFiles = require("../middleware/uploadOrganizationFiles");
 /**
@@ -44,6 +44,9 @@ router.get("/industries", ...WithSuperAdminAndRole(GetAllIndustries));
 router.get("/industries/:id", ...WithSuperAdminAndRole(GetIndustryById));
 router.put("/industries/:id", ...WithSuperAdminAndRole(UpdateIndustry));
 router.delete("/industries/:id", ...WithSuperAdminAndRole(SoftDeleteIndustry));
+
+router.put("/update-password-by-superadmin", ...WithSuperAdminAndRole(UpdatePasswordBySuperAdmin));
+router.post("/send-forget-password-to", ...WithSuperAdminAndRole(SendEmailForgetPassword));
 
 router.post("/superadmin-logout", ...WithSuperAdminAndRole(SuperAdminLogout));
 

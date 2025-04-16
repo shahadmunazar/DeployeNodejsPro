@@ -19,7 +19,16 @@ const validateOrganization = [
   body("city").optional().isString(),
   body("state").optional().isString(),
   body("name").notEmpty().withMessage("Admin name is required"),
-  body("email").optional().isEmail().withMessage("Invalid email"),
+  body("email")
+  .optional()
+  .isEmail().withMessage("Invalid email format")
+  .custom(async (email, { req }) => {
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser && existingUser.id !== req.body.id) {
+      throw new Error("Email is already in use");
+    }
+    return true;
+  }),
   body("user_name").optional().isString().withMessage("Username must be a string"),
   body("plan_id").optional(),
   body("role_id").notEmpty().withMessage("Role ID is required"),
