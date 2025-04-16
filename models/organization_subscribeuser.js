@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'organizations', // This should match the table name of the Organization model
+        model: 'organizations',
         key: 'id',
       },
       onUpdate: 'CASCADE',

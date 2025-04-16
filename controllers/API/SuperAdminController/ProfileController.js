@@ -220,4 +220,56 @@ const GetAllRoles = async (req, res) => {
     });
   }
 };
-module.exports = { SuperAdminProfile, CheckPingSessionActivity, ForgetPassword, UpdatePassword,GetAllRoles };
+
+
+
+const SuperAdminLogout = async(req,res)=>{
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+  
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized: Token missing' });
+    }
+  
+    // Verify the token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
+    } catch (err) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    }
+  
+    // Find the user
+    const admin = await User.findByPk(decoded.id);
+    if (!admin) {
+      return res.status(404).json({ error: 'Admin user not found' });
+    }
+  
+    // Delete refresh token from DB
+    const deleted = await RefreshToken.destroy({
+      where: {
+        userId: admin.id,
+        token: token
+      }
+    });
+  
+    // Update logout timestamp
+    await admin.update({
+      logout_at: new Date(),
+      login_at: null
+    });
+  
+  
+    return res.status(200).json({
+      message: deleted
+        ? 'Admin successfully logged out, refresh token deleted'
+        : 'Admin logged out, but no matching refresh token found',
+    });
+  
+  } catch (error) {
+    console.error('Logout error:', error);
+    return res.status(500).json({ error: 'Internal Server Error' });
+  }
+}
+module.exports = { SuperAdminProfile, CheckPingSessionActivity, ForgetPassword, UpdatePassword,GetAllRoles,SuperAdminLogout };
