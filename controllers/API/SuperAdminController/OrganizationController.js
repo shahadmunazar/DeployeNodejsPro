@@ -191,11 +191,14 @@ function generateTempPassword(length = 10) {
 }
 const GetAllOrganization = async (req, res) => {
   try {
-    const organizations = await Organization.findAll();
-
+    const organizations = await Organization.findAll({
+      order: [['id', 'DESC']]
+    });
+    
     if (!organizations || organizations.length === 0) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
+        status:400,
         message: "No organizations found",
       });
     }
@@ -308,8 +311,9 @@ const GetOrgnizationById = async (req, res) => {
     const organization = await Organization.findOne({ where: { id } });
 
     if (!organization) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
+        status:400,
         message: "Organization not found",
       });
     }
@@ -437,13 +441,13 @@ const UpdateOrginzation = async (req, res) => {
 
     const organization = await Organization.findByPk(id);
     if (!organization) {
-      return res.status(404).json({ success: false, message: "Organization not found" });
+      return res.status(400).json({ status:400,success: false, message: "Organization not found" });
     }
 
     await Promise.all(validateOrganizationUpdate.map(validation => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ success: false, errors: errors.array() });
+      return res.status(400).json({ status:400,success: false, errors: errors.array() });
     }
 
     const {
