@@ -431,7 +431,6 @@ const validateOrganizationUpdate = [
   body("email").optional().isEmail(),
   body("user_name").optional(),
   body("plan_id").optional(),
-  body("role_id").optional(),
 ];
 
 const UpdateOrginzation = async (req, res) => {
@@ -463,7 +462,6 @@ const UpdateOrginzation = async (req, res) => {
       name,
       email,
       user_name,
-      role_id,
     } = req.body;
 
     // 🖼️ Handle updated files
@@ -514,13 +512,13 @@ const UpdateOrginzation = async (req, res) => {
         await adminUser.save();
 
         // 🧑‍⚖️ Update user role
-        if (role_id) {
-          await UserRoles.destroy({ where: { userId: adminUser.id } });
-          newUserRole = await UserRoles.create({
-            userId: adminUser.id,
-            roleId: role_id,
-          });
-        }
+        // if (role_id) {
+        //   await UserRoles.destroy({ where: { userId: adminUser.id } });
+        //   newUserRole = await UserRoles.create({
+        //     userId: adminUser.id,
+        //     roleId: role_id,
+        //   });
+        // }
 
         // 📅 Update subscription
         if (plan_id) {
