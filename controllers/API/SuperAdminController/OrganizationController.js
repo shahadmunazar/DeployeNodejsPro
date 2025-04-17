@@ -422,11 +422,10 @@ const validateOrganizationUpdate = [
   body("organization_address").optional(),
   body("city").optional(),
   body("state").optional(),
-  body("postal_code").optional().isLength({ max: 10 }),
+  body("postal_code").optional().isLength({ max: 4 }),
   body("registration_id").optional(),
   body("contact_phone_number")
-    .optional()
-    .matches(/^[0-9+\-\s()]{7,20}$/),
+    .optional(),
   body("number_of_employees").optional().isIn(["1-10", "11-50", "51-200", "201-500", "500+"]),
   body("name").optional(),
   body("email").optional().isEmail(),
