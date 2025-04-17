@@ -22,6 +22,7 @@ const {
   UpdateOrginzation,
   ManagmentOrginazation,
   GetUserSubscriptionList,
+  UpdateSubscriber,
   ToogleStatus,
   GetOrginazationDetails,
 } = require("../controllers/API/SuperAdminController/OrganizationController");
@@ -72,13 +73,14 @@ router.post("/superadmin-logout", ...WithSuperAdminAndRole(SuperAdminLogout));
 //Subscription List
 
 router.get("/get-subscription-user-list", ...WithSuperAdminAndRole(GetUserSubscriptionList));
+router.get("/update0subsciption-user-plans", ...WithSuperAdminAndRole(UpdateSubscriber));
 
 router.post("/create-plans", ...WithSuperAdminAndRole(CreatePlans));
 router.get("/plans", ...WithSuperAdminAndRole(GetPlans));
 router.get("/plans/:id", ...WithSuperAdminAndRole(GetPlanById));
 router.put("/update-plans/:id", ...WithSuperAdminAndRole(UpdatePlan));
 router.delete("/plans/:id", ...WithSuperAdminAndRole(DeletePlan));
-router.put("/plans/:id/toggle-status", ...WithSuperAdminAndRole(TogglePlanStatus));
+router.put("/toggle-plan-status/:id", ...WithSuperAdminAndRole(TogglePlanStatus));
 
 //Enquiry Routes Start
 router.get("/get-all-enquiry", ...WithSuperAdminAndRole(GetAllEnquiry));

@@ -7,7 +7,7 @@ const { Op } = require("sequelize");
 // Create a new plan
 const CreatePlans = async (req, res) => {
   try {
-    const { name, description, tier, features, asset_limit, user_limit, price_monthly, price_yearly, price_custom, billing_cycle, status = true, additional_info } = req.body;
+    const { name, description, tier, features, asset_limit, user_limit, price_monthly, price_yearly, price_custom, billing_cycle,  status  = true, additional_info } = req.body;
     if (!name || !tier || !user_limit || !billing_cycle) {
       return res.status(400).json({
         success: false,
@@ -33,7 +33,7 @@ const CreatePlans = async (req, res) => {
       additional_info,
     });
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: "Plan created successfully",
       data: newPlan,
@@ -66,7 +66,7 @@ const GetPlans = async (req, res) => {
 
     // Filter by status
     if (status) {
-      whereClause.status = status.toLowerCase(); // "active" or "inactive"
+      whereClause.status = status.toLowerCase();
     }
 
     // Filter by tier
@@ -229,7 +229,7 @@ const TogglePlanStatus = async (req, res) => {
   try {
     const plan = await Plan.findByPk(id);
     if (plan) {
-      plan.status = !plan.status; // Toggle the status (active/inactive)
+      plan.status = !plan.status;
       await plan.save();
 
       res.status(200).json({

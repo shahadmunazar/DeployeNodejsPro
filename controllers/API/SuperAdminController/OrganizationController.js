@@ -93,6 +93,7 @@ const CreateOrganization = async (req, res) => {
       organization_name,
       industryId,
       organization_address,
+      
       city,
       contact_phone_number,
       state,
@@ -723,28 +724,14 @@ const ToogleStatus = async (req, res) => {
   try {
     const { id } = req.params;
     let { status } = req.body;
-    if (status === true || status === 1) {
-      status = 1;
-    } else if (status === false || status === 0) {
-      status = 0;
-    } else {
-      return res.status(400).json({
-        success: false,
-        message: "Status must be either true/false or 1/0",
-      });
-    }
-
     const organization = await Organization.findByPk(id);
-
     if (!organization) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "Organization not found",
       });
     }
-
     await organization.update({ status });
-
     return res.status(200).json({
       success: true,
       status: 200,
@@ -961,6 +948,14 @@ const GetUserSubscriptionList = async (req, res) => {
   }
 };
 
+const UpdateSubscriber = async(req,res)=>{
+  try {
+    
+  } catch (error) {
+    
+  }
+}
+
 module.exports = {
   CreateOrganization,
   GetAllOrganization,
@@ -969,5 +964,6 @@ module.exports = {
   ManagmentOrginazation,
   ToogleStatus,
   GetOrginazationDetails,
+  UpdateSubscriber,
   GetUserSubscriptionList,
 };
