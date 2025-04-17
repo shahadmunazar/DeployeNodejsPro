@@ -446,7 +446,7 @@ const UpdateOrginzation = async (req, res) => {
     await Promise.all(validateOrganizationUpdate.map(validation => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ status:400,success: false, errors: errors.array() });
+      return res.status(400).json({ status:400,success: false, errors: errors });
     }
 
     const {
