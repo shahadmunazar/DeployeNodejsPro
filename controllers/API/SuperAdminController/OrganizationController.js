@@ -270,7 +270,7 @@ const GetAllOrganization = async (req, res) => {
         });
         planName = plan ? plan.name : null;
       }
-
+      const baseUrl = `${req.protocol}://${req.get("host")}`; // e.g. http://localhost:3000
       return {
         id: organization.id,
         organization_name: organization.organization_name,
@@ -278,6 +278,11 @@ const GetAllOrganization = async (req, res) => {
         industry_name: industryName, // ✅ Added industry name
         plan_id: organization.plan_id,
         plan_name: planName, // ✅ Added plan name
+        contact_phone_number: organization.contact_phone_number,
+        number_of_employees: organization.number_of_employees,
+        registration_id: organization.registration_id,
+        logo_url: organization.logo ? `${baseUrl}/uploads/organization/logo/${organization.logo}` : null,
+        agreement_url: organization.agreement_paper ? `${baseUrl}/uploads/organization/agreement_paper/${organization.agreement_paper}` : null,
         organization_address: organization.organization_address,
         city: organization.city,
         state: organization.state,
