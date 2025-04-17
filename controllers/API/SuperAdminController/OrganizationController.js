@@ -93,7 +93,7 @@ const CreateOrganization = async (req, res) => {
             [Op.like]: `${prefix}%`,
           },
         },
-      });
+      }); 
       const nextNumber = String(existingCount + 1).padStart(6, "0");
       finalRegistrationId = `${prefix}${nextNumber}`;
       console.log("final result",finalRegistrationId);
