@@ -94,6 +94,7 @@ const CreateOrganization = async (req, res) => {
       industryId,
       organization_address,
       city,
+      contact_phone_number,
       state,
       postal_code,
       registration_id: finalRegistrationId, 
