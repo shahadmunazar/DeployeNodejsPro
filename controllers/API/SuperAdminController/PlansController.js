@@ -2,10 +2,7 @@ const { tryCatch } = require("bullmq");
 const sequelize = require("../../../config/database"); // adjust path if needed
 const { DataTypes } = require("sequelize");
 const Plan = require("../../../models/AllPlans")(sequelize, DataTypes);
-const { Op } = require('sequelize');
-
-
-
+const { Op } = require("sequelize");
 
 // Create a new plan
 const CreatePlans = async (req, res) => {
@@ -61,8 +58,8 @@ const GetPlans = async (req, res) => {
       max_price,
       from_date,
       to_date,
-      sort_by = 'createdAt',
-      sort_order = 'DESC' // ASC or DESC
+      sort_by = "createdAt",
+      sort_order = "DESC", // ASC or DESC
     } = req.query;
 
     const whereClause = {};
@@ -108,7 +105,7 @@ const GetPlans = async (req, res) => {
     }
     const plans = await Plan.findAll({
       where: whereClause,
-      order: [[sort_by, sort_order.toUpperCase()]]
+      order: [[sort_by, sort_order.toUpperCase()]],
     });
 
     res.status(200).json({
@@ -154,20 +151,7 @@ const GetPlanById = async (req, res) => {
 // Update an existing plan
 const UpdatePlan = async (req, res) => {
   const { id } = req.params;
-  const {
-    name,
-    description,
-    tier,
-    features,
-    asset_limit,
-    user_limit,
-    price_monthly,
-    price_yearly,
-    price_custom,
-    billing_cycle,
-    status,
-    additional_info,
-  } = req.body;
+  const { name, description, tier, features, asset_limit, user_limit, price_monthly, price_yearly, price_custom, billing_cycle, status, additional_info } = req.body;
 
   try {
     const plan = await Plan.findByPk(id);
@@ -179,11 +163,7 @@ const UpdatePlan = async (req, res) => {
     }
 
     // Normalize features input
-    const parsedFeatures = Array.isArray(features)
-      ? features
-      : typeof features === "string"
-      ? features.split(",").map((f) => f.trim())
-      : plan.features; // fallback to existing if not sent
+    const parsedFeatures = Array.isArray(features) ? features : typeof features === "string" ? features.split(",").map(f => f.trim()) : plan.features; // fallback to existing if not sent
 
     // Update fields only if they're provided
     plan.name = name ?? plan.name;
@@ -215,7 +195,6 @@ const UpdatePlan = async (req, res) => {
     });
   }
 };
-
 
 // Soft delete a plan (paranoid deletion)
 const DeletePlan = async (req, res) => {
@@ -273,10 +252,5 @@ const TogglePlanStatus = async (req, res) => {
     });
   }
 };
-
-
-
-
-
 
 module.exports = { CreatePlans, GetPlans, GetPlanById, UpdatePlan, DeletePlan, TogglePlanStatus };

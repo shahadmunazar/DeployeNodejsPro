@@ -20,18 +20,18 @@ const validateOrganization = [
   body("state").optional().isString(),
   body("name").notEmpty().withMessage("Admin name is required"),
   body("email")
-  .optional()
-  .isEmail().withMessage("Invalid email format")
-  .custom(async (email, { req }) => {
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser && existingUser.id !== req.body.id) {
-      throw new Error("Email is already in use");
-    }
-    return true;
-  }),
+    .optional()
+    .isEmail()
+    .withMessage("Invalid email format")
+    .custom(async (email, { req }) => {
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser && existingUser.id !== req.body.id) {
+        throw new Error("Email is already in use");
+      }
+      return true;
+    }),
   body("user_name").optional().isString().withMessage("Username must be a string"),
   body("plan_id").optional(),
-  body("role_id").notEmpty().withMessage("Role ID is required"),
   body("postal_code").optional().isLength({ max: 10 }),
   body("registration_id").optional().isString(),
   body("contact_phone_number")
@@ -49,13 +49,13 @@ const CreateOrganization = async (req, res) => {
         message: "Both logo and agreement paper are required",
       });
     }
-
+   
     await Promise.all(validateOrganization.map(validation => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
-
+    
     const {
       organization_name,
       industryId,
@@ -70,7 +70,6 @@ const CreateOrganization = async (req, res) => {
       email,
       user_name,
       plan_id,
-      role_id,
     } = req.body;
 
     if (!email && !user_name) {
@@ -116,7 +115,7 @@ const CreateOrganization = async (req, res) => {
     // Step 4: Assign role
     const newUserRole = await UserRoles.create({
       userId: newUser.id,
-      roleId: role_id,
+      roleId: 2,
     });
 
     // Step 5: Add subscription if plan exists
@@ -868,76 +867,75 @@ const GetUserSubscriptionList = async (req, res) => {
   try {
     // Query all subscriptions from OrganizationSubscribeUser
     const subscriptions = await OrganizationSubscribeUser.findAll({
-      order: [['createdAt', 'DESC']]  // Sorting by creation date
+      order: [["createdAt", "DESC"]], // Sorting by creation date
     });
 
     if (!subscriptions || subscriptions.length === 0) {
       return res.status(404).json({
         success: false,
-        message: 'No subscriptions found'
+        message: "No subscriptions found",
       });
     }
 
     // Process each subscription individually
-    const subscriptionsWithDetails = await Promise.all(subscriptions.map(async (subscription) => {
-      // Fetch the user details for each subscription
-      const user = await User.findOne({
-        where: { id: subscription.user_id },
-        attributes: ['id', 'name', 'email', 'username']
-      });
+    const subscriptionsWithDetails = await Promise.all(
+      subscriptions.map(async subscription => {
+        // Fetch the user details for each subscription
+        const user = await User.findOne({
+          where: { id: subscription.user_id },
+          attributes: ["id", "name", "email", "username"],
+        });
 
-      // Fetch the organization details for each subscription
-      const organization = await Organization.findOne({
-        where: { id: subscription.org_id },
-        attributes: ['id', 'organization_name']
-      });
+        // Fetch the organization details for each subscription
+        const organization = await Organization.findOne({
+          where: { id: subscription.org_id },
+          attributes: ["id", "organization_name"],
+        });
 
-      // Fetch the plan details for each subscription
-      const plan = await Plan.findOne({
-        where: { id: subscription.plan_id },
-        attributes: ['id', 'name', 'tier', 'price_monthly', 'price_yearly']
-      });
+        // Fetch the plan details for each subscription
+        const plan = await Plan.findOne({
+          where: { id: subscription.plan_id },
+          attributes: ["id", "name", "tier", "price_monthly", "price_yearly"],
+        });
 
-      // Determine the billing cycle based on monthly or yearly pricing
-      const billingCycle = plan.price_monthly ? 'Monthly' : 'Annually';
+        // Determine the billing cycle based on monthly or yearly pricing
+        const billingCycle = plan.price_monthly ? "Monthly" : "Annually";
 
-      return {
-        organization_name: organization ? organization.organization_name : null,
-        admin_name: user ? user.name : null,
-        admin_contact: user ? user.email : null,  // Assuming admin's contact is their email
-        plan_name: plan ? plan.name : null,
-        plan_tier: plan ? plan.tier : null,
-        subscription_status: subscription.subscription_status,
-        subscription_start_date: formatDate(subscription.validity_start_date),
-        renewal_end_date: formatDate(subscription.validity_end_date),
-        billing_cycle: billingCycle,
-        payment_status: subscription.payment_status,
-        renewal_date: formatDate(subscription.renewal_date),  // Added renewal_date
-        validity_start_date: formatDate(subscription.validity_start_date),  // Added validity_start_date
-        validity_end_date: formatDate(subscription.validity_end_date),  // Added validity_end_date
-        createdAt: formatDate(subscription.createdAt),  // Added createdAt
-        updatedAt: formatDate(subscription.updatedAt),  // Added updatedAt
-      };
-    }));
+        return {
+          organization_name: organization ? organization.organization_name : null,
+          admin_name: user ? user.name : null,
+          admin_contact: user ? user.email : null, // Assuming admin's contact is their email
+          plan_name: plan ? plan.name : null,
+          plan_tier: plan ? plan.tier : null,
+          subscription_status: subscription.subscription_status,
+          subscription_start_date: formatDate(subscription.validity_start_date),
+          renewal_end_date: formatDate(subscription.validity_end_date),
+          billing_cycle: billingCycle,
+          payment_status: subscription.payment_status,
+          renewal_date: formatDate(subscription.renewal_date), // Added renewal_date
+          validity_start_date: formatDate(subscription.validity_start_date), // Added validity_start_date
+          validity_end_date: formatDate(subscription.validity_end_date), // Added validity_end_date
+          createdAt: formatDate(subscription.createdAt), // Added createdAt
+          updatedAt: formatDate(subscription.updatedAt), // Added updatedAt
+        };
+      })
+    );
 
     // Send the response with formatted data
     res.status(200).json({
       success: true,
-      message: 'Subscription list fetched successfully',
-      data: subscriptionsWithDetails
+      message: "Subscription list fetched successfully",
+      data: subscriptionsWithDetails,
     });
-
   } catch (error) {
     console.error("Error fetching subscriptions:", error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch subscription list',
-      error: error.message
+      message: "Failed to fetch subscription list",
+      error: error.message,
     });
   }
 };
-
-
 
 module.exports = {
   CreateOrganization,
