@@ -8,6 +8,7 @@ const OrganizationSubscribeUser = require("../../../models/organization_subscrib
 const UserRoles = require("../../../models/userrole");
 const Roles = require("../../../models/role");
 const { Op } = require("sequelize");
+const SubscriberActivityLog = require("../../../models/subscriberactivitylog")(sequelize, DataTypes)
 const Industry = require("../../../models/industry")(sequelize, DataTypes);
 const Plan = require("../../../models/AllPlans")(sequelize, DataTypes);
 
@@ -33,19 +34,29 @@ const validateOrganization = [
 
 const CreateOrganization = async (req, res) => {
   try {
+    // Check if the required files are provided
     if (!req.files?.logo || !req.files?.agreement_paper) {
       return res.status(400).json({
         success: false,
         message: "Both logo and agreement paper are required",
       });
     }
-   
+
+    // Get the user performing the action (Super Admin)
+    const performedBy = req.user; // contains id, name, etc.
+    console.log("Performed By", performedBy);
+
+    // Validate request body data
     await Promise.all(validateOrganization.map(validation => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ status:400,success: false, errors: errors });
+      return res.status(400).json({
+        success: false,
+        errors: errors.array(),
+      });
     }
-    
+
+    // Destructure and get values from the request body
     const {
       organization_name,
       industryId,
@@ -62,6 +73,7 @@ const CreateOrganization = async (req, res) => {
       plan_id,
     } = req.body;
 
+    // Validate either email or username must be present
     if (!email && !user_name) {
       return res.status(400).json({
         success: false,
@@ -72,9 +84,8 @@ const CreateOrganization = async (req, res) => {
     const logoPath = req.files.logo[0].filename;
     const agreementPaperPath = req.files.agreement_paper[0].filename;
 
-
+    // Generate a unique registration ID if not provided
     let finalRegistrationId = registration_id;
-
     if (!finalRegistrationId) {
       const prefix = organization_name.replace(/\s/g, "").toUpperCase().slice(0, 4);
       const existingCount = await Organization.count({
@@ -83,63 +94,69 @@ const CreateOrganization = async (req, res) => {
             [Op.like]: `${prefix}%`,
           },
         },
-      }); 
+      });
       const nextNumber = String(existingCount + 1).padStart(6, "0");
       finalRegistrationId = `${prefix}${nextNumber}`;
-      console.log("final result",finalRegistrationId);
     }
-    // Step 1: Create organization
+
+    // Step 1: Create the organization record
     const newOrganization = await Organization.create({
       organization_name,
       industryId,
       organization_address,
-      
       city,
-      contact_phone_number,
       state,
       postal_code,
-      registration_id: finalRegistrationId, 
+      registration_id: finalRegistrationId,
+      contact_phone_number,
       number_of_employees,
       logo: logoPath,
       agreement_paper: agreementPaperPath,
       plan_id: plan_id || null,
     });
 
-    console.log("final Orginazation Result",newOrganization);
-    // Step 2: Create admin user
+    console.log("Organization Created:", newOrganization);
 
-
+    // Step 2: Check if the email already exists for the admin user
     const createdUser = await User.findOne({ where: { email } });
-if (createdUser) {
-  return res.status(400).json({
-    success: false,
-    status:400,
-    message: "Email is already in use.",
-  });
-}
+    if (createdUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is already in use.",
+      });
+    }
 
-const tempPassword = generateTempPassword();
-const hashedPassword = await bcrypt.hash(tempPassword, 10);
+    // Step 3: Create a new user for the admin and hash password
+    const tempPassword = generateTempPassword();
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-const newUser = await User.create({
-  name,
-  email,
-  user_name,
-  password: hashedPassword,
-});
-   
-    // Step 3: Update org with user ID
+    const newUser = await User.create({
+      name,
+      email,
+      user_name,
+      password: hashedPassword,
+    });
+
+    // Step 4: Update the organization with the new admin user ID
     await newOrganization.update({ user_id: newUser.id });
 
-    // Step 4: Assign role
+    // Step 5: Assign the admin user the "Super Admin" role (roleId = 2 for Super Admin)
     const newUserRole = await UserRoles.create({
       userId: newUser.id,
       roleId: 2,
     });
 
-    // Step 5: Add subscription if plan exists
+    // Step 6: Create subscription if a plan is selected
     let newSubscription = null;
     if (plan_id) {
+      const plan = await Plan.findByPk(plan_id); // get plan name if available
+      if (!plan) {
+        return res.status(400).json({
+          success: false,
+          message: "Plan not found.",
+        });
+      }
+
       newSubscription = await OrganizationSubscribeUser.create({
         user_id: newUser.id,
         org_id: newOrganization.id,
@@ -147,8 +164,23 @@ const newUser = await User.create({
         validity_start_date: new Date(),
         validity_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
       });
+
+      // Step 7: Log the activity for the new subscription
+      await SubscriberActivityLog.create({
+        action: 'plan_assigned',
+        organizationId: newOrganization.id,
+        organizationName: newOrganization.organization_name,
+        newPlan: plan.name, // Using plan name instead of ID
+        effectiveDate: newSubscription.validity_start_date,
+        subscriptionId: newSubscription.id,
+        performedByAdminId: performedBy?.id,
+        performedByAdminName: performedBy?.name,
+        reason: `Plan assigned to new organization: ${newOrganization.organization_name} for user ${newUser.name}`,
+        notificationSent: true,
+      });
     }
 
+    // Step 8: Respond with the result
     return res.status(200).json({
       success: true,
       message: "Organization, admin user, and subscription created successfully",
@@ -876,13 +908,12 @@ const GetOrginazationDetails = async (req, res) => {
 
 const GetUserSubscriptionList = async (req, res) => {
   try {
-    // Query all subscriptions from OrganizationSubscribeUser
     const subscriptions = await OrganizationSubscribeUser.findAll({
-      order: [["createdAt", "DESC"]], // Sorting by creation date
+      order: [["createdAt", "DESC"]],
     });
 
     if (!subscriptions || subscriptions.length === 0) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
         message: "No subscriptions found",
       });
@@ -909,7 +940,6 @@ const GetUserSubscriptionList = async (req, res) => {
           attributes: ["id", "name", "tier", "price_monthly", "price_yearly"],
         });
 
-        // Determine the billing cycle based on monthly or yearly pricing
         const billingCycle = plan.price_monthly ? "Monthly" : "Annually";
 
         return {
@@ -948,13 +978,144 @@ const GetUserSubscriptionList = async (req, res) => {
   }
 };
 
-const UpdateSubscriber = async(req,res)=>{
+const UpdateSubscriber = async (req, res) => {
   try {
-    
+    const { org_id, plan_id, subscription_id, renewal_date, validity_start_date, validity_end_date } = req.body;
+
+    // Validate input
+    if (!org_id || !plan_id || !subscription_id || !validity_start_date || !validity_end_date || !renewal_date) {
+      return res.status(400).json({
+        success: false,
+        status:400,
+        message: "Organization ID, Plan ID, Subscription ID, Validity Start Date, Validity End Date, and Renewal Date are required.",
+      });
+    }
+
+    // Step 1: Find the organization based on org_id
+    const organization = await Organization.findByPk(org_id);
+    if (!organization) {
+      return res.status(400).json({
+        success: false,
+        status:400,
+        message: "Organization not found.",
+      });
+    }
+
+    // Step 2: Find the plan based on plan_id
+    const plan = await Plan.findByPk(plan_id);
+    if (!plan) {
+      return res.status(400).json({
+        success: false,
+        status:400,
+        message: "Plan not found.",
+      });
+    }
+
+    // Step 3: Find the subscription by subscription_id
+    const subscription = await OrganizationSubscribeUser.findOne({
+      where: {
+        id: subscription_id,
+        org_id: org_id,
+      },
+    });
+
+    if (!subscription) {
+      return res.status(400).json({
+        success: false,
+        status:400,
+        message: "Subscription not found.",
+      });
+    }
+
+    // Step 4: Update the subscription with the new details
+    const updatedSubscription = await subscription.update({
+      plan_id,
+      validity_start_date: new Date(validity_start_date), // Convert validity_start_date to Date object
+      validity_end_date: new Date(validity_end_date), // Convert validity_end_date to Date object
+      renewal_date: new Date(renewal_date), // Convert renewal_date to Date object
+    });
+
+    // Step 5: Log the activity
+    const performedBy = req.user; // Get the current admin who performed the action
+    await SubscriberActivityLog.create({
+      action: 'plan_updated',
+      organizationId: org_id,
+      organizationName: organization.organization_name,
+      newPlan: plan.name,
+      effectiveDate: updatedSubscription.validity_start_date,
+      subscriptionId: updatedSubscription.id,
+      performedByAdminId: performedBy?.id,
+      performedByAdminName: performedBy?.name,
+      reason: `Plan updated to ${plan.name} for organization: ${organization.organization_name}`,
+      notificationSent: true, // Assuming you want to send a notification
+    });
+
+    // Step 6: Return the updated subscription and success message
+    return res.status(200).json({
+      success: true,
+      message: "Subscriber plan updated successfully.",
+      subscription: updatedSubscription,
+    });
+
   } catch (error) {
-    
+    console.error("Error in UpdateSubscriber:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
   }
-}
+};
+
+
+const GetActivityLogDetails = async (req, res) => {
+  try {
+    // Get the subscription_id from the request body
+    const { subscription_id } = req.body;
+
+    // Check if subscription_id is provided
+    if (!subscription_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Subscription ID is required.",
+      });
+    }
+
+    // Find all activity logs related to the subscription_id
+    const activityLogs = await SubscriberActivityLog.findAll({
+      where: {
+        subscriptionId: subscription_id, // Matching the subscription ID
+      },
+      order: [['createdAt', 'DESC']], // Optionally order by the created date in descending order
+    });
+
+    // If no logs are found, return an empty response
+    if (!activityLogs.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No activity logs found for this subscription.",
+      });
+    }
+
+    // Return the activity logs as the response
+    return res.status(200).json({
+      success: true,
+      message: "Activity logs retrieved successfully.",
+      data: activityLogs,
+    });
+
+  } catch (error) {
+    // Catch and handle any errors
+    console.error("Error fetching activity logs:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+
 
 module.exports = {
   CreateOrganization,
@@ -966,4 +1127,5 @@ module.exports = {
   GetOrginazationDetails,
   UpdateSubscriber,
   GetUserSubscriptionList,
+  GetActivityLogDetails
 };
