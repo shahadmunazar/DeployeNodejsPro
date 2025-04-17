@@ -32,7 +32,6 @@ const validateOrganization = [
     }),
   body("user_name").optional().isString().withMessage("Username must be a string"),
   body("plan_id").optional(),
-  body("role_id").notEmpty().withMessage("Role ID is required"),
   body("postal_code").optional().isLength({ max: 10 }),
   body("registration_id").optional().isString(),
   body("contact_phone_number")
@@ -50,13 +49,13 @@ const CreateOrganization = async (req, res) => {
         message: "Both logo and agreement paper are required",
       });
     }
-
+   
     await Promise.all(validateOrganization.map(validation => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
-
+    
     const {
       organization_name,
       industryId,
@@ -71,7 +70,6 @@ const CreateOrganization = async (req, res) => {
       email,
       user_name,
       plan_id,
-      role_id,
     } = req.body;
 
     if (!email && !user_name) {
@@ -117,7 +115,7 @@ const CreateOrganization = async (req, res) => {
     // Step 4: Assign role
     const newUserRole = await UserRoles.create({
       userId: newUser.id,
-      roleId: role_id,
+      roleId: 2,
     });
 
     // Step 5: Add subscription if plan exists

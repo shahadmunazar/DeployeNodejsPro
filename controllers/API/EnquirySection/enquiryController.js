@@ -2,7 +2,7 @@ const { validationResult, body } = require("express-validator");
 const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
 const { Op } = require("sequelize");
-
+const emailQueue = require("../../../queues/emailQueue");
 const Enquiry = require("../../../models/enquiry")(sequelize, DataTypes);
 const ActivityLog = require("../../../models/activityLog")(sequelize, DataTypes);
 
@@ -186,11 +186,9 @@ const GetEnquiryById = async (req, res) => {
 const validateStatusUpdate = [
   body("status")
     .notEmpty()
-    .withMessage("Status is required") // Ensure status is not empty
+    .withMessage("Status is required")
     .isIn(["New", "In Progress", "Resolved", "Closed"])
     .withMessage("Invalid status. Valid options are: New, In Progress, Resolved, Closed"),
-
-  // Optional comments field - if provided, ensure it's a string and limit its length
   body("comments").optional().isString().withMessage("Comments must be a string.").isLength({ max: 1000 }).withMessage("Comments cannot be longer than 1000 characters."),
 ];
 
@@ -235,7 +233,59 @@ const UpdateInquiry = async (req, res) => {
       where: { id: enquiryId },
     });
     const commentMessage = comments ? `Status changed to: ${status}. Comment: ${comments}` : `Status changed to: ${status}`;
-
+    if (status === "Resolved") {
+      await emailQueue.add("send-enquiry-resolved", {
+        to: updatedEnquiry.email,
+        subject: `Your Enquiry #${updatedEnquiry.id} Has Been Resolved`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <title>Enquiry Resolved</title>
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 30px 0;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 40px; font-family: Arial, sans-serif;">
+                    <tr>
+                      <td align="center" style="padding-bottom: 20px;">
+                        <h2 style="color: #28a745; margin: 0;">Enquiry Resolved</h2>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="color: #333333; font-size: 16px; line-height: 1.5;">
+                        <p>Hello <strong>${updatedEnquiry.firstName || "User"}</strong>,</p>
+                        <p>Your enquiry titled <strong>"${updatedEnquiry.subject}"</strong> has been marked as <strong style="color: #28a745;">Resolved</strong>.</p>
+                        
+                        ${
+                          comments
+                            ? `<p style="margin-top: 20px; background: #f9f9f9; border-left: 4px solid #28a745; padding: 10px 15px;"><strong>Admin's Comment:</strong><br/>${comments}</p>`
+                            : ""
+                        }
+    
+                        <p style="margin-top: 20px;">If you did not expect this update or still have concerns, feel free to reply to this email or contact our support team.</p>
+    
+                        <p style="margin-top: 30px;">Best regards,<br/><strong>The Support Team</strong></p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-top: 30px; font-size: 12px; color: #999999;">
+                        © ${new Date().getFullYear()} Konnect. All rights reserved.
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `,
+      });
+    }
+    
     await ActivityLog.create({
       enquiryId,
       action: "Status Updated",
@@ -244,8 +294,6 @@ const UpdateInquiry = async (req, res) => {
       comments: commentMessage,
       timestamp: new Date(),
     });
-
-    // Fetch the activity logs for this enquiry
     const activityLogs = await ActivityLog.findAll({
       where: { enquiryId },
       order: [["timestamp", "DESC"]], // Sort by most recent activity
