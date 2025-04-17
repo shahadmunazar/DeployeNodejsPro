@@ -115,16 +115,27 @@ const CreateOrganization = async (req, res) => {
 
     console.log("final Orginazation Result",newOrganization);
     // Step 2: Create admin user
-    const tempPassword = generateTempPassword();
-    const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-    const newUser = await User.create({
-      name,
-      email,
-      user_name,
-      password: hashedPassword,
-    });
 
+    const createdUser = await User.findOne({ where: { email } });
+if (createdUser) {
+  return res.status(400).json({
+    success: false,
+    status:400,
+    message: "Email is already in use.",
+  });
+}
+
+const tempPassword = generateTempPassword();
+const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+const newUser = await User.create({
+  name,
+  email,
+  user_name,
+  password: hashedPassword,
+});
+   
     // Step 3: Update org with user ID
     await newOrganization.update({ user_id: newUser.id });
 
