@@ -6,9 +6,16 @@ const router = express.Router();
 
 const { CreateCategory, GetAllCategory, GetCategoryById, UpdateCategory, StatusUpdate, CategoryDelete } = require("../controllers/SuperAdmin/CategoryController");
 
-const {CreateDepartment,GetDepartmentList,GetDepartmentListById,UpdateDepartment,DeleteDepartment,UpdateDepartmentStatus} = require("../controllers/SuperAdmin/Assets/DepartmentController")
+const {
+  CreateDepartment,
+  GetDepartmentList,
+  GetDepartmentListById,
+  UpdateDepartment,
+  DeleteDepartment,
+  UpdateDepartmentStatus,
+} = require("../controllers/SuperAdmin/Assets/DepartmentController");
 
-const {CreateBrands,GetBrandsList,GetBrandsListById,UpdateBrands,DeleteBrands,UpdateBrandsStatus} = require("../controllers/SuperAdmin/Assets/BrandController")
+const { CreateBrands, GetBrandsList, GetBrandsListById, UpdateBrands, DeleteBrands, UpdateBrandsStatus } = require("../controllers/SuperAdmin/Assets/BrandController");
 
 const {
   GetAllUsersToken,
@@ -40,8 +47,8 @@ const {
   WarrantyStatusUpdate,
 } = require("../controllers/SuperAdmin/Assets/WarrantyController");
 
-const {CreateAsset} = require("../controllers/SuperAdmin/Assets/AssetController");
-const {CreateVendor,GetVendorList,GetVendorListById,UpdateVendor,DeleteVendor,UpdateVendorStatus} = require("../controllers/SuperAdmin/Assets/VendorController");
+const { CreateAsset } = require("../controllers/SuperAdmin/Assets/AssetController");
+const { CreateVendor, GetVendorList, GetVendorListById, UpdateVendor, DeleteVendor, UpdateVendorStatus } = require("../controllers/SuperAdmin/Assets/VendorController");
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
  * @param {Function} handler - The route handler function.
@@ -50,13 +57,11 @@ const {CreateVendor,GetVendorList,GetVendorListById,UpdateVendor,DeleteVendor,Up
  */
 const withAuthAndRole = (handler, role = "admin") => [authenticateUser, authorizeRoles(role), handler];
 
-
-//for SuperAdmin Define Authentication And Authorization Variable 
+//for SuperAdmin Define Authentication And Authorization Variable
 
 const WithSuperAdminAndRole = (handler, role = "superadmin") => {
   return [authenticateUser, authorizeRoles(role), handler];
 };
-
 
 // Start For Routes SuperAdmin
 
@@ -78,7 +83,6 @@ router.get("/export-all-users-into-csv", ...withAuthAndRole(exportAllUsers));
 
 //  Asset Routes Start
 router.post("/create-asset", ...withAuthAndRole(CreateAsset));
-
 
 // End Asset Routes Here
 
@@ -106,8 +110,7 @@ router.put("/update-finacial-asset/:id", ...withAuthAndRole(UpdateFinancial));
 router.delete("/delete-financial-asset/:id", ...withAuthAndRole(DeleteFinancial));
 router.put("/update-financial-status", ...withAuthAndRole(UpdateFinancialStatus));
 
-
-// for brands Core Settings 
+// for brands Core Settings
 router.post("/create-brands-asset", ...withAuthAndRole(CreateBrands));
 router.get("/get-all-brands-list-asset", ...withAuthAndRole(GetBrandsList));
 router.get("/get-brands-list-by-id/:id", ...withAuthAndRole(GetBrandsListById));
@@ -123,7 +126,7 @@ router.put("/update-department-asset/:id", ...withAuthAndRole(UpdateDepartment))
 router.delete("/delete-department-asset/:id", ...withAuthAndRole(DeleteDepartment));
 router.put("/update-department-status", ...withAuthAndRole(UpdateDepartmentStatus));
 
-//for vendor added 
+//for vendor added
 
 router.post("/create-vendor-asset", ...withAuthAndRole(CreateVendor));
 router.get("/get-all-vendor-list-asset", ...withAuthAndRole(GetVendorList));

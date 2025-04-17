@@ -2,7 +2,7 @@ const User = require("../../../models/user");
 const UserRole = require("../../../models/userrole");
 const { body, validationResult } = require("express-validator");
 const moment = require("moment");
-const Role = require('../../../models/role'); // adjust the path if needed
+const Role = require("../../../models/role"); // adjust the path if needed
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
@@ -12,7 +12,7 @@ const { DataTypes } = require("sequelize");
 const RefreshToken = require("../../../models/refreshToken")(sequelize, DataTypes);
 const { sendPasswordResetEmail } = require("../../../utils/sendPasswordResetEmail");
 
-const emailQueue = require('../../../queues/emailQueue'); // Ensure the emailQueue is correctly imported
+const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
 const SuperAdminProfile = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -199,91 +199,84 @@ const UpdatePassword = async (req, res) => {
   }
 };
 
-
 const GetAllRoles = async (req, res) => {
   try {
     const roles = await Role.findAll({
-      attributes: ['id', 'name'], // include only needed columns
-      order: [['id', 'ASC']] // optional: sort roles by ID
+      attributes: ["id", "name"], // include only needed columns
+      order: [["id", "ASC"]], // optional: sort roles by ID
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Roles fetched successfully',
-      data: roles
+      message: "Roles fetched successfully",
+      data: roles,
     });
   } catch (error) {
-    console.error('Error fetching roles:', error);
+    console.error("Error fetching roles:", error);
     return res.status(500).json({
       success: false,
-      message: 'Internal server error',
-      error: error.message
+      message: "Internal server error",
+      error: error.message,
     });
   }
 };
 
-
-
-const SuperAdminLogout = async(req,res)=>{
+const SuperAdminLogout = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = authHeader?.split(' ')[1];
-  
+    const token = authHeader?.split(" ")[1];
+
     if (!token) {
-      return res.status(401).json({ error: 'Unauthorized: Token missing' });
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
-  
+
     // Verify the token
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
     } catch (err) {
-      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      return res.status(401).json({ error: "Unauthorized: Invalid token" });
     }
-  
+
     // Find the user
     const admin = await User.findByPk(decoded.id);
     if (!admin) {
-      return res.status(404).json({ error: 'Admin user not found' });
+      return res.status(404).json({ error: "Admin user not found" });
     }
-  
+
     // Delete refresh token from DB
     const deleted = await RefreshToken.destroy({
       where: {
         userId: admin.id,
-        token: token
-      }
+        token: token,
+      },
     });
-  
+
     // Update logout timestamp
     await admin.update({
       logout_at: new Date(),
-      login_at: null
+      login_at: null,
     });
-  
-  
+
     return res.status(200).json({
-      message: deleted
-        ? 'Admin successfully logged out, refresh token deleted'
-        : 'Admin logged out, but no matching refresh token found',
+      message: deleted ? "Admin successfully logged out, refresh token deleted" : "Admin logged out, but no matching refresh token found",
     });
-  
   } catch (error) {
-    console.error('Logout error:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
+    console.error("Logout error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
-}
+};
 
 const SendEmailForgetPassword = async (req, res) => {
   try {
     const { id } = req.body;
     if (!id) {
-      return res.status(400).json({ message: 'User ID is required' });
+      return res.status(400).json({ message: "User ID is required" });
     }
 
     const user = await User.findByPk(id); // Ensure 'User' model is correctly imported
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // Generate a reset token and set its expiry time
@@ -300,9 +293,9 @@ const SendEmailForgetPassword = async (req, res) => {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
 
     // Add a job to the email queue to send the reset email
-    await emailQueue.add('send-password-reset', {
+    await emailQueue.add("send-password-reset", {
       to: user.email,
-      subject: 'Password Reset Request',
+      subject: "Password Reset Request",
       text: `Click on the link to reset your password: ${resetLink}`,
       html: `
       <div style="max-width: 600px; margin: auto; font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f7; padding: 30px; border-radius: 8px;">
@@ -344,13 +337,12 @@ const SendEmailForgetPassword = async (req, res) => {
 
     // Respond to the client
     return res.status(200).json({
-      message: 'Password reset email has been sent.',
+      message: "Password reset email has been sent.",
     });
-
   } catch (error) {
-    console.error('Error in SendEmailForgetPassword:', error);
+    console.error("Error in SendEmailForgetPassword:", error);
     return res.status(500).json({
-      message: 'Internal server error',
+      message: "Internal server error",
       error: error.message,
     });
   }
@@ -362,19 +354,19 @@ const UpdatePasswordBySuperAdmin = async (req, res) => {
 
     // 1. Validate input fields
     if (!id) {
-      return res.status(400).json({ message: 'User ID is required' });
+      return res.status(400).json({ message: "User ID is required" });
     }
     if (!password || !confirm_password) {
-      return res.status(400).json({ message: 'Password and confirm password are required' });
+      return res.status(400).json({ message: "Password and confirm password are required" });
     }
     if (password !== confirm_password) {
-      return res.status(400).json({ message: 'Password and confirm password must match' });
+      return res.status(400).json({ message: "Password and confirm password must match" });
     }
 
     // 2. Find the user by ID
     const user = await User.findByPk(id); // Ensure 'User' model is correctly imported
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     // 3. Hash the new password
@@ -384,9 +376,9 @@ const UpdatePasswordBySuperAdmin = async (req, res) => {
     await user.update({ password: hashedPassword });
 
     // 5. Add email job to the queue to notify the user
-    await emailQueue.add('send-password-update-notification', {
+    await emailQueue.add("send-password-update-notification", {
       to: user.email,
-      subject: 'Your Password Has Been Updated Successfully',
+      subject: "Your Password Has Been Updated Successfully",
       text: `
         Dear ${user.name},
     
@@ -502,20 +494,27 @@ const UpdatePasswordBySuperAdmin = async (req, res) => {
         </html>
       `,
     });
-    
 
     // 6. Return a success message
     return res.status(200).json({
-      message: 'Password updated successfully',
+      message: "Password updated successfully",
       user: { id: user.id, email: user.email },
     });
-
   } catch (error) {
-    console.error('Error updating password:', error);
+    console.error("Error updating password:", error);
     return res.status(500).json({
-      message: 'Internal server error',
+      message: "Internal server error",
       error: error.message,
     });
   }
 };
-module.exports = { SuperAdminProfile, CheckPingSessionActivity, ForgetPassword, UpdatePassword,GetAllRoles,SuperAdminLogout,SendEmailForgetPassword,UpdatePasswordBySuperAdmin };
+module.exports = {
+  SuperAdminProfile,
+  CheckPingSessionActivity,
+  ForgetPassword,
+  UpdatePassword,
+  GetAllRoles,
+  SuperAdminLogout,
+  SendEmailForgetPassword,
+  UpdatePasswordBySuperAdmin,
+};
