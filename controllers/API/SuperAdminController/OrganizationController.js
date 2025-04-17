@@ -82,6 +82,22 @@ const CreateOrganization = async (req, res) => {
     const logoPath = req.files.logo[0].filename;
     const agreementPaperPath = req.files.agreement_paper[0].filename;
 
+
+    let finalRegistrationId = registration_id;
+
+    if (!finalRegistrationId) {
+      const prefix = organization_name.replace(/\s/g, "").toUpperCase().slice(0, 4);
+      const existingCount = await Organization.count({
+        where: {
+          registration_id: {
+            [Op.like]: `${prefix}%`,
+          },
+        },
+      });
+      const nextNumber = String(existingCount + 1).padStart(6, "0");
+      finalRegistrationId = `${prefix}${nextNumber}`;
+      console.log("final result",finalRegistrationId);
+    }
     // Step 1: Create organization
     const newOrganization = await Organization.create({
       organization_name,
@@ -90,14 +106,14 @@ const CreateOrganization = async (req, res) => {
       city,
       state,
       postal_code,
-      registration_id,
-      contact_phone_number,
+      registration_id: finalRegistrationId, 
       number_of_employees,
       logo: logoPath,
       agreement_paper: agreementPaperPath,
       plan_id: plan_id || null,
     });
 
+    console.log("final Orginazation Result",newOrganization);
     // Step 2: Create admin user
     const tempPassword = generateTempPassword();
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
