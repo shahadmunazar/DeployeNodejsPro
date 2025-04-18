@@ -941,13 +941,17 @@ const GetUserSubscriptionList = async (req, res) => {
         });
 
         const billingCycle = plan.price_monthly ? "Monthly" : "Annually";
-
+        const today = new Date();
+        const endDate = new Date(subscription.validity_end_date);
+        const timeDiff = endDate.getTime() - today.getTime();
+        const left_days = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
         return {
           organization_name: organization ? organization.organization_name : null,
           admin_name: user ? user.name : null,
           admin_contact: user ? user.email : null, // Assuming admin's contact is their email
           plan_name: plan ? plan.name : null,
           plan_tier: plan ? plan.tier : null,
+          left_days:left_days,
           subscription_status: subscription.subscription_status,
           subscription_start_date: formatDate(subscription.validity_start_date),
           renewal_end_date: formatDate(subscription.validity_end_date),
@@ -1070,7 +1074,7 @@ const UpdateSubscriber = async (req, res) => {
 
 const GetActivityLogDetails = async (req, res) => {
   try {
-    const { subscription_id } = req.body;
+    const { subscription_id } = req.query;
 
     if (!subscription_id) {
       return res.status(400).json({
@@ -1111,12 +1115,12 @@ const GetActivityLogDetails = async (req, res) => {
       order: [['createdAt', 'DESC']],
     });
 
-    if (!activityLogs.length) {
-      return res.status(400).json({
-        success: false,
-        message: "No activity logs found for this subscription.",
-      });
-    }
+    // if (!activityLogs.length) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "No activity logs found for this subscription.",
+    //   });
+    // }
 
     // ✅ Structured Response
     return res.status(200).json({
