@@ -1,7 +1,7 @@
 const { body, validationResult } = require("express-validator");
 const bcrypt = require("bcryptjs");
 const sequelize = require("../../../config/database");
-const { DataTypes } = require("sequelize");
+const { DataTypes, or } = require("sequelize");
 const User = require("../../../models/user");
 const Organization = require("../../../models/organization")(sequelize, DataTypes);
 const OrganizationSubscribeUser = require("../../../models/organization_subscribeuser")(sequelize, DataTypes);
@@ -1070,10 +1070,8 @@ const UpdateSubscriber = async (req, res) => {
 
 const GetActivityLogDetails = async (req, res) => {
   try {
-    // Get the subscription_id from the request body
     const { subscription_id } = req.body;
 
-    // Check if subscription_id is provided
     if (!subscription_id) {
       return res.status(400).json({
         success: false,
@@ -1081,31 +1079,62 @@ const GetActivityLogDetails = async (req, res) => {
       });
     }
 
-    // Find all activity logs related to the subscription_id
-    const activityLogs = await SubscriberActivityLog.findAll({
-      where: {
-        subscriptionId: subscription_id, // Matching the subscription ID
-      },
-      order: [['createdAt', 'DESC']], // Optionally order by the created date in descending order
+    const organization_subscribeuser = await OrganizationSubscribeUser.findOne({
+      where: { id: subscription_id },
     });
 
-    // If no logs are found, return an empty response
-    if (!activityLogs.length) {
+    if (!organization_subscribeuser) {
       return res.status(404).json({
+        success: false,
+        message: "Subscription not found.",
+      });
+    }
+
+    const userDetails = await User.findOne({
+      where: { id: organization_subscribeuser.user_id },
+    });
+
+    const planDetails = await Plan.findOne({
+      where: { id: organization_subscribeuser.plan_id },
+    });
+
+    const organizationDetails = await Organization.findOne({
+      where: { id: organization_subscribeuser.org_id },
+    });
+
+    const industryDetails = await Industry.findOne({
+      where: { id: organizationDetails.industryId },
+    });
+
+    const activityLogs = await SubscriberActivityLog.findAll({
+      where: { subscriptionId: subscription_id },
+      order: [['createdAt', 'DESC']],
+    });
+
+    if (!activityLogs.length) {
+      return res.status(400).json({
         success: false,
         message: "No activity logs found for this subscription.",
       });
     }
 
-    // Return the activity logs as the response
+    // ✅ Structured Response
     return res.status(200).json({
       success: true,
-      message: "Activity logs retrieved successfully.",
-      data: activityLogs,
+      message: "Activity logs and subscriber details retrieved successfully.",
+      data: {
+        activityLog: activityLogs,
+        subscriberDetails: {
+          subscription: organization_subscribeuser,
+          user: userDetails,
+          organization: organizationDetails,
+          plan: planDetails,
+          industry: industryDetails,
+        },
+      },
     });
 
   } catch (error) {
-    // Catch and handle any errors
     console.error("Error fetching activity logs:", error);
     return res.status(500).json({
       success: false,
@@ -1114,6 +1143,8 @@ const GetActivityLogDetails = async (req, res) => {
     });
   }
 };
+
+
 
 
 
