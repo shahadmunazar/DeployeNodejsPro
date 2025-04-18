@@ -24,6 +24,7 @@ const {
   GetUserSubscriptionList,
   UpdateSubscriber,
   GetActivityLogDetails,
+  UpdatePlanStatus,
   ToogleStatus,
   GetOrginazationDetails,
 } = require("../controllers/API/SuperAdminController/OrganizationController");
@@ -76,6 +77,8 @@ router.post("/superadmin-logout", ...WithSuperAdminAndRole(SuperAdminLogout));
 router.get("/get-subscription-user-list", ...WithSuperAdminAndRole(GetUserSubscriptionList));
 router.put("/update-subsciption-user-plans", ...WithSuperAdminAndRole(UpdateSubscriber));
 router.get("/get-subscriber-activity-logs", ...WithSuperAdminAndRole(GetActivityLogDetails));
+
+router.put("/update-payment-status", ...WithSuperAdminAndRole(UpdatePlanStatus));
 
 
 

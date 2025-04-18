@@ -948,7 +948,7 @@ const GetUserSubscriptionList = async (req, res) => {
         return {
           organization_name: organization ? organization.organization_name : null,
           admin_name: user ? user.name : null,
-          admin_contact: user ? user.email : null, // Assuming admin's contact is their email
+          admin_contact: user ? user.email : null, 
           plan_name: plan ? plan.name : null,
           plan_tier: plan ? plan.tier : null,
           left_days:left_days,
@@ -1149,6 +1149,60 @@ const GetActivityLogDetails = async (req, res) => {
 };
 
 
+const UpdatePlanStatus = async (req, res) => {
+  try {
+    const { subscription_id, payment_status } = req.body;
+
+    if (!subscription_id || !payment_status) {
+      return res.status(400).json({
+        success: false,
+        status:400,
+        message: "subscription_id and payment_status are required.",
+      });
+    }
+
+    const checksubscriber = await OrganizationSubscribeUser.findOne({
+      where: {
+        id: subscription_id
+      }
+    });
+
+    if (!checksubscriber) {
+      return res.status(400).json({
+        status:400,
+        success: false,
+        message: "Subscriber not found."
+      });
+    }
+
+    // Validate allowed statuses
+    const allowedStatuses = ['Paid', 'Due', 'Overdue'];
+    if (!allowedStatuses.includes(payment_status)) {
+      return res.status(400).json({
+        status:400,
+        success: false,
+        message: "Invalid payment_status. Allowed values are: 'Paid', 'Due', 'Overdue'."
+      });
+    }
+    checksubscriber.payment_status = payment_status;
+    await checksubscriber.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment status updated successfully.",
+      data: checksubscriber
+    });
+
+  } catch (error) {
+    console.error("Error updating payment status:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
 
 
 
@@ -1162,5 +1216,6 @@ module.exports = {
   GetOrginazationDetails,
   UpdateSubscriber,
   GetUserSubscriptionList,
-  GetActivityLogDetails
+  GetActivityLogDetails,
+  UpdatePlanStatus
 };
