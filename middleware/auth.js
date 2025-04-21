@@ -3,7 +3,6 @@ const User = require("../models/user");
 const sequelize = require("../config/database");
 const { DataTypes } = require("sequelize");
 
-// Assuming your refresh token model looks like this
 const RefreshToken = require("../models/refreshToken")(sequelize, DataTypes);
 
 const authenticateUser = async (req, res, next) => {
@@ -17,7 +16,6 @@ const authenticateUser = async (req, res, next) => {
     const decoded = jwt.verify(token, "your_secret_key");
     console.log("Decoded JWT:", decoded);
 
-    // Check if token exists in the RefreshToken table and is not blacklisted
     const storedToken = await RefreshToken.findOne({
       where: {
         userId: decoded.id,

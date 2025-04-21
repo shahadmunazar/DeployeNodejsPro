@@ -80,8 +80,6 @@ router.get("/get-subscriber-activity-logs", ...WithSuperAdminAndRole(GetActivity
 
 router.put("/update-payment-status", ...WithSuperAdminAndRole(UpdatePlanStatus));
 
-
-
 router.post("/create-plans", ...WithSuperAdminAndRole(CreatePlans));
 router.get("/plans", ...WithSuperAdminAndRole(GetPlans));
 router.get("/plans/:id", ...WithSuperAdminAndRole(GetPlanById));

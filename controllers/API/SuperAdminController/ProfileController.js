@@ -6,6 +6,7 @@ const Role = require("../../../models/role"); // adjust the path if needed
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
+const https = require('https');
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
@@ -508,12 +509,100 @@ const UpdatePasswordBySuperAdmin = async (req, res) => {
     });
   }
 };
+
+
+const API_KEY = process.env.RAPIDAPI_KEY || 'your-rapidapi-key';
+
+const GetLocation = async (req, res) => {
+  try {
+    const address = req.query.address;
+    if (!address) {
+      return res.status(400).json({
+        success: false,
+        message: 'Address query parameter is required.',
+      });
+    }
+
+    const encodedAddress = encodeURIComponent(address);
+
+    const options = {
+      method: 'GET',
+      hostname: 'google-map-places.p.rapidapi.com',
+      path: `/maps/api/geocode/json?address=${encodedAddress}&language=en&region=en&result_type=administrative_area_level_1&location_type=GEOMETRIC_CENTER`,
+      headers: {
+        'x-rapidapi-key': API_KEY,  // Use the secure API key
+        'x-rapidapi-host': 'google-map-places.p.rapidapi.com',
+      },
+    };
+
+    // Make the API request
+    const apiReq = https.request(options, (apiRes) => {
+      let data = '';
+
+      // Collect the data chunks
+      apiRes.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      // Handle the response after receiving all chunks
+      apiRes.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+
+          // Check for a successful response from the API
+          if (result.status === 'OK') {
+            return res.status(200).json({
+              success: true,
+              address: address,
+              locationData: result,
+            });
+          } else {
+            return res.status(404).json({
+              success: false,
+              message: 'Location not found.',
+            });
+          }
+        } catch (err) {
+          console.error('Error parsing API response:', err);
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to parse response.',
+            error: err.message,
+          });
+        }
+      });
+    });
+
+    // Handle request errors
+    apiReq.on('error', (e) => {
+      console.error('API Request Error:', e.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Error contacting Google Maps API',
+        error: e.message,
+      });
+    });
+
+    // End the request
+    apiReq.end();
+  } catch (error) {
+    console.error('Unhandled error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
+
 module.exports = {
   SuperAdminProfile,
   CheckPingSessionActivity,
   ForgetPassword,
   UpdatePassword,
   GetAllRoles,
+  GetLocation,
   SuperAdminLogout,
   SendEmailForgetPassword,
   UpdatePasswordBySuperAdmin,

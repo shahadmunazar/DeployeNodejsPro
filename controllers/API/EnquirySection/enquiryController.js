@@ -204,7 +204,7 @@ const UpdateInquiry = async (req, res) => {
     const currentUser = req.user;
     console.log("Current User:", currentUser);
     if (!currentUser) {
-      return res.status(401).json({
+      return res.status(400).json({
         message: "User not authorized to update the enquiry.",
       });
     }
@@ -212,13 +212,13 @@ const UpdateInquiry = async (req, res) => {
       where: { id: enquiryId },
     });
     if (!enquiry) {
-      return res.status(404).json({
+      return res.status(400).json({
         message: "Enquiry not found",
       });
     }
     if (enquiry.status === status) {
-      return res.status(403).json({
-        status: 403,
+      return res.status(400).json({
+        status: 400,
         message: "No status change detected.",
       });
     }
