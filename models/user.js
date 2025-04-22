@@ -14,6 +14,14 @@ User.init(
   {
     name: DataTypes.STRING,
     email: { type: DataTypes.STRING, allowNull: true, unique: true },
+    phone: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    address: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     username: { type: DataTypes.STRING, allowNull: true, unique: true },
     password: { type: DataTypes.STRING, allowNull: false },
     otp: { type: DataTypes.STRING, allowNull: true },

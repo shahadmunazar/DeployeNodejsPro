@@ -512,6 +512,49 @@ const GetLocation = async (req, res) => {
 };
 
 
+const ProfileUpdate = async (req, res) => {
+  try {
+    const { name, email, phone, address } = req.body;
+
+    // 🔐 Get user ID from authenticated token/middleware
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(400).json({ message: 'Unauthorized' });
+    }
+
+    // 🔎 Fetch the user from the database
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(400).json({ message: 'User not found' });
+    }
+
+    // ✅ Update fields if provided
+    await user.update({
+      name: name ?? user.name,
+      email: email ?? user.email,
+      phone: phone ?? user.phone,
+      address: address ?? user.address,
+    });
+
+    return res.status(200).json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        address: user.address,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    return res.status(500).json({
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   SuperAdminProfile,
   CheckPingSessionActivity,
@@ -519,6 +562,7 @@ module.exports = {
   UpdatePassword,
   GetAllRoles,
   GetLocation,
+  ProfileUpdate,
   SuperAdminLogout,
   SendEmailForgetPassword,
   UpdatePasswordBySuperAdmin,
