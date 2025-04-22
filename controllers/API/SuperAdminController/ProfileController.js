@@ -351,143 +351,56 @@ const SendEmailForgetPassword = async (req, res) => {
 
 const UpdatePasswordBySuperAdmin = async (req, res) => {
   try {
-    const { id, password, confirm_password } = req.body;
+    const { current_password, password, confirm_password } = req.body;
+    const userId = req.user?.id;
 
-    // 1. Validate input fields
-    if (!id) {
-      return res.status(400).json({ message: "User ID is required" });
+    console.log('userId',userId);
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized access" });
     }
-    if (!password || !confirm_password) {
-      return res.status(400).json({ message: "Password and confirm password are required" });
+
+    // 1. Validate input
+    if (!current_password || !password || !confirm_password) {
+      return res.status(400).json({ message: "All password fields are required" });
     }
+
     if (password !== confirm_password) {
       return res.status(400).json({ message: "Password and confirm password must match" });
     }
 
-    // 2. Find the user by ID
-    const user = await User.findByPk(id); // Ensure 'User' model is correctly imported
+    // 2. Find the user
+    const user = await User.findByPk(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // 3. Hash the new password
+    // 3. Check current password
+    const isMatch = await bcrypt.compare(current_password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // 4. Hash the new password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 4. Update the user's password
+    // 5. Update password
     await user.update({ password: hashedPassword });
 
-    // 5. Add email job to the queue to notify the user
+    // 6. Notify user via email
     await emailQueue.add("send-password-update-notification", {
       to: user.email,
       subject: "Your Password Has Been Updated Successfully",
-      text: `
-        Dear ${user.name},
-    
-        Your password has been successfully updated. If you did not request this change, please contact our support team immediately at support@yourdomain.com.
-    
-        Thank you,
-        The Support Team`,
+      text: `Hi ${user.name}, your password has been successfully updated.`,
       html: `
         <html>
-          <head>
-            <style>
-              /* General styles */
-              body {
-                font-family: 'Arial', sans-serif;
-                margin: 0;
-                padding: 0;
-                background-color: #f8f9fa;
-                color: #333;
-              }
-              table {
-                width: 100%;
-                max-width: 600px;
-                margin: 0 auto;
-                background-color: #ffffff;
-                border-radius: 8px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-                padding: 20px;
-              }
-              td {
-                padding: 10px;
-                line-height: 1.6;
-              }
-    
-              h2 {
-                color: #007bff;
-                font-size: 24px;
-                font-weight: bold;
-              }
-    
-              p {
-                font-size: 16px;
-                color: #333;
-              }
-    
-              a {
-                color: #007bff;
-                text-decoration: none;
-              }
-    
-              .footer {
-                font-size: 12px;
-                color: #bbb;
-                text-align: center;
-                margin-top: 20px;
-              }
-    
-              .footer a {
-                color: #007bff;
-              }
-    
-              .alert {
-                font-weight: bold;
-                color: #d9534f;
-              }
-    
-              /* Responsive styles for smaller devices */
-              @media (max-width: 600px) {
-                table {
-                  width: 100%;
-                  padding: 10px;
-                }
-    
-                h2 {
-                  font-size: 20px;
-                }
-    
-                p {
-                  font-size: 14px;
-                }
-    
-                .footer {
-                  font-size: 10px;
-                }
-              }
-            </style>
-          </head>
-          <body>
-            <table>
-              <tr>
-                <td style="text-align: center; padding-bottom: 20px;">
-                  <img src="https://yourdomain.com/logo.png" alt="Your Company" style="max-width: 150px; margin-bottom: 10px;" />
-                  <h2>Your Password Has Been Updated</h2>
-                </td>
-              </tr>
-    
+          <body style="font-family: Arial, sans-serif; background-color: #f6f6f6; padding: 20px;">
+            <table style="max-width: 600px; margin: auto; background: #fff; border-radius: 8px; padding: 20px;">
               <tr>
                 <td>
-                  <p>Dear ${user.name},</p>
-                  <p>Your password has been successfully updated.</p>
-                  <p class="alert">If you did not request this change, please contact us immediately at <a href="mailto:support@yourdomain.com">support@yourdomain.com</a>.</p>
-                  <p>For your security, please make sure this update was done by you. If you believe your account has been compromised, we'll assist you in resolving it.</p>
-                </td>
-              </tr>
-    
-              <tr>
-                <td class="footer">
-                  <p>If you have any questions or concerns, feel free to reach out to us at <a href="mailto:support@yourdomain.com">support@yourdomain.com</a>.</p>
-                  <p>&copy; ${new Date().getFullYear()} Your Company. All rights reserved.</p>
+                  <h2 style="color: #007bff;">Password Updated</h2>
+                  <p>Hi ${user.name},</p>
+                  <p>Your password has been successfully updated. If you didn’t request this, please contact us immediately at <a href="mailto:support@yourdomain.com">support@yourdomain.com</a>.</p>
+                  <p>Thanks,<br />The Support Team</p>
                 </td>
               </tr>
             </table>
@@ -496,10 +409,13 @@ const UpdatePasswordBySuperAdmin = async (req, res) => {
       `,
     });
 
-    // 6. Return a success message
+    // 7. Respond
     return res.status(200).json({
       message: "Password updated successfully",
-      user: { id: user.id, email: user.email },
+      user: {
+        id: user.id,
+        email: user.email,
+      },
     });
   } catch (error) {
     console.error("Error updating password:", error);
