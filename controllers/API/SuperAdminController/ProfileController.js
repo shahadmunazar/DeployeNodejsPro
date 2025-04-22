@@ -6,13 +6,15 @@ const Role = require("../../../models/role"); // adjust the path if needed
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
+
 const https = require('https');
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
 const RefreshToken = require("../../../models/refreshToken")(sequelize, DataTypes);
 const { sendPasswordResetEmail } = require("../../../utils/sendPasswordResetEmail");
-
+const Organization = require("../../../models/organization")(sequelize, DataTypes);
+const OrganizationSubscribeUser = require("../../../models/organization_subscribeuser")(sequelize, DataTypes);
 const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
 const SuperAdminProfile = async (req, res) => {
   try {
@@ -512,23 +514,22 @@ const GetLocation = async (req, res) => {
 };
 
 
+
+
 const ProfileUpdate = async (req, res) => {
   try {
     const { name, email, phone, address } = req.body;
 
-    // 🔐 Get user ID from authenticated token/middleware
     const userId = req.user?.id;
     if (!userId) {
       return res.status(400).json({ message: 'Unauthorized' });
     }
 
-    // 🔎 Fetch the user from the database
     const user = await User.findByPk(userId);
     if (!user) {
       return res.status(400).json({ message: 'User not found' });
     }
 
-    // ✅ Update fields if provided
     await user.update({
       name: name ?? user.name,
       email: email ?? user.email,
@@ -555,6 +556,54 @@ const ProfileUpdate = async (req, res) => {
   }
 };
 
+const DashBoard = async (req, res) => {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    // 🔢 Total counts
+    const totalOrganizations = await Organization.count();
+    const totalSubscribers = await OrganizationSubscribeUser.count();
+
+    // 📆 Today's counts
+    const todayOrganizations = await Organization.count({
+      where: {
+        createdAt: {
+          [Op.between]: [todayStart, todayEnd],
+        },
+      },
+    });
+
+    const todaySubscribers = await OrganizationSubscribeUser.count({
+      where: {
+        createdAt: {
+          [Op.between]: [todayStart, todayEnd],
+        },
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalOrganizations,
+        todayOrganizations,
+        totalSubscribers,
+        todaySubscribers,
+      },
+    });
+  } catch (error) {
+    console.error('Dashboard error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   SuperAdminProfile,
   CheckPingSessionActivity,
@@ -563,6 +612,7 @@ module.exports = {
   GetAllRoles,
   GetLocation,
   ProfileUpdate,
+  DashBoard,
   SuperAdminLogout,
   SendEmailForgetPassword,
   UpdatePasswordBySuperAdmin,
