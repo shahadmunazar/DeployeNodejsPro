@@ -658,14 +658,26 @@ const DashBoard = async (req, res) => {
 
 const Activetwofa = async (req, res) => {
   try {
-    const { email, is_two_factor_enabled } = req.body;
-    if (!email || typeof is_two_factor_enabled !== "boolean") {
+    const userId = req.user?.id; 
+    console.log('user',req.user);
+    const { is_two_factor_enabled } = req.body;
+
+    if (typeof is_two_factor_enabled !== "boolean") {
       return res.status(400).json({
         status: 400,
-        message: "Email and is_two_factor_enabled (true or false) are required.",
+        message: "is_two_factor_enabled (true or false) is required.",
       });
     }
-    const user = await User.findOne({ where: { email } });
+
+    if (!userId) {
+      return res.status(401).json({
+        status: 401,
+        message: "Unauthorized. User not logged in.",
+      });
+    }
+
+    // Find user by ID
+    const user = await User.findByPk(userId);
 
     if (!user) {
       return res.status(404).json({
@@ -673,11 +685,15 @@ const Activetwofa = async (req, res) => {
         message: "User not found.",
       });
     }
+
+    // Update 2FA status
     await user.update({ is_two_factor_enabled });
+
     return res.status(200).json({
       status: 200,
-      message: `Two-factor authentication has been ${is_two_factor_enabled ? "enabled" : "disabled"} for user.`,
+      message: `Two-factor authentication has been ${is_two_factor_enabled ? "enabled" : "disabled"}.`,
       response: {
+        id: user.id,
         email: user.email,
         is_two_factor_enabled: user.is_two_factor_enabled,
       },
@@ -692,6 +708,8 @@ const Activetwofa = async (req, res) => {
     });
   }
 };
+
+ 
 
 
 module.exports = {
