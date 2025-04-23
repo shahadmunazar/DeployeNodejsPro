@@ -711,6 +711,45 @@ const Activetwofa = async (req, res) => {
 
  
 
+const GetStatusOfMultiFactor = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        status: 401,
+        message: "Unauthorized. User not logged in.",
+      });
+    }
+
+    const user = await User.findByPk(userId, {
+      attributes: ['is_two_factor_enabled'],
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 404,
+        message: "User not found.",
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Two-factor authentication status fetched successfully.",
+      response: {
+        is_two_factor_enabled: user.is_two_factor_enabled,
+      },
+    });
+
+  } catch (error) {
+    console.error("Get 2FA Status Error:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error.",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
   SuperAdminProfile,
@@ -725,5 +764,6 @@ module.exports = {
   SendEmailForgetPassword,
   ConfirmEmailChange,
   UpdatePasswordBySuperAdmin,
-  Activetwofa
+  Activetwofa,
+  GetStatusOfMultiFactor
 };

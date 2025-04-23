@@ -15,7 +15,7 @@ const {
   ProfileUpdate,
   ConfirmEmailChange,
   DashBoard,
-  Activetwofa
+  Activetwofa,GetStatusOfMultiFactor
 } = require("../controllers/API/SuperAdminController/ProfileController");
 const { CreateIndustry, SoftDeleteIndustry, UpdateIndustry, GetIndustryById, GetAllIndustries } = require("../controllers/API/SuperAdminController/IndustryController");
 const { CreatePlans, GetPlans, GetPlanById, UpdatePlan, DeletePlan, TogglePlanStatus } = require("../controllers/API/SuperAdminController/PlansController");
@@ -75,6 +75,7 @@ router.get("/get-dashboard", ...WithSuperAdminAndRole(DashBoard));
 router.post("/send-email-changed", ...WithSuperAdminAndRole(SendEmailForgetPassword));
 router.put("/confirm-email-changed", ...WithSuperAdminAndRole(ConfirmEmailChange));
 router.put("/active-multi-factor", ...WithSuperAdminAndRole(Activetwofa));
+router.get("/get-status-of-multifactor", ...WithSuperAdminAndRole(GetStatusOfMultiFactor));
 router.post("/superadmin-logout", ...WithSuperAdminAndRole(SuperAdminLogout));
 
 //Create For Plan's
