@@ -13,7 +13,9 @@ const {
   SendEmailForgetPassword,
   UpdatePasswordBySuperAdmin,
   ProfileUpdate,
-  DashBoard
+  ConfirmEmailChange,
+  DashBoard,
+  Activetwofa
 } = require("../controllers/API/SuperAdminController/ProfileController");
 const { CreateIndustry, SoftDeleteIndustry, UpdateIndustry, GetIndustryById, GetAllIndustries } = require("../controllers/API/SuperAdminController/IndustryController");
 const { CreatePlans, GetPlans, GetPlanById, UpdatePlan, DeletePlan, TogglePlanStatus } = require("../controllers/API/SuperAdminController/PlansController");
@@ -70,8 +72,9 @@ router.delete("/industries/:id", ...WithSuperAdminAndRole(SoftDeleteIndustry));
 router.put("/update-password-by-superadmin", ...WithSuperAdminAndRole(UpdatePasswordBySuperAdmin));
 router.put("/profile-update", ...WithSuperAdminAndRole(ProfileUpdate));
 router.get("/get-dashboard", ...WithSuperAdminAndRole(DashBoard));
-router.post("/send-forget-password-to", ...WithSuperAdminAndRole(SendEmailForgetPassword));
-
+router.post("/send-email-changed", ...WithSuperAdminAndRole(SendEmailForgetPassword));
+router.put("/confirm-email-changed", ...WithSuperAdminAndRole(ConfirmEmailChange));
+router.put("/active-multi-factor", ...WithSuperAdminAndRole(Activetwofa));
 router.post("/superadmin-logout", ...WithSuperAdminAndRole(SuperAdminLogout));
 
 //Create For Plan's

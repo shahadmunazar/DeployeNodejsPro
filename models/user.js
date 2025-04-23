@@ -14,9 +14,14 @@ User.init(
   {
     name: DataTypes.STRING,
     email: { type: DataTypes.STRING, allowNull: true, unique: true },
+    new_email: { type: DataTypes.STRING, allowNull: true},
     phone: {
       type: DataTypes.STRING,
       allowNull: true,
+    },
+    is_two_factor_enabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
     address: {
       type: DataTypes.STRING,
