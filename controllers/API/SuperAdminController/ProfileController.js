@@ -736,7 +736,7 @@ const GetStatusOfMultiFactor = async (req, res) => {
     return res.status(200).json({
       status: 200,
       message: "Two-factor authentication status fetched successfully.",
-      response: {
+      data: {
         is_two_factor_enabled: user.is_two_factor_enabled,
       },
     });
