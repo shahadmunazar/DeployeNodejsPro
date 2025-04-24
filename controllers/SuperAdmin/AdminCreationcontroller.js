@@ -259,7 +259,7 @@ const UpdateUsers = async (req, res) => {
         return res.status(400).json({ message: "Invalid Role ID" });
       }
       await UserRole.update({ roleId: role }, { where: { userId: id } });
-      console.log("✅ UserRole Updated Successfully");
+      console.log("Step UserRole Updated Successfully");
     }
 
     // *Fetch Updated User with Role*
@@ -297,7 +297,7 @@ const UpdateUsers = async (req, res) => {
     };
     res.status(200).json({ message: "User Updated Successfully", data: formattedUser });
   } catch (error) {
-    console.error("❌ Error updating user:", error);
+    console.error(" Error updating user:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };

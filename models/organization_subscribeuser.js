@@ -53,7 +53,7 @@ subscription_status: {
     paranoid: true
   });
 
-  // ✅ Associations go here
+  // Step Associations go here
   OrganizationSubscribeUser.associate = (models) => {
     // Association to Organization (backlink from OrganizationSubscribeUser to Organization)
     OrganizationSubscribeUser.belongsTo(models.Organization, {

@@ -12,7 +12,7 @@ const SubscriberActivityLog = require("../../../models/subscriberactivitylog")(s
 const Industry = require("../../../models/industry")(sequelize, DataTypes);
 const Plan = require("../../../models/AllPlans")(sequelize, DataTypes);
 
-// ✅ Validation
+// Step Validation
 const validateOrganization = [
   body("organization_name").notEmpty().withMessage("Organization name is required"),
   body("industryId").optional().isInt().withMessage("Industry ID must be a number"),
@@ -202,7 +202,7 @@ const CreateOrganization = async (req, res) => {
   }
 };
 
-// ✅ Password Generator
+
 function generateTempPassword(length = 10) {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lower = "abcdefghijklmnopqrstuvwxyz";
@@ -285,7 +285,7 @@ const GetAllOrganization = async (req, res) => {
       const roles = await Promise.all(rolesPromises);
       const flattenedRoles = roles.flat().filter(role => role);
 
-      // ✅ Get Industry name
+      // Step Get Industry name
       let industryName = null;
       if (organization.industryId) {
         const industry = await Industry.findOne({
@@ -295,7 +295,7 @@ const GetAllOrganization = async (req, res) => {
         industryName = industry ? industry.name : null;
       }
 
-      // ✅ Get Plan name
+      // Step Get Plan name
       let planName = null;
       if (organization.plan_id) {
         const plan = await Plan.findOne({
@@ -309,9 +309,9 @@ const GetAllOrganization = async (req, res) => {
         id: organization.id,
         organization_name: organization.organization_name,
         industryId: organization.industryId,
-        industry_name: industryName, // ✅ Added industry name
+        industry_name: industryName, // Step Added industry name
         plan_id: organization.plan_id,
-        plan_name: planName, // ✅ Added plan name
+        plan_name: planName, // Step Added plan name
         contact_phone_number: organization.contact_phone_number,
         number_of_employees: organization.number_of_employees,
         registration_id: organization.registration_id,
@@ -404,7 +404,7 @@ const GetOrgnizationById = async (req, res) => {
     const roles = await Promise.all(rolesPromises);
     const flattenedRoles = roles.flat().filter(role => role);
 
-    // ✅ Get Industry name
+    // Step Get Industry name
     let industryName = null;
     if (organization.industryId) {
       const industry = await Industry.findOne({
@@ -414,7 +414,7 @@ const GetOrgnizationById = async (req, res) => {
       industryName = industry ? industry.name : null;
     }
 
-    // ✅ Get Plan name
+    // Step Get Plan name
     let planName = null;
     if (organization.plan_id) {
       const plan = await Plan.findOne({
@@ -503,7 +503,7 @@ const UpdateOrginzation = async (req, res) => {
       user_name,
     } = req.body;
 
-    // 🖼️ Handle updated files
+    //  Handle updated files
     if (req.files?.logo) {
       organization.logo = req.files.logo[0].path;
     }
@@ -511,7 +511,7 @@ const UpdateOrginzation = async (req, res) => {
       organization.agreement_paper = req.files.agreement_paper[0].path;
     }
 
-    // 📦 Update organization fields conditionally
+    //  Update organization fields conditionally
     const orgFields = {
       organization_name,
       industryId,
@@ -531,7 +531,7 @@ const UpdateOrginzation = async (req, res) => {
 
     await organization.save();
 
-    // 👤 Update user if exists
+    //  Update user if exists
     let adminUser = null;
     let newUserRole = null;
     let subscription = null;
@@ -550,7 +550,7 @@ const UpdateOrginzation = async (req, res) => {
 
         await adminUser.save();
 
-        // 🧑‍⚖️ Update user role
+        //  Update user role
         // if (role_id) {
         //   await UserRoles.destroy({ where: { userId: adminUser.id } });
         //   newUserRole = await UserRoles.create({
@@ -559,7 +559,7 @@ const UpdateOrginzation = async (req, res) => {
         //   });
         // }
 
-        // 📅 Update subscription
+        //  Update subscription
         if (plan_id) {
           subscription = await OrganizationSubscribeUser.findOne({
             where: { user_id: adminUser.id, org_id: organization.id },
@@ -585,7 +585,7 @@ const UpdateOrginzation = async (req, res) => {
       subscription,
     });
   } catch (error) {
-    console.error("❌ Error in UpdateOrganization:", error);
+    console.error(" Error in UpdateOrganization:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -675,7 +675,7 @@ const ManagmentOrginazation = async (req, res) => {
       const roles = await Promise.all(rolesPromises);
       const flattenedRoles = roles.flat().filter(role => role);
 
-      // ✅ Industry
+      // Step Industry
       let industryName = null;
       if (organization.industryId) {
         const industry = await Industry.findOne({
@@ -694,13 +694,13 @@ const ManagmentOrginazation = async (req, res) => {
           attributes: ["id", "name"],
         });
         planName = plan ? plan.name : null;
-        console.log(`✅ Org ID: ${organization.id} → Plan Name: ${planName}`);
+        console.log(`Step Org ID: ${organization.id} → Plan Name: ${planName}`);
         if (plan_type && planName !== plan_type) {
-          console.log(`❌ Skipping Org ID: ${organization.id} - Plan mismatch`);
+          console.log(` Skipping Org ID: ${organization.id} - Plan mismatch`);
           return null;
         }
       } else if (plan_type) {
-        console.log(`❌ Skipping Org ID: ${organization.id} - No plan, but filter applied`);
+        console.log(` Skipping Org ID: ${organization.id} - No plan, but filter applied`);
         return null;
       }
 
@@ -1122,7 +1122,7 @@ const GetActivityLogDetails = async (req, res) => {
     //   });
     // }
 
-    // ✅ Structured Response
+    // Step Structured Response
     return res.status(200).json({
       success: true,
       message: "Activity logs and subscriber details retrieved successfully.",

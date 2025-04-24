@@ -157,17 +157,17 @@ router.get("/manager", authenticateUser, authorizeRoles("manager"), (req, res) =
   res.json({ message: "Welcome Manager!" });
 });
 
-// ✅ Officer Route
+// Step Officer Route
 router.get("/officer", authenticateUser, authorizeRoles("officer"), (req, res) => {
   res.json({ message: "Welcome Officer!" });
 });
 
-// ✅ Technician Route
+// Step Technician Route
 router.get("/technician", authenticateUser, authorizeRoles("technician"), (req, res) => {
   res.json({ message: "Welcome Technician!" });
 });
 
-// ✅ Compliance Route
+// Step Compliance Route
 router.get("/compliance", authenticateUser, authorizeRoles("compliance"), (req, res) => {
   res.json({ message: "Welcome Compliance Officer!" });
 });

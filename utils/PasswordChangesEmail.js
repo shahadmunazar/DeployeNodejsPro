@@ -51,7 +51,7 @@ const PasswordChangesEmail = async ({ email, name }) => {
     await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
-    console.error('❌ Failed to send password change email:', error);
+    console.error(' Failed to send password change email:', error);
     return false;
   }
 };

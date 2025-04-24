@@ -6,7 +6,6 @@ const Role = require("../../../models/role"); // adjust the path if needed
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
-
 const https = require("https");
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
@@ -410,7 +409,7 @@ const UpdatePasswordBySuperAdmin = async (req, res) => {
   try {
     const { email, current_password, password, confirm_password } = req.body;
 
-    // 🛡 Validate input
+    
     if (!email || !current_password || !password || !confirm_password) {
       return res.status(400).json({ message: "All fields are required." });
     }

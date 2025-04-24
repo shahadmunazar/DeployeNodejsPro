@@ -29,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
     paranoid: true
   });
 
-  // ✅ Associations should be defined here
+  // Step Associations should be defined here
   Organization.associate = (models) => {
     Organization.hasMany(models.OrganizationSubscribeUser, {
       foreignKey: 'org_id',

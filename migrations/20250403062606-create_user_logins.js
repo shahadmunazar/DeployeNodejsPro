@@ -43,7 +43,7 @@ module.exports = {
               type: Sequelize.DATE,
               defaultValue: Sequelize.NOW
           },
-          logout_at: {  // ✅ New field to track logout time
+          logout_at: {  // Step New field to track logout time
             type: Sequelize.DATE,
             allowNull: true, // Initially null until user logs out
         },

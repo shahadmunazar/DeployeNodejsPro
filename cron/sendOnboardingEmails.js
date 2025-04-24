@@ -69,7 +69,7 @@ const sendPendingOnboardingEmails = async () => {
 
         if (emailSent) {
           await user.update({ onboarding_email_sent: true });
-          console.log(`✅ Onboarding email sent to ${user.email}`);
+          console.log(`Step Onboarding email sent to ${user.email}`);
         } else {
           console.warn(`⚠️ Failed to send onboarding email to ${user.email}`);
         }
@@ -83,7 +83,7 @@ const sendPendingOnboardingEmails = async () => {
 
         if (emailSent) {
           await user.update({ passwordChanged: false });
-          console.log(`✅ Password change email sent to ${user.email}`);
+          console.log(`Step Password change email sent to ${user.email}`);
         } else {
           console.warn(`⚠️ Failed to send password change email to ${user.email}`);
         }
@@ -91,7 +91,7 @@ const sendPendingOnboardingEmails = async () => {
     }
 
   } catch (error) {
-    console.error('❌ Error in onboarding cron job:', error);
+    console.error(' Error in onboarding cron job:', error);
   }
 };
 

@@ -63,6 +63,7 @@ const UpdateIndustry = async (req, res) => {
     return res.status(500).json({ message: "Server Error", error });
   }
 };
+
 const SoftDeleteIndustry = async (req, res) => {
   const { id } = req.params;
 

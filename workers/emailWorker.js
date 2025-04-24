@@ -34,9 +34,9 @@ const worker = new Worker('email-queue', async (job) => {
       text,
       html,
     });
-    console.log(`✅ Email sent to ${to}`);
+    console.log(`Step Email sent to ${to}`);
   } catch (err) {
-    console.error(`❌ Failed to send email to ${to}: ${err.message}`);
+    console.error(` Failed to send email to ${to}: ${err.message}`);
     console.error('Full error:', err);  // Log the full error for debugging
     throw err; // Rethrow so the job is marked as failed
   }
