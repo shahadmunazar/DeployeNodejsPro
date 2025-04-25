@@ -766,13 +766,20 @@ const SendONBoardingEmail = async (req, res) => {
       onboarding_email_sent: false,
       passwordChanged: true
     });
-    return res.status(200).json({ message: 'User status updated successfully.' });
+    return res.status(200).json({ status:200,message: 'User status updated successfully.' });
 
   } catch (error) {
     console.error('Error in SendONBoardingEmail:', error);
     return res.status(500).json({ message: 'Internal server error.' });
   }
 };
+
+const SendEmailAgain =async(req,res) =>{try {
+  const {email} = req.body;
+
+} catch (error) {
+  
+}}
 
 module.exports = {
   SuperAdminProfile,
@@ -788,5 +795,5 @@ module.exports = {
   ConfirmEmailChange,
   UpdatePasswordBySuperAdmin,
   Activetwofa,
-  GetStatusOfMultiFactor,SendONBoardingEmail
+  GetStatusOfMultiFactor,SendONBoardingEmail,SendEmailAgain
 };
