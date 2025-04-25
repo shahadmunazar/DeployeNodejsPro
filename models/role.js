@@ -10,4 +10,6 @@ Role.init(
   { sequelize, modelName: "Role" }
 );
 
+
+
 module.exports = Role;
