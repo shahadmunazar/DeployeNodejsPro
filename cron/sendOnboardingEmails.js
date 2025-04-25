@@ -47,9 +47,9 @@ const sendPendingOnboardingEmails = async () => {
         attributes: ['organization_name'],
       });
 
-      const orgName = organization?.organization_name?.replace(/\s+/g, '-').toLowerCase() || 'user-login'; // fallback if not found
+      const orgName = organization?.organization_name?.replace(/\s+/g, '-').toLowerCase() || 'user-login';
 
-      const activationLink = `https://naaticcl.visionlanguageexperts.in/${orgName}`;
+      const activationLink = `http://localhost:5173/${orgName}/login`;
 
       // If onboarding email has not been sent
       if (!user.onboarding_email_sent) {
