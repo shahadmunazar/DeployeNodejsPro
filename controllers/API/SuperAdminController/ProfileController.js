@@ -750,6 +750,30 @@ const GetStatusOfMultiFactor = async (req, res) => {
   }
 };
 
+
+const SendONBoardingEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({
+      where: {
+        email: email
+      }
+    });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+    await user.update({
+      onboarding_email_sent: false,
+      passwordChanged: true
+    });
+    return res.status(200).json({ message: 'User status updated successfully.' });
+
+  } catch (error) {
+    console.error('Error in SendONBoardingEmail:', error);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
 module.exports = {
   SuperAdminProfile,
   CheckPingSessionActivity,
@@ -764,5 +788,5 @@ module.exports = {
   ConfirmEmailChange,
   UpdatePasswordBySuperAdmin,
   Activetwofa,
-  GetStatusOfMultiFactor
+  GetStatusOfMultiFactor,SendONBoardingEmail
 };

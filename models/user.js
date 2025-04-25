@@ -36,6 +36,10 @@ User.init(
       allowNull: false,
       defaultValue: 0,
     },
+    activation_expires_at: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
     user_status: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

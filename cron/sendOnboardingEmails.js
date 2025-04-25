@@ -1,5 +1,3 @@
-// cron/sendOnboardingEmails.js
-
 const User = require('../models/user');
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
@@ -13,14 +11,51 @@ const { Op } = require('sequelize');
 
 const sendPendingOnboardingEmails = async () => {
   try {
-    console.log("🔁 Running onboarding email cron job...");
+    console.log("Running onboarding email cron job...");
 
+    const currentTime = new Date(); // Get the current time
+    console.log(`Current time: ${currentTime.toISOString()}`);
+
+    // Step 1: Check and update expired users
+    const expiredUsers = await User.findAll({
+      where: {
+        onboarding_email_sent: true,
+        invitation_status: 'sent',
+        activation_expires_at: {
+          [Op.lt]: currentTime, // Check if activation_expires_at is less than the current date
+        },
+      },
+    });
+
+    // Update users whose invitations have expired
+    for (const user of expiredUsers) {
+      const activationExpiresAt = new Date(user.activation_expires_at);
+      console.log(`User: ${user.email} - Activation expires at: ${activationExpiresAt.toISOString()}`);
+
+      // Calculate the difference in milliseconds
+      const timeDifference = currentTime - activationExpiresAt; 
+
+      // Convert difference to minutes or seconds
+      const diffInMinutes = Math.floor(timeDifference / (1000 * 60));
+      const diffInSeconds = Math.floor(timeDifference / 1000);
+
+      // Print the time difference
+      console.log(`Time difference for ${user.email}: ${diffInMinutes} minutes (${diffInSeconds} seconds)`);
+
+      await user.update({
+        invitation_status: 'expired',
+        activation_expires_at:null
+      });
+      console.log(`Invitation expired for user ${user.email}`);
+    }
+
+    // Step 2: Fetch users who have not received an onboarding email or whose password was changed
     const users = await User.findAll({
       where: {
         [Op.or]: [
           { onboarding_email_sent: false },
-          { passwordChanged: true }
-        ]
+          { passwordChanged: true },
+        ],
       },
       include: [
         {
@@ -31,33 +66,33 @@ const sendPendingOnboardingEmails = async () => {
       ],
     });
 
+    // Step 3: Process each user and handle email sending
     for (const user of users) {
       // Skip users without an email
       if (!user.email) {
-        console.warn(`⚠️ Skipping user (ID: ${user.id}) - email is missing.`);
+        console.warn(`Skipping user (ID: ${user.id}) - email is missing.`);
         continue;
       }
 
       const tempPassword = generateTempPassword();
       const activationToken = generateActivationToken(user.email);
 
-      // 🔍 Fetch organization using user_id
+      // Fetch organization using user_id
       const organization = await Organization.findOne({
         where: { user_id: user.id },
         attributes: ['organization_name'],
       });
 
       const orgName = organization?.organization_name?.replace(/\s+/g, '-').toLowerCase() || 'user-login';
-
       const activationLink = `http://localhost:5173/${orgName}/login`;
 
-      // If onboarding email has not been sent
+      // Step 4: If onboarding email has not been sent, send onboarding email
       if (!user.onboarding_email_sent) {
         await user.update({
           password: await bcrypt.hash(tempPassword, 10),
           activation_token: activationToken,
-          invitation_status:'sent',
-          activation_expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+          invitation_status: 'sent',
+          activation_expires_at: new Date(Date.now() + 2 * 60 * 1000), // 10 minutes
         });
 
         const emailSent = await sendOnboardingEmail({
@@ -69,12 +104,13 @@ const sendPendingOnboardingEmails = async () => {
 
         if (emailSent) {
           await user.update({ onboarding_email_sent: true });
-          console.log(`Step Onboarding email sent to ${user.email}`);
+          console.log(`Onboarding email sent to ${user.email}`);
         } else {
-          console.warn(`⚠️ Failed to send onboarding email to ${user.email}`);
+          console.warn(`Failed to send onboarding email to ${user.email}`);
         }
 
       } else if (user.passwordChanged === true) {
+        // Step 5: If password was changed, send a password change email
         const emailSent = await PasswordChangesEmail({
           email: user.email,
           name: user.name,
@@ -83,19 +119,19 @@ const sendPendingOnboardingEmails = async () => {
 
         if (emailSent) {
           await user.update({ passwordChanged: false });
-          console.log(`Step Password change email sent to ${user.email}`);
+          console.log(`Password change email sent to ${user.email}`);
         } else {
-          console.warn(`⚠️ Failed to send password change email to ${user.email}`);
+          console.warn(`Failed to send password change email to ${user.email}`);
         }
       }
     }
 
   } catch (error) {
-    console.error(' Error in onboarding cron job:', error);
+    console.error('Error in onboarding cron job:', error);
   }
 };
 
-// 🔐 Generate a strong temporary password
+//  Generate a strong temporary password
 function generateTempPassword(length = 10) {
   const upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
   const lower = 'abcdefghijklmnopqrstuvwxyz';
@@ -117,7 +153,7 @@ function generateTempPassword(length = 10) {
   return password.sort(() => 0.5 - Math.random()).join('');
 }
 
-// 🔐 Generate activation token safely
+//  Generate activation token safely
 function generateActivationToken(email) {
   return crypto
     .createHash('sha256')
