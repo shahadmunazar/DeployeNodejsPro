@@ -15,6 +15,7 @@ const sequelize = require("../config/database"); // adjust path if needed
 const { DataTypes } = require("sequelize");
 const RefreshToken = require("../models/refreshToken")(sequelize, DataTypes);
 const UserLogin = require("../models/user_logins");
+const Organization = require("../models/organization")(sequelize, DataTypes);
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
@@ -25,7 +26,7 @@ const blacklist = new Set(); // Temporary blacklist (or use Redis for persistenc
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    
+
     // Validation checks for email and password
     if (!email || !password) {
       return res.status(403).json({ status: 403, message: "Email or username and password are required." });
@@ -36,11 +37,13 @@ const login = async (req, res) => {
       where: {
         [Op.or]: [{ email }, { username: email }],
       },
-      include: [{
-        model: Role,
-        as: "Roles",
-        attributes: ["id", "name"],
-      }],
+      include: [
+        {
+          model: Role,
+          as: "Roles",
+          attributes: ["id", "name"],
+        },
+      ],
     });
 
     if (!user) {
@@ -52,7 +55,7 @@ const login = async (req, res) => {
     const userRole = user.Roles[0]?.name;
     if (userRole === "organization") {
       const activationExpiresAt = user.activation_expires_at;
-      if (activationExpiresAt) {
+      if (activationExpiresAt || activationExpiresAt == null) {
         const activationTime = new Date(activationExpiresAt);
         if (activationTime < new Date()) {
           return res.status(403).json({ status: 403, message: "Account activation expired. Please Contact To Admin" });
@@ -120,7 +123,7 @@ const login = async (req, res) => {
     });
 
     // Generate JWT and refresh tokens
-    const roles = user.Roles.map(role => role.name);  // Directly using the associated roles
+    const roles = user.Roles.map(role => role.name); // Directly using the associated roles
     const token = jwt.sign({ id: user.id, username: user.username, roles }, "your_secret_key", { expiresIn: "30d" });
     const refreshToken = jwt.sign({ id: user.id, username: user.username, roles }, "your_secret_key", { expiresIn: "30d" });
 
@@ -149,7 +152,6 @@ const login = async (req, res) => {
         roles, // Directly sending the roles
       },
     });
-
   } catch (error) {
     console.error("Login Error:", error);
     return res.status(500).json({
@@ -158,8 +160,6 @@ const login = async (req, res) => {
     });
   }
 };
-
-
 
 // ========================== OTP EMAIL FUNCTION ==========================
 const sendOtpEmail = async (userEmail, otp) => {
@@ -279,7 +279,16 @@ const verifyOtp = async (req, res) => {
 
     // Find user
     const whereClause = email ? { email } : { username };
-    const user = await User.findOne({ where: whereClause });
+    const user = await User.findOne({
+      where: whereClause,
+      include: [
+        {
+          model: Role,
+          as: "Roles",
+          attributes: ["id", "name"],
+        },
+      ],
+    });
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
@@ -304,6 +313,31 @@ const verifyOtp = async (req, res) => {
     }
 
     //
+    const userRole = user.Roles[0]?.name;
+    if (userRole === "organization" && user.invitation_status === "sent") {
+      const organization = await Organization.findOne({
+        where: { id: user.organization_id },
+        attributes: ["organization_name", "contact_phone_number"],
+      });
+
+      await Notification.create({
+        senderId: user.id,
+        receiverId: 1,
+        type: "in-app",
+        category: "INVITE",
+        priority: "normal",
+        title: "New Invitation Request",
+        message: `${user.name} has requested to join ${organization?.organization_name || "an organization"}.`,
+        meta: {
+          userId: user.id,
+          email: user.email,
+          organizationId: organization?.id,
+        },
+      });
+
+      await SendOnBoardingAcceptationEmailtoSuperAdmin(user, organization);
+    }
+
     const clientIp = requestIp.getClientIp(req) || "Unknown IP";
     const agent = useragent.parse(req.headers["user-agent"]);
     const device = agent.device.toString() || "Unknown Device";
@@ -374,6 +408,32 @@ const verifyOtp = async (req, res) => {
   }
 };
 
+const SendOnBoardingAcceptationEmailtoSuperAdmin = async (user, organization) => {
+  return emailQueue.add("sendInvitationEmail", {
+    to: "shahad1932@gmail.com", // You can fetch Super Admin from DB too
+    subject: "Organization Invitation Sent",
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <p><strong>New Invitation Request</strong></p>
+        <p>${user.name} has requested to join the organization:</p>
+
+        <ul>
+          <li><strong>Organization Name:</strong> ${organization?.organization_name}</li>
+          <li><strong>User Email:</strong> ${user.email}</li>
+          <li><strong>Organization Contact:</strong> ${organization?.contact_phone_number || "N/A"}</li>
+        </ul>
+
+        <p>To approve or reject this request:</p>
+        <a href="https://your-panel.com/approve/${
+          user.id
+        }" style="background-color: green; color: white; padding: 10px 15px; text-decoration: none; margin-right: 10px;">Approve</a>
+        <a href="https://your-panel.com/reject/${user.id}" style="background-color: red; color: white; padding: 10px 15px; text-decoration: none;">Reject</a>
+
+        <p>Thanks,<br/>Team</p>
+      </div>
+    `,
+  });
+};
 // ========================== GET CURRENT USER FUNCTION ==========================
 const getCurrentUser = async (req, res) => {
   try {
@@ -419,7 +479,7 @@ const CreateAdminLogout = async (req, res) => {
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
     } catch (err) {
-      return res.status(401).json({ error: "Unauthorized: Invalid token" });
+      return res.status(401).json({ error: "Unauthorized: Invalid tokenS" });
     }
 
     // Find the user

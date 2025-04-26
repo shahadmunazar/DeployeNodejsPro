@@ -20,8 +20,16 @@ module.exports = {
         updatedAt: new Date(),
       },
       {
-        name: "Admin User",
+        name: "Contractor Admin User",
         email: "shahad1932@gmail.com",
+        username: "contractor_admin_user",
+        password: await bcrypt.hash("Contractoradmin123", 10),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        name: "Admin User",
+        email: "shahad1932a@gmail.com",
         username: "admin_user",
         password: await bcrypt.hash("admin123", 10),
         createdAt: new Date(),

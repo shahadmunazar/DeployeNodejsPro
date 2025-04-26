@@ -234,6 +234,7 @@ const SuperAdminLogout = async (req, res) => {
 
     // Verify the token
     let decoded;
+    console.log("Decoded",decoded);
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
     } catch (err) {
