@@ -1,8 +1,8 @@
 const { tryCatch } = require("bullmq");
-const Plan =  require("../../../models/AllPlans");
-// const sequelize = require("../../../config/database"); // adjust path if needed
-// const { DataTypes } = require("sequelize");
-// const Plan = require("../../../models/AllPlans")(sequelize, DataTypes);
+// const Plan =  require("../../../models/AllPlans");
+const sequelize = require("../../../config/database"); // adjust path if needed
+const { DataTypes } = require("sequelize");
+const Plan = require("../../../models/AllPlans")(sequelize, DataTypes);
 const { Op } = require("sequelize");
 
 // Create a new plan
@@ -108,7 +108,7 @@ const GetPlans = async (req, res) => {
       where: whereClause,
       order: [[sort_by, sort_order.toUpperCase()]],
     });
-
+    console.log("Plans", plans);
     res.status(200).json({
       success: true,
       data: plans,
