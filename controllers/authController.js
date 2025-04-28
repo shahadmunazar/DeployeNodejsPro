@@ -16,6 +16,7 @@ const { DataTypes } = require("sequelize");
 const RefreshToken = require("../models/refreshToken")(sequelize, DataTypes);
 const UserLogin = require("../models/user_logins");
 const Organization = require("../models/organization")(sequelize, DataTypes);
+const Notification =  require("../models/notification")(sequelize,DataTypes);
 const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
@@ -60,6 +61,33 @@ const login = async (req, res) => {
         if (activationTime < new Date()) {
           return res.status(403).json({ status: 403, message: "Account activation expired. Please Contact To Admin" });
         }
+
+        // Fetch organization details based on user ID
+        const organization = await Organization.findOne({
+          where: { user_id: user.id },
+          attributes: ["organization_name", "contact_phone_number"]  // Specify the attributes to fetch
+        });
+
+        if (!organization) {
+          return res.status(400).json({ message: "Organization not found" });
+        }
+
+        await Notification.create({
+          senderId: user.id,
+          receiverId: 1,
+          type: "in-app",
+          category: "INVITE",
+          priority: "normal",
+          title: "New Invitation Request",
+          message: `${user.name} has requested to join ${organization.organization_name || "an organization"}.`,
+          meta: {
+            userId: user.id,
+            email: user.email,
+            organizationId: organization.id,
+          },
+        });
+
+        await SendOnBoardingAcceptationEmailtoSuperAdmin(user, organization);
       }
     }
 
@@ -312,40 +340,42 @@ const verifyOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    //
     const userRole = user.Roles[0]?.name;
-    if (userRole === "organization" && user.invitation_status === "sent") {
-      // Check if organization_id is available before querying
-      if (!user.organization_id) {
-        return res.status(400).json({ message: "User is not associated with an organization" });
+    if (userRole === "organization") {
+      const activationExpiresAt = user.activation_expires_at;
+      if (activationExpiresAt || activationExpiresAt == null) {
+        const activationTime = new Date(activationExpiresAt);
+        if (activationTime < new Date()) {
+          return res.status(403).json({ status: 403, message: "Account activation expired. Please Contact To Admin" });
+        }
+
+        // Fetch organization details based on user ID
+        const organization = await Organization.findOne({
+          where: { user_id: user.id },
+          attributes: ["organization_name", "contact_phone_number"]  // Specify the attributes to fetch
+        });
+
+        if (!organization) {
+          return res.status(400).json({ message: "Organization not found" });
+        }
+
+        await Notification.create({
+          senderId: user.id,
+          receiverId: 1,
+          type: "in-app",
+          category: "INVITE",
+          priority: "normal",
+          title: "New Invitation Request",
+          message: `${user.name} has requested to join ${organization.organization_name || "an organization"}.`,
+          meta: {
+            userId: user.id,
+            email: user.email,
+            organizationId: organization.id,
+          },
+        });
+
+        await SendOnBoardingAcceptationEmailtoSuperAdmin(user, organization);
       }
-
-      // Query the Organization
-      const organization = await Organization.findOne({
-        where: { id: user.organization_id },
-        attributes: ["organization_name", "contact_phone_number"],
-      });
-
-      if (!organization) {
-        return res.status(400).json({ message: "Organization not found" });
-      }
-
-      await Notification.create({
-        senderId: user.id,
-        receiverId: 1,
-        type: "in-app",
-        category: "INVITE",
-        priority: "normal",
-        title: "New Invitation Request",
-        message: `${user.name} has requested to join ${organization?.organization_name || "an organization"}.`,
-        meta: {
-          userId: user.id,
-          email: user.email,
-          organizationId: organization?.id,
-        },
-      });
-
-      await SendOnBoardingAcceptationEmailtoSuperAdmin(user, organization);
     }
 
     const clientIp = requestIp.getClientIp(req) || "Unknown IP";
@@ -395,7 +425,7 @@ const verifyOtp = async (req, res) => {
     await RefreshToken.create({
       userId: user.id,
       token: refreshToken,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 7 days
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
     });
 
     res.json({
