@@ -3,7 +3,7 @@ const User = require("../models/user");
 const sequelize = require("../config/database");
 const { DataTypes } = require("sequelize");
 
-const RefreshToken = require("../models/refreshToken")(sequelize, DataTypes);
+const RefreshToken = require("../models/refreshToken");
 
 const authenticateUser = async (req, res, next) => {
   try {

@@ -4,6 +4,7 @@ module.exports = (sequelize, DataTypes) => {
     invited_by: {
       type: DataTypes.INTEGER,
       allowNull: true
+      // You can define associations later to link this to the User model
     },
     contractor_email: {
       type: DataTypes.STRING,
@@ -40,8 +41,10 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     tableName: 'contractor_invitations',
     timestamps: true,
-    paranoid: true 
+    paranoid: true // enables deletedAt (soft delete)
   });
+
+  // Associations (optional)
   ContractorInvitation.associate = function(models) {
     ContractorInvitation.belongsTo(models.User, {
       foreignKey: 'invited_by',

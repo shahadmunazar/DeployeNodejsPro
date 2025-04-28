@@ -1,6 +1,6 @@
 const sequelize = require("../../../config/database"); // adjust path if needed
 const { DataTypes } = require("sequelize");
-const Industry = require("../../../models/industry")(sequelize, DataTypes);
+const Industry = require("../../../models/industry");
 const CreateIndustry = async (req, res) => {
   try {
     const { name } = req.body;

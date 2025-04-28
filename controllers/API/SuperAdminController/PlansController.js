@@ -1,7 +1,8 @@
 const { tryCatch } = require("bullmq");
-const sequelize = require("../../../config/database"); // adjust path if needed
-const { DataTypes } = require("sequelize");
-const Plan = require("../../../models/AllPlans")(sequelize, DataTypes);
+const Plan =  require("../../../models/AllPlans");
+// const sequelize = require("../../../config/database"); // adjust path if needed
+// const { DataTypes } = require("sequelize");
+// const Plan = require("../../../models/AllPlans")(sequelize, DataTypes);
 const { Op } = require("sequelize");
 
 // Create a new plan
