@@ -315,10 +315,20 @@ const verifyOtp = async (req, res) => {
     //
     const userRole = user.Roles[0]?.name;
     if (userRole === "organization" && user.invitation_status === "sent") {
+      // Check if organization_id is available before querying
+      if (!user.organization_id) {
+        return res.status(400).json({ message: "User is not associated with an organization" });
+      }
+
+      // Query the Organization
       const organization = await Organization.findOne({
         where: { id: user.organization_id },
         attributes: ["organization_name", "contact_phone_number"],
       });
+
+      if (!organization) {
+        return res.status(400).json({ message: "Organization not found" });
+      }
 
       await Notification.create({
         senderId: user.id,
@@ -407,6 +417,7 @@ const verifyOtp = async (req, res) => {
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
 
 const SendOnBoardingAcceptationEmailtoSuperAdmin = async (user, organization) => {
   return emailQueue.add("sendInvitationEmail", {

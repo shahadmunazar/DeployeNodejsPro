@@ -92,7 +92,7 @@ const sendPendingOnboardingEmails = async () => {
           password: await bcrypt.hash(tempPassword, 10),
           activation_token: activationToken,
           invitation_status: 'sent',
-          activation_expires_at: new Date(Date.now() + 2 * 60 * 1000), // 10 minutes
+          activation_expires_at: new Date(Date.now() + 100 * 60 * 1000), // 10 minutes
         });
 
         const emailSent = await sendOnboardingEmail({
