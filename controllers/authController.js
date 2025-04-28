@@ -123,7 +123,7 @@ const login = async (req, res) => {
     });
 
     // Generate JWT and refresh tokens
-    const roles = user.Roles.map(role => role.name).join(', '); // Converts the array into a comma-separated string
+    const roles = user.Roles.map(role => role.name); // Directly using the associated roles
     const token = jwt.sign({ id: user.id, username: user.username, roles }, "your_secret_key", { expiresIn: "30d" });
     const refreshToken = jwt.sign({ id: user.id, username: user.username, roles }, "your_secret_key", { expiresIn: "30d" });
 
@@ -364,13 +364,13 @@ const verifyOtp = async (req, res) => {
     // Fetch user roles
     const userRoles = await UserRole.findAll({ where: { userId: user.id } });
     const roles = userRoles.length
-    ? await Promise.all(
-        userRoles.map(async ur => {
-          const role = await Role.findByPk(ur.roleId);
-          return role ? role.name : null;
-        })
-      ).then(roleNames => roleNames.filter(name => name).join(', ')) 
-    : '';
+      ? await Promise.all(
+          userRoles.map(async ur => {
+            const role = await Role.findByPk(ur.roleId);
+            return role ? role.name : null;
+          })
+        )
+      : [];
 
     // Generate JWT token with roles
     const token = jwt.sign({ id: user.id, username: user.username, roles }, "your_secret_key", { expiresIn: "30d" });
@@ -479,7 +479,7 @@ const CreateAdminLogout = async (req, res) => {
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
     } catch (err) {
-      return res.status(401).json({ error: "Unauthorized: Invalid tokenS" });
+      return res.status(401).json({ error: "Unauthorized: Invalid token" });
     }
 
     // Find the user
