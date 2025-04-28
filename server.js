@@ -10,6 +10,7 @@ const LoginRoutes = require("./routes/authRoutes");
 const path = require('path');
 const SuperAdminRoutes = require("./routes/SuperAdminRoutes");
 const ContractorRoutes  = require("./routes/contractorAdminRoutes");
+const OrginazationRoutes = require("./routes/orginazationAdminRoutes");
 const app = express();
 app.use(cors({
     origin: "*", 
@@ -38,5 +39,6 @@ app.use("/api/superadmin",SuperAdminRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/api", LoginRoutes);
 app.use("/api/contractor", ContractorRoutes);
+app.use("/api/orginazation",OrginazationRoutes)
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

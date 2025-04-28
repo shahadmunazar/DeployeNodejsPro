@@ -177,7 +177,7 @@ const login = async (req, res) => {
           last_login: loginTime,
           is_two_factor_enabled: user.is_two_factor_enabled,
         },
-        roles, // Directly sending the roles
+        roles,
       },
     });
   } catch (error) {
@@ -321,6 +321,7 @@ const verifyOtp = async (req, res) => {
     if (!user) {
       return res.status(400).json({ message: "User not found" });
     }
+
     if (user.user_status === false) {
       return res.status(400).json({
         message: "Account Locked Due to Too Many Failed Attempts. Please Contact Admin",
@@ -341,49 +342,64 @@ const verifyOtp = async (req, res) => {
     }
 
     const userRole = user.Roles[0]?.name;
-    if (userRole === "organization") {
-      const activationExpiresAt = user.activation_expires_at;
-      if (activationExpiresAt || activationExpiresAt == null) {
-        const activationTime = new Date(activationExpiresAt);
-        if (activationTime < new Date()) {
-          return res.status(403).json({ status: 403, message: "Account activation expired. Please Contact To Admin" });
+
+    if (user.invitation_status === "accepted") {
+      console.log("User's invitation is already accepted. Proceeding with login.");
+    } else {
+      if (userRole === "organization") {
+        const activationExpiresAt = user.activation_expires_at;
+
+        if (activationExpiresAt || activationExpiresAt == null) {
+          const activationTime = new Date(activationExpiresAt);
+          if (activationTime < new Date()) {
+            return res.status(403).json({ status: 403, message: "Account activation expired. Please Contact To Admin" });
+          }
+
+          // Fetch organization details based on user ID
+          const organization = await Organization.findOne({
+            where: { user_id: user.id },
+            attributes: ["organization_name", "contact_phone_number"]  // Specify the attributes to fetch
+          });
+
+          if (!organization) {
+            return res.status(400).json({ message: "Organization not found" });
+          }
+
+          // Update invitation status to "accepted" once verified
+          await user.update({
+            invitation_status: "accepted", // Update the invitation status
+          });
+
+          // Send a notification about the invitation request
+          await Notification.create({
+            senderId: user.id,
+            receiverId: 1, // Adjust receiverId if necessary
+            type: "in-app",
+            category: "INVITE",
+            priority: "normal",
+            title: "New Invitation Request",
+            message: `${user.name} has requested to join ${organization.organization_name || "an organization"}.`,
+            meta: {
+              userId: user.id,
+              email: user.email,
+              organizationId: organization.id,
+            },
+          });
+
+          // Send onboarding acceptance email to the super admin
+          await SendOnBoardingAcceptationEmailtoSuperAdmin(user, organization);
         }
-
-        // Fetch organization details based on user ID
-        const organization = await Organization.findOne({
-          where: { user_id: user.id },
-          attributes: ["organization_name", "contact_phone_number"]  // Specify the attributes to fetch
-        });
-
-        if (!organization) {
-          return res.status(400).json({ message: "Organization not found" });
-        }
-
-        await Notification.create({
-          senderId: user.id,
-          receiverId: 1,
-          type: "in-app",
-          category: "INVITE",
-          priority: "normal",
-          title: "New Invitation Request",
-          message: `${user.name} has requested to join ${organization.organization_name || "an organization"}.`,
-          meta: {
-            userId: user.id,
-            email: user.email,
-            organizationId: organization.id,
-          },
-        });
-
-        await SendOnBoardingAcceptationEmailtoSuperAdmin(user, organization);
       }
     }
+
+    // Once the invitation status is processed or verified, proceed to login
 
     const clientIp = requestIp.getClientIp(req) || "Unknown IP";
     const agent = useragent.parse(req.headers["user-agent"]);
     const device = agent.device.toString() || "Unknown Device";
     const browser = agent.family || "Unknown Browser";
     const loginTime = moment().format("YYYY-MM-DD HH:mm:ss");
-    console.log("Login Ip", clientIp);
+
     // Update last_login timestamp
     await user.update({
       login_at: loginTime,
@@ -447,6 +463,7 @@ const verifyOtp = async (req, res) => {
     res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
 
 
 const SendOnBoardingAcceptationEmailtoSuperAdmin = async (user, organization) => {

@@ -50,20 +50,24 @@ const authenticateUser = async (req, res, next) => {
 
 
 const authorizeRoles = (...roles) => {
-    return (req, res, next) => {
-      console.log(req.user);
-      if (!req.user || !Array.isArray(req.user.roles)) {
-        return res.status(403).json({ message: "Access Denied!",status:401 });
-      }
-  
-      const hasRole = req.user.roles.some(role => roles.includes(role));  
-      if (!hasRole) {
-        return res.status(403).json({ message: "Access Denied!",status:401 });
-      }
-  
-      next();
-    };
+  return (req, res, next) => {
+    console.log("Decoded user:", req.user);
+
+    if (!req.user || !Array.isArray(req.user.roles)) {
+      return res.status(403).json({ message: "Access Denied!", status: 403 });
+    }
+
+    const hasRole = req.user.roles.some(role => roles.includes(role));
+    console.log("Has required role?", hasRole);
+
+    if (!hasRole) {
+      return res.status(403).json({ message: "Access Denied!", status: 403 });
+    }
+
+    next();
   };
+};
+
   
 
 module.exports = { authenticateUser, authorizeRoles };
