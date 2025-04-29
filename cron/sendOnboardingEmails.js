@@ -42,11 +42,15 @@ const sendPendingOnboardingEmails = async () => {
       // Print the time difference
       console.log(`Time difference for ${user.email}: ${diffInMinutes} minutes (${diffInSeconds} seconds)`);
 
-      await user.update({
-        invitation_status: 'expired',
-        activation_expires_at:null
-      });
-      console.log(`Invitation expired for user ${user.email}`);
+      if (user.invitation_status !== 'accepted') {
+        await user.update({
+          invitation_status: 'expired',  
+          activation_expires_at: null,
+        });
+        console.log(`Invitation expired for user ${user.email}`);
+      } else {
+        console.log(`Skipping update for ${user.email} because the invitation is accepted.`);
+      }
     }
 
     // Step 2: Fetch users who have not received an onboarding email or whose password was changed
