@@ -84,58 +84,84 @@ const OrginazationAdminLogout = async (req, res) => {
 
 const SendIvitationLinkContractor = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, isResend = false } = req.body;
     const user = req.user;
-    console.log("user",user)
+    const contractor_name = user.name || email;
+
     const token = crypto.randomBytes(64).toString("hex");
     const expiresAt = moment().add(72, "hours").toDate();
-    const checkEmail = await ContractorInvitation.findOne({
-      where: {
-        contractor_email: email,
-      },
+
+    const organization = await Organization.findOne({
+      where: { user_id: user.id },
     });
-    if (checkEmail) {
-      return res.status(400).json({ message: "This email has already been invited." });
+
+    if (!organization) {
+      return res.status(404).json({ message: "Organization not found." });
     }
+
+    const existing = await ContractorInvitation.findOne({
+      where: { contractor_email: email, status: "pending" },
+    });
+
+    // Case 1: Existing invite found, and it's not a resend request
+    if (existing && !isResend) {
+      await ContractorInvitation.update(
+        {
+          invite_token: token,
+          expires_at: expiresAt,
+          sent_at: new Date(),
+          status:"revoked"
+        },
+        { where: { id: existing.id } }
+      );
+      const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register?token=${token}`;
+      const htmlContent = generateInviteHTML(user.name || user.email, organization.organization_name, inviteUrl);
+      await emailQueue.add("sendContractorInvite", {
+        to: email,
+        subject: "Reminder: You're invited to join as a contractor!",
+        html: htmlContent,
+        data: {
+          name: contractor_name,
+          inviteUrl,
+          invitedBy: user.name || user.email,
+        },
+      });
+
+      return res.status(200).json({ message: "Invitation resent successfully." });
+    }
+
+    // Case 2: Either it's a resend OR first time (no record exists)
+    if (isResend) {
+      await ContractorInvitation.update(
+        { status: "revoked" },
+        { where: { contractor_email: email, status: "pending" } }
+      );
+    }
+
+    const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register?token=${token}`;
+    const htmlContent = generateInviteHTML(user.name || user.email, organization.organization_name, inviteUrl);
+
     await ContractorInvitation.create({
       contractor_email: email,
-      contractor_name: user.name || null,
+      contractor_name,
       invite_token: token,
       invited_by: user.id,
       sent_at: new Date(),
       expires_at: expiresAt,
       status: "pending",
     });
-    const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register?token=${token}`;
-    const htmlContent = `
-        <html>
-          <body>
-            <h2>You're Invited, ${name || email}!</h2>
-            <p><strong>${user.username || user.email}</strong> has invited you to join as a contractor on our platform.</p>
-            <p>Click the link below to accept the invitation and complete your registration:</p>
-            <p>
-              <a href="${inviteUrl}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Accept Invitation</a>
-            </p>
-            <p>This invitation will expire in 72 hours.</p>
-            <p>If you did not request this invitation, please ignore this email.</p>
-            <p>Thanks,<br>Contractor Platform Team</p>
-          </body>
-        </html>
-      `;
 
-    // Add the email sending job to the email queue
     await emailQueue.add("sendContractorInvite", {
       to: email,
       subject: "You are invited to join as a contractor!",
       html: htmlContent,
       data: {
-        name: name || email,
+        name: contractor_name,
         inviteUrl,
-        invitedBy: user.username || user.email,
+        invitedBy: user.name || user.email,
       },
     });
 
-    // Respond to the client with a success message
     return res.status(200).json({ message: "Invitation sent successfully!" });
   } catch (error) {
     console.error("Error sending contractor invitation:", error);
@@ -143,133 +169,193 @@ const SendIvitationLinkContractor = async (req, res) => {
   }
 };
 
+// ✅ Extracted email HTML builder
+function generateInviteHTML(senderName, organizationName, inviteUrl) {
+  return `
+    <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <p>Hi there,</p>
+        <p><strong>${senderName}</strong> from <strong>${organizationName}</strong> has invited you to fill in a pre-qualification form which, provided it is approved internally by ${organizationName}, will mean that your organisation is prequalified to perform work for ${organizationName}.</p>
+        <p>If you are not the person who will register your business and complete the prequalification process, please forward this email including the link to the appropriate person.</p>
+        <p>Should you have any questions or concerns about this process, please discuss with your key contact at ${organizationName}.</p>
+        <p>
+          <a href="${inviteUrl}" style="padding: 10px 20px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px;">
+            Click here to begin your pre-qualification
+          </a>
+        </p>
+        <p>Best regards,<br>${organizationName} Team</p>
+      </body>
+    </html>
+  `;
+}
+
+
+
+
+
 const GetInviationLinksList = async (req, res) => {
-    try {
-      const invitation_list = await ContractorInvitation.findAll();
-    
-      return res.status(200).json({
-        status: 200,
-        message: "Invitation list fetched successfully",
-        data: invitation_list,
-      });
-    } catch (error) {
-      console.error("Error fetching invitation links:", error);
-      return res.status(500).json({
-        status: 500,
-        message: "Failed to fetch invitation list",
-        error: error.message,
+  try {
+    const invitation_list = await ContractorInvitation.findAll();
+
+    return res.status(200).json({
+      status: 200,
+      message: "Invitation list fetched successfully",
+      data: invitation_list,
+    });
+  } catch (error) {
+    console.error("Error fetching invitation links:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Failed to fetch invitation list",
+      error: error.message,
+    });
+  }
+};
+
+const ResendInvitationEmail = async (req, res) => {
+  try {
+    const { id } = req.body;
+
+    // 1. Find existing invitation
+    const FindEmail = await ContractorInvitation.findOne({
+      where: { id },
+    });
+
+    if (!FindEmail) {
+      return res.status(404).json({
+        status: 404,
+        message: "Invitation not found",
       });
     }
-  };
 
+    // 2. Revoke the previous invitation
+    await ContractorInvitation.update(
+      { status: "revoked" },
+      { where: { id } }
+    );
 
-  const ResendInvitationEmail = async (req, res) => {
-    try {
-      const { id } = req.body;
-  
-      // Find the invitation record
-      const FindEmail = await ContractorInvitation.findOne({
-        where: { id: id }
-      });
-  
-      if (!FindEmail) {
-        return res.status(404).json({
-          status: 404,
-          message: "Invitation not found"
-        });
-      }
-  
-      // Generate a new invite token
-      const token = crypto.randomBytes(64).toString("hex");
-  
-      // Set expiration date to 72 hours from now
-      const expirationDate = new Date();
-      expirationDate.setHours(expirationDate.getHours() + 72);
-  
-      // Update the invitation with new token and expiration date
-      await ContractorInvitation.update(
-        { invite_token: token, expiration_time: expirationDate },
-        { where: { id: id } }
-      );
-  
-      // Find the organization details using invited_by (assuming invited_by is organization ID)
-      const findOrganization = await Organization.findOne({
-        where: { id: FindEmail.invited_by }
-      });
-  
-      if (!findOrganization) {
-        return res.status(404).json({
-          status: 404,
-          message: "Organization not found"
-        });
-      }
-  
-      // Find the user associated with the organization
-      const FindInvitedUser = await User.findOne({
-        where: { id: findOrganization.user_id }
-      });
-  
-      if (!FindInvitedUser) {
-        return res.status(404).json({
-          status: 404,
-          message: "Inviting user not found"
-        });
-      }
-  
-      // Create the invite URL with the new token
-      const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register?token=${token}`;
-  
-      // Construct the HTML email content
-      const htmlContent = `
-        <html>
-          <body>
-            <h2>You're Invited, ${FindEmail.contractor_name || FindEmail.contractor_email}!</h2>
-            <p><strong>${FindInvitedUser.name || FindInvitedUser.email}</strong> has invited you to join as a contractor on our platform.</p>
-            <p>Click the link below to accept the invitation and complete your registration:</p>
-            <p>
-              <a href="${inviteUrl}" style="padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Accept Invitation</a>
-            </p>
-            <p>This invitation will expire in 72 hours.</p>
-            <p>If you did not request this invitation, please ignore this email.</p>
-            <p>Thanks,<br>Contractor Platform Team</p>
-          </body>
-        </html>
-      `;
-  
-      // Add the email sending job to the queue
-      await emailQueue.add("sendContractorInvite", {
-        to: FindEmail.contractor_email,
-        subject: "You are invited to join as a contractor!",
-        html: htmlContent,
-        data: {
-          name: FindEmail.contractor_name || FindEmail.contractor_email,
-          inviteUrl,
-          invitedBy: FindInvitedUser.name || FindInvitedUser.email,
-        }
-      });
-  
-      console.log("Resent Invitation Email");
-  
-      // Send success response
-      return res.status(200).json({
-        status: 200,
-        message: "Invitation email resent successfully",
-      });
-  
-    } catch (error) {
-      console.error("Error sending invitation email:", error);
-      return res.status(500).json({
-        status: 500,
-        message: "Failed to resend the invitation email",
-        error: error.message,
+    // 3. Generate new token and expiration
+    const token = crypto.randomBytes(64).toString("hex");
+    const expirationDate = new Date();
+    expirationDate.setHours(expirationDate.getHours() + 72);
+
+    // 4. Create a new invitation entry
+    const newInvitation = await ContractorInvitation.create({
+      contractor_email: FindEmail.contractor_email,
+      contractor_name: FindEmail.contractor_name,
+      invite_token: token,
+      invited_by: FindEmail.invited_by,
+      sent_at: new Date(),
+      expires_at: expirationDate,
+      status: "pending",
+    });
+
+    const findOrganization = await Organization.findOne({
+      where: { id: FindEmail.invited_by },
+    });
+
+    if (!findOrganization) {
+      return res.status(404).json({
+        status: 404,
+        message: "Organization not found",
       });
     }
-  };
-  
+
+    const FindInvitedUser = await User.findOne({
+      where: { id: findOrganization.user_id },
+    });
+
+    if (!FindInvitedUser) {
+      return res.status(404).json({
+        status: 404,
+        message: "Inviting user not found",
+      });
+    }
+
+    // 6. Build email content
+    const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register?token=${token}`;
+    const htmlContent = `
+      <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <p>Hi there,</p>
+          <p><strong>${FindInvitedUser.name || FindInvitedUser.email}</strong> from <strong>${findOrganization.organization_name}</strong> has invited you to fill in a pre-qualification form which, provided it is approved internally by ${findOrganization.organization_name}, will mean that your organisation is prequalified to perform work for ${findOrganization.organization_name}.</p>
+          <p>If you are not the person who will register your business and complete the prequalification process, please forward this email including the link to the appropriate person.</p>
+          <p>Should you have any questions or concerns about this process, in the first instance please discuss with your key contact at ${findOrganization.organization_name}.</p>
+          <p>
+            <a href="${inviteUrl}" style="padding: 10px 20px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px;">
+              Click here to begin your pre-qualification
+            </a>
+          </p>
+          <p>Best regards,<br>${findOrganization.organization_name} Team</p>
+        </body>
+      </html>
+    `;
+
+    // 7. Queue email
+    await emailQueue.add("sendContractorInvite", {
+      to: FindEmail.contractor_email,
+      subject: "You are invited to join as a contractor!",
+      html: htmlContent,
+      data: {
+        name: FindEmail.contractor_name || FindEmail.contractor_email,
+        inviteUrl,
+        invitedBy: FindInvitedUser.name || FindInvitedUser.email,
+      },
+    });
+
+    console.log("Resent Invitation Email");
+    return res.status(200).json({
+      status: 200,
+      message: "Invitation email resent successfully",
+    });
+  } catch (error) {
+    console.error("Error sending invitation email:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Failed to resend the invitation email",
+      error: error.message,
+    });
+  }
+};
+
+
+
+const handleContractorTokenInvitation  = async(req,res)=>{
+  try {
+    const { token } = req.query;
+    if (!token) {
+      return res.status(400).json({ error: "Token is required." });
+    }
+    const invitation = await ContractorInvitation.findOne({
+      where: { invite_token: token },
+    });
+    if (!invitation) {
+      return res.status(404).json({ error: "Invitation not found." });
+    }
+    const now = moment();
+    const expiryTime = moment(invitation.expires_at);
+    if (invitation.status === 'accepted') {
+      return res.status(200).json({ message: "Invitation already accepted." });
+    }
+    if (now.isAfter(expiryTime)) {
+      if (invitation.status !== 'expired') {
+        await invitation.update({ status: 'expired' });
+      }
+      return res.status(410).json({ error: "Invitation link has expired." });
+    }
+    await invitation.update({ status: 'accepted' });
+    return res.status(200).json({ message: "Invitation accepted."});
+  } catch (error) {
+    console.error("Error validating invitation token:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
 module.exports = {
   GetOrginazationDetails,
   OrginazationAdminLogout,
   SendIvitationLinkContractor,
   GetInviationLinksList,
-  ResendInvitationEmail
+  ResendInvitationEmail,
+  handleContractorTokenInvitation
 };
