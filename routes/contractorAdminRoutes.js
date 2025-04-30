@@ -19,6 +19,8 @@ const WithContractorAdminAndRole = (handler, role = "contractor") => {
   return [authenticateUser, authorizeRoles(role), handler];
 };
 
+
+
 router.get("/admin-details", ...WithContractorAdminAndRole(GetContractorDetails));
 router.post("/logout", ...WithContractorAdminAndRole(ContractorAdminLogout));
 

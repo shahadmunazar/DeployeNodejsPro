@@ -5,20 +5,22 @@ const router = express.Router();
 const {
   GetOrginazationDetails,
   OrginazationAdminLogout,
-  SendIvitationLinkContractor,GetInviationLinksList,ResendInvitationEmail,handleContractorTokenInvitation
+  SendIvitationLinkContractor,GetInviationLinksList,ResendInvitationEmail,handleContractorTokenInvitation,SendverificationCode,VerifyMultifactorAuth
 } = require("../controllers/API/OrginazationAdminController/OrginazationControllerAdmin");
 
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 
-const WithContractorAdminAndRole = (handler, role = "organization") => {
+const WithOrginazationAdminAndRole = (handler, role = "organization") => {
   return [authenticateUser, authorizeRoles(role), handler];
 };
 
-router.get("/admin-details", ...WithContractorAdminAndRole(GetOrginazationDetails));
-router.post("/logout", ...WithContractorAdminAndRole(OrginazationAdminLogout));
-router.post("/send-contract-invitation-link", ...WithContractorAdminAndRole(SendIvitationLinkContractor));
-router.get("/get-all-invitation-link", ...WithContractorAdminAndRole(GetInviationLinksList));
-router.post("/resend-email-to-invitation", ...WithContractorAdminAndRole(ResendInvitationEmail));
+router.post("/send-multifactor-verification", SendverificationCode);
+router.post("/verify-multifactor-authentication", VerifyMultifactorAuth)
+router.get("/admin-details", ...WithOrginazationAdminAndRole(GetOrginazationDetails));
+router.post("/logout", ...WithOrginazationAdminAndRole(OrginazationAdminLogout));
+router.post("/send-contract-invitation-link", ...WithOrginazationAdminAndRole(SendIvitationLinkContractor));
+router.get("/get-all-invitation-link", ...WithOrginazationAdminAndRole(GetInviationLinksList));
+router.post("/resend-email-to-invitation", ...WithOrginazationAdminAndRole(ResendInvitationEmail));
 
 
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);

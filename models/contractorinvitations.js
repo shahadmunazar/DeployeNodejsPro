@@ -13,6 +13,14 @@ module.exports = (sequelize, DataTypes) => {
         isEmail: true
       }
     },
+    OneTimePass: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    otpExpiresAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     contractor_name: {
       type: DataTypes.STRING,
       allowNull: true

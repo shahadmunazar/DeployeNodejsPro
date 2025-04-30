@@ -114,7 +114,8 @@ const SendIvitationLinkContractor = async (req, res) => {
         },
         { where: { id: existing.id } }
       );
-      const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register?token=${token}`;
+      // http://localhost:5173/contractor-pre
+      const inviteUrl = `${process.env.FRONTEND_URL}/contractor-pre?token=${token}`;
       const htmlContent = generateInviteHTML(user.name || user.email, organization.organization_name, inviteUrl);
       await emailQueue.add("sendContractorInvite", {
         to: email,
@@ -346,11 +347,103 @@ const handleContractorTokenInvitation  = async(req,res)=>{
   }
 }
 
+
+const SendverificationCode = async (req, res) => {
+  try {
+    const { email } = req.body;
+  
+    const otp = Math.floor(10000000 + Math.random() * 90000000).toString(); // 8-digit OTP
+    const otpExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes expiry
+  
+    let invitation = await ContractorInvitation.findOne({ where: { contractor_email: email } });
+  
+    if (invitation) {
+      await invitation.update({ OneTimePass: otp, otpExpiresAt });
+    } else {
+      invitation = await ContractorInvitation.create({
+        contractor_email: email,
+        OneTimePass: otp,
+        otpExpiresAt,
+      });
+    }
+    const organizationName = invitation ? invitation.contractor_name : 'James Milson Villages';
+  console.log("orginazationName", organizationName);
+    await emailQueue.add('sendOtpEmail', {
+      to: email,
+      subject: 'Your OTP Code',
+      text: `Hi there,
+  Your passcode is: ${otp}
+  Copy and paste this into the passcode field on your web browser.
+  Please note that this code is only valid for 30 minutes. You can generate another passcode, if required.
+  Thank you,
+  ${organizationName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://your-logo-url.com/logo.png" alt="James Milson Village" width="200" />
+          </div>
+          <div style="background-color: #f9f9f9; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+            <p style="font-size: 18px;">Hi there,</p>
+            <p style="font-size: 16px; margin-bottom: 20px;">
+              Your passcode is: <span style="font-size: 24px; font-weight: bold; color: #007bff;">${otp}</span>
+            </p>
+            <p style="font-size: 16px; margin-bottom: 20px;">
+              Copy and paste this into the passcode field on your web browser.
+            </p>
+            <p style="font-size: 16px; margin-bottom: 20px;">
+              Please note that this code is only valid for <strong>30 minutes</strong>. You can generate another passcode, if required.
+            </p>
+            <br />
+            <p style="font-size: 16px; color: #888;">
+              Thank you,<br>
+              <strong>${organizationName}</strong>
+            </p>
+            <hr style="border-top: 1px solid #ddd; margin-top: 30px;" />
+            <p style="font-size: 12px; color: #bbb; text-align: center;">
+              If you did not request this, please ignore this email.
+            </p>
+          </div>
+        </div>
+      `,
+    });
+    return res.status(200).json({ message: 'OTP sent successfully' });
+  } catch (error) {
+    console.error('Error sending OTP:', error);
+    return res.status(500).json({ error: 'Failed to send OTP' });
+  }
+  
+  
+};
+
+const VerifyMultifactorAuth = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    let invitation = await ContractorInvitation.findOne({ where: { contractor_email: email } });
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invitation not found for this email' });
+    }
+    const currentTime = new Date();
+    if (invitation.otpExpiresAt < currentTime) {
+      return res.status(400).json({ error: 'OTP has expired. Please request a new OTP.' });
+    }
+    if (invitation.OneTimePass !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP. Please try again.' });
+    }
+    await invitation.update({ OneTimePass: null, otpExpiresAt: null });
+    return res.status(200).json({ message: 'OTP verified successfully' });
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    return res.status(500).json({ error: 'Failed to verify OTP' });
+  }
+};
+
+
 module.exports = {
   GetOrginazationDetails,
   OrginazationAdminLogout,
   SendIvitationLinkContractor,
   GetInviationLinksList,
   ResendInvitationEmail,
-  handleContractorTokenInvitation
+  handleContractorTokenInvitation,
+  SendverificationCode,VerifyMultifactorAuth
 };
