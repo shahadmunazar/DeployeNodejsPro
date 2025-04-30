@@ -116,7 +116,7 @@ const SendIvitationLinkContractor = async (req, res) => {
         { where: { id: existing.id } }
       );
       // http://localhost:5173/contractor-pre
-      const inviteUrl = `${process.env.FRONTEND_URL}/contractor-pre?token=${token}`;
+      const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register?token=${token}`;
       const htmlContent = generateInviteHTML(user.name || user.email, organization.organization_name, inviteUrl);
       await emailQueue.add("sendContractorInvite", {
         to: email,
@@ -133,7 +133,8 @@ const SendIvitationLinkContractor = async (req, res) => {
     }
 
     // No existing invitation: create a new one
-    const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register?token=${token}`;
+    // http://localhost:5173/contractor-pre
+    const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register/token=${token}`;
     const htmlContent = generateInviteHTML(user.name || user.email, organization.organization_name, inviteUrl);
 
     await ContractorInvitation.create({
