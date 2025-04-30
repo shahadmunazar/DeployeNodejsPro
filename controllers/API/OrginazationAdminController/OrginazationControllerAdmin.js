@@ -89,31 +89,22 @@ const SendIvitationLinkContractor = async (req, res) => {
     const contractor_name = user.name || email;
     const token = crypto.randomBytes(64).toString("hex");
     const expiresAt = moment().add(72, "hours").toDate();
-
     const organization = await Organization.findOne({
       where: { user_id: user.id },
     });
-
     if (!organization) {
       return res.status(404).json({ message: "Organization not found." });
     }
-
     const existing = await ContractorInvitation.findOne({
       where: { contractor_email: email },
     });
-
-    // If invitation exists
     if (existing) {
       if (existing.status === "accepted") {
         return res.status(400).json({ message: "This email has already accepted the invitation." });
       }
-
       if (!isResend) {
-        // If isResend is false, don't create or update — just notify it's already invited
         return res.status(400).json({ message: "This email has already been invited." });
       }
-
-      // Resend: update token, status and resend invitation
       await ContractorInvitation.update(
         {
           invite_token: token,
@@ -123,10 +114,8 @@ const SendIvitationLinkContractor = async (req, res) => {
         },
         { where: { id: existing.id } }
       );
-
       const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register?token=${token}`;
       const htmlContent = generateInviteHTML(user.name || user.email, organization.organization_name, inviteUrl);
-
       await emailQueue.add("sendContractorInvite", {
         to: email,
         subject: "You're invited to join as a contractor!",
