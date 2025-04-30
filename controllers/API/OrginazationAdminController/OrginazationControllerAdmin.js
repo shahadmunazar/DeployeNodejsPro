@@ -401,7 +401,7 @@ const SendverificationCode = async (req, res) => {
         </div>
       `,
     });
-    return res.status(200).json({ message: "OTP sent successfully" });
+    return res.status(200).json({ status:200,message: "OTP sent successfully" });
   } catch (error) {
     console.error("Error sending OTP:", error);
     return res.status(500).json({ error: "Failed to send OTP" });
@@ -459,6 +459,7 @@ const VerifyMultifactorAuth = async (req, res) => {
     // Step 8: Return the success message with registration details
     return res.status(200).json({
       message: "OTP verified successfully",
+      status:200,
       registration: contractorRegistration,
     });
   } catch (error) {
