@@ -13,6 +13,7 @@ const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
 const RefreshToken = require("../../../models/refreshToken")(sequelize, DataTypes);
 const ContractorInvitation = require("../../../models/contractorinvitations")(sequelize, DataTypes);
+const ContractorRegistration = require("../../../models/ContractorRegistration")(sequelize, DataTypes);
 // const { sendPasswordResetEmail } = require("../../../utils/sendPasswordResetEmail");
 const Organization = require("../../../models/organization")(sequelize, DataTypes);
 // const OrganizationSubscribeUser = require("../../../models/organization_subscribeuser")(sequelize, DataTypes);
@@ -183,12 +184,6 @@ function generateInviteHTML(senderName, organizationName, inviteUrl) {
   `;
 }
 
-
-
-
-
-
-
 const GetInviationLinksList = async (req, res) => {
   try {
     const invitation_list = await ContractorInvitation.findAll();
@@ -225,10 +220,7 @@ const ResendInvitationEmail = async (req, res) => {
     }
 
     // 2. Revoke the previous invitation
-    await ContractorInvitation.update(
-      { status: "revoked" },
-      { where: { id } }
-    );
+    await ContractorInvitation.update({ status: "revoked" }, { where: { id } });
 
     // 3. Generate new token and expiration
     const token = crypto.randomBytes(64).toString("hex");
@@ -274,7 +266,11 @@ const ResendInvitationEmail = async (req, res) => {
       <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6;">
           <p>Hi there,</p>
-          <p><strong>${FindInvitedUser.name || FindInvitedUser.email}</strong> from <strong>${findOrganization.organization_name}</strong> has invited you to fill in a pre-qualification form which, provided it is approved internally by ${findOrganization.organization_name}, will mean that your organisation is prequalified to perform work for ${findOrganization.organization_name}.</p>
+          <p><strong>${FindInvitedUser.name || FindInvitedUser.email}</strong> from <strong>${
+      findOrganization.organization_name
+    }</strong> has invited you to fill in a pre-qualification form which, provided it is approved internally by ${
+      findOrganization.organization_name
+    }, will mean that your organisation is prequalified to perform work for ${findOrganization.organization_name}.</p>
           <p>If you are not the person who will register your business and complete the prequalification process, please forward this email including the link to the appropriate person.</p>
           <p>Should you have any questions or concerns about this process, in the first instance please discuss with your key contact at ${findOrganization.organization_name}.</p>
           <p>
@@ -314,9 +310,7 @@ const ResendInvitationEmail = async (req, res) => {
   }
 };
 
-
-
-const handleContractorTokenInvitation  = async(req,res)=>{
+const handleContractorTokenInvitation = async (req, res) => {
   try {
     const { token } = req.query;
     if (!token) {
@@ -330,33 +324,32 @@ const handleContractorTokenInvitation  = async(req,res)=>{
     }
     const now = moment();
     const expiryTime = moment(invitation.expires_at);
-    if (invitation.status === 'accepted') {
+    if (invitation.status === "accepted") {
       return res.status(200).json({ message: "Invitation already accepted." });
     }
     if (now.isAfter(expiryTime)) {
-      if (invitation.status !== 'expired') {
-        await invitation.update({ status: 'expired' });
+      if (invitation.status !== "expired") {
+        await invitation.update({ status: "expired" });
       }
       return res.status(410).json({ error: "Invitation link has expired." });
     }
-    await invitation.update({ status: 'accepted' });
-    return res.status(200).json({ message: "Invitation accepted."});
+    await invitation.update({ status: "accepted" });
+    return res.status(200).json({ message: "Invitation accepted." });
   } catch (error) {
     console.error("Error validating invitation token:", error);
     return res.status(500).json({ error: "Internal Server Error" });
   }
-}
-
+};
 
 const SendverificationCode = async (req, res) => {
   try {
     const { email } = req.body;
-  
+
     const otp = Math.floor(10000000 + Math.random() * 90000000).toString(); // 8-digit OTP
     const otpExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes expiry
-  
+
     let invitation = await ContractorInvitation.findOne({ where: { contractor_email: email } });
-  
+
     if (invitation) {
       await invitation.update({ OneTimePass: otp, otpExpiresAt });
     } else {
@@ -366,11 +359,11 @@ const SendverificationCode = async (req, res) => {
         otpExpiresAt,
       });
     }
-    const organizationName = invitation ? invitation.contractor_name : 'James Milson Villages';
-  console.log("orginazationName", organizationName);
-    await emailQueue.add('sendOtpEmail', {
+    const organizationName = invitation ? invitation.contractor_name : "James Milson Villages";
+    console.log("orginazationName", organizationName);
+    await emailQueue.add("sendOtpEmail", {
       to: email,
-      subject: 'Your OTP Code',
+      subject: "Your OTP Code",
       text: `Hi there,
   Your passcode is: ${otp}
   Copy and paste this into the passcode field on your web browser.
@@ -406,37 +399,71 @@ const SendverificationCode = async (req, res) => {
         </div>
       `,
     });
-    return res.status(200).json({ message: 'OTP sent successfully' });
+    return res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
-    console.error('Error sending OTP:', error);
-    return res.status(500).json({ error: 'Failed to send OTP' });
+    console.error("Error sending OTP:", error);
+    return res.status(500).json({ error: "Failed to send OTP" });
   }
-  
-  
 };
 
 const VerifyMultifactorAuth = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    let invitation = await ContractorInvitation.findOne({ where: { contractor_email: email } });
+
+    // Step 1: Find the invitation by email
+    const invitation = await ContractorInvitation.findOne({
+      where: { contractor_email: email },
+    });
     if (!invitation) {
-      return res.status(404).json({ error: 'Invitation not found for this email' });
+      return res.status(404).json({ error: "Invitation not found for this email" });
     }
+
+    // Step 2: Check if OTP has expired
     const currentTime = new Date();
     if (invitation.otpExpiresAt < currentTime) {
-      return res.status(400).json({ error: 'OTP has expired. Please request a new OTP.' });
+      return res.status(400).json({ error: "OTP has expired. Please request a new OTP." });
     }
+
+    // Step 3: Check if the OTP is valid
     if (invitation.OneTimePass !== otp) {
-      return res.status(400).json({ error: 'Invalid OTP. Please try again.' });
+      return res.status(400).json({ error: "Invalid OTP. Please try again." });
     }
+
+    // Step 4: Find the user who invited the contractor
+    const findUser = await User.findOne({
+      where: { id: invitation.invited_by },
+    });
+    if (!findUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Step 5: Find the organization associated with the user
+    const findOrganization = await Organization.findOne({
+      where: { user_id: findUser.id },
+    });
+    if (!findOrganization) {
+      return res.status(404).json({ error: "Organization not found" });
+    }
+
+    // Step 6: Clear the OTP fields in the invitation
     await invitation.update({ OneTimePass: null, otpExpiresAt: null });
-    return res.status(200).json({ message: 'OTP verified successfully' });
+
+    // Step 7: Create the contractor registration with the correct organization ID
+    const contractorRegistration = await ContractorRegistration.create({
+      invited_organization_by: findOrganization.id,
+      contractor_invitation_id: invitation.id,
+    });
+
+    // Step 8: Return the success message with registration details
+    return res.status(200).json({
+      message: "OTP verified successfully",
+      registration: contractorRegistration,
+    });
   } catch (error) {
-    console.error('Error verifying OTP:', error);
-    return res.status(500).json({ error: 'Failed to verify OTP' });
+    console.error("Error verifying OTP:", error);
+    return res.status(500).json({ error: "Failed to verify OTP" });
   }
 };
-
 
 module.exports = {
   GetOrginazationDetails,
@@ -445,5 +472,6 @@ module.exports = {
   GetInviationLinksList,
   ResendInvitationEmail,
   handleContractorTokenInvitation,
-  SendverificationCode,VerifyMultifactorAuth
+  SendverificationCode,
+  VerifyMultifactorAuth,
 };

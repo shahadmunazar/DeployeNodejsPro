@@ -33,7 +33,7 @@ module.exports = {
       },
       company_structure: {
         type: Sequelize.ENUM('Sole-Trader', '2-10 Employees', '11-50 Employees', '51-100 Employees', 'Over 100 Employees'),
-        defaultValue: 'Sole-Trader',
+        allowNull:true,
       },
       company_representative_first_name: {
         type: Sequelize.STRING,
@@ -79,13 +79,11 @@ module.exports = {
       have_professional_indemnity_insurance: {
         type: Sequelize.BOOLEAN,
         allowNull: true,
-        defaultValue: false,
       },
      
       is_staff_member_nominated: {
         type: Sequelize.ENUM('Yes', 'No'),
         allowNull: true,
-        defaultValue: 'No',
       },
       provide_name_position_mobile_no: {
         type: Sequelize.JSON,
@@ -94,72 +92,58 @@ module.exports = {
       are_employees_provided_with_health_safety: {
         type: Sequelize.ENUM('Yes', 'No'),
         allowNull: true,
-        defaultValue: 'No',
       },
       are_employees_appropriately_licensed_qualified_safety: {
         type: Sequelize.ENUM('Yes', 'No', 'N/A'),
         allowNull: true,
-        defaultValue: 'N/A',
       },
       are_employees_confirmed_as_competent_to_undertake_work: {
         type: Sequelize.ENUM('Yes', 'No'),
         allowNull: true,
-        defaultValue: 'No',
       },
       do_you_all_sub_contractor_qualified_to_work: {
         type: Sequelize.ENUM('Yes', 'No', 'N/A'),
         allowNull: true,
-        defaultValue: 'N/A',
       },
       do_you_all_sub_contractor_required_insurance_public_liability: {
         type: Sequelize.ENUM('Yes', 'No', 'N/A'),
         allowNull: true,
-        defaultValue: 'N/A',
       },
       have_you_identified_all_health_safety_legislation: {
         type: Sequelize.ENUM('Yes', 'No', 'N/A'),
         allowNull: true,
-        defaultValue: 'N/A',
       },
       do_you_have_emergency_response: {
         type: Sequelize.ENUM('Yes', 'No', 'N/A'),
         allowNull: true,
-        defaultValue: 'N/A',
       },
       do_you_have_procedures_to_notify_the_applicable: {
         type: Sequelize.ENUM('Yes', 'No', 'N/A'),
         allowNull: true,
-        defaultValue: 'N/A',
       },
       do_you_have_SWMS_JSAS_or_safe_work: {
         type: Sequelize.ENUM('Yes', 'No', 'N/A'),
         allowNull: true,
-        defaultValue: 'N/A',
       },
       do_your_workers_conduct_on_site_review: {
         type: Sequelize.ENUM('Yes', 'No'),
         allowNull: true,
-        defaultValue: 'No',
       },
       do_you_regularly_monitor_compliance: {
         type: Sequelize.ENUM('Yes', 'No'),
         allowNull: true,
-        defaultValue: 'No',
       },
       do_you_have_procedures_circumstances: {
         type: Sequelize.ENUM('Yes', 'No'),
         allowNull: true,
-        defaultValue: 'No',
       },
       have_you_been_prosecuted_health_regulator: {
         type: Sequelize.ENUM('Yes', 'No'),
         allowNull: true,
-        defaultValue: 'No',
       },
       submission_status: {
         type: Sequelize.ENUM('confirm_submit', 'let_me_check', 'i_do_it_later', 'save_and_come_back_later'),
         allowNull: true,
-        defaultValue: 'i_do_it_later',
       },
       createdAt: {
         allowNull: false,

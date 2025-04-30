@@ -11,13 +11,16 @@ module.exports = (sequelize, DataTypes) => {
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
       });
+
       // Add relationship with ContractorRegisterInsurance
       ContractorRegistration.hasMany(models.ContractorRegisterInsurance, {
         foreignKey: 'contractor_id',
         as: 'insurance', // Alias to access insurance data
-        onDelete: 'CASCADE', // Delete insurance records when contractor is deleted
-        onUpdate: 'CASCADE', // Update contractor ID when contractor is updated
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
       });
+
+
 
       // Add relationship with ContractorPublicLiability
       ContractorRegistration.hasMany(models.ContractorPublicLiability, {
@@ -50,7 +53,10 @@ module.exports = (sequelize, DataTypes) => {
       contractor_trading_name: DataTypes.STRING,
       company_structure: {
         type: DataTypes.ENUM('Sole-Trader', '2-10 Employees', '11-50 Employees', '51-100 Employees', 'Over 100 Employees'),
-        defaultValue: 'Sole-Trader',
+      },
+      contractor_invitation_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
       },
       company_representative_first_name: DataTypes.STRING,
       company_representative_last_name: DataTypes.STRING,
@@ -64,68 +70,68 @@ module.exports = (sequelize, DataTypes) => {
       covered_amount: DataTypes.INTEGER,
       have_professional_indemnity_insurance: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
+        allowNull: true,
+          },
       is_staff_member_nominated: {
         type: DataTypes.ENUM('Yes', 'No'),
-        defaultValue: 'No',
+        allowNull: true,
       },
       provide_name_position_mobile_no: DataTypes.JSON,
       are_employees_provided_with_health_safety: {
         type: DataTypes.ENUM('Yes', 'No'),
-        defaultValue: 'No',
+        allowNull: true,
       },
       are_employees_appropriately_licensed_qualified_safety: {
         type: DataTypes.ENUM('Yes', 'No', 'N/A'),
-        defaultValue: 'N/A',
+        allowNull: true,
       },
       are_employees_confirmed_as_competent_to_undertake_work: {
         type: DataTypes.ENUM('Yes', 'No'),
-        defaultValue: 'No',
+        allowNull: true,
       },
       do_you_all_sub_contractor_qualified_to_work: {
         type: DataTypes.ENUM('Yes', 'No', 'N/A'),
-        defaultValue: 'N/A',
+        allowNull: true,
       },
       do_you_all_sub_contractor_required_insurance_public_liability: {
         type: DataTypes.ENUM('Yes', 'No', 'N/A'),
-        defaultValue: 'N/A',
+        allowNull: true,
       },
       have_you_identified_all_health_safety_legislation: {
         type: DataTypes.ENUM('Yes', 'No', 'N/A'),
-        defaultValue: 'N/A',
+        allowNull: true,
       },
       do_you_have_emergency_response: {
         type: DataTypes.ENUM('Yes', 'No', 'N/A'),
-        defaultValue: 'N/A',
+        allowNull: true,
       },
       do_you_have_procedures_to_notify_the_applicable: {
         type: DataTypes.ENUM('Yes', 'No', 'N/A'),
-        defaultValue: 'N/A',
+        allowNull: true,
       },
       do_you_have_SWMS_JSAS_or_safe_work: {
         type: DataTypes.ENUM('Yes', 'No', 'N/A'),
-        defaultValue: 'N/A',
+        allowNull: true,
       },
       do_your_workers_conduct_on_site_review: {
         type: DataTypes.ENUM('Yes', 'No'),
-        defaultValue: 'No',
+        allowNull: true,
       },
       do_you_regularly_monitor_compliance: {
         type: DataTypes.ENUM('Yes', 'No'),
-        defaultValue: 'No',
+        allowNull: true,
       },
       do_you_have_procedures_circumstances: {
         type: DataTypes.ENUM('Yes', 'No'),
-        defaultValue: 'No',
+        allowNull: true,
       },
       have_you_been_prosecuted_health_regulator: {
         type: DataTypes.ENUM('Yes', 'No'),
-        defaultValue: 'No',
+        allowNull: true,
       },
       submission_status: {
         type: DataTypes.ENUM('confirm_submit', 'let_me_check', 'i_do_it_later', 'save_and_come_back_later'),
-        defaultValue: 'i_do_it_later',
+        allowNull: true,
       },
       employee_insure_doc_id: {
         type: DataTypes.INTEGER,
@@ -158,8 +164,9 @@ module.exports = (sequelize, DataTypes) => {
       modelName: 'ContractorRegistration',
       tableName: 'contractor_registration',
       timestamps: true,
-      paranoid: true, 
+      paranoid: true,
     }
   );
+
   return ContractorRegistration;
 };
