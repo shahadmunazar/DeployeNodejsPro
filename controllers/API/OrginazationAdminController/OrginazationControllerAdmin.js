@@ -175,9 +175,10 @@ function generateInviteHTML(senderName, organizationName, inviteUrl) {
         <p>If you are not the person who will register your business and complete the prequalification process, please forward this email including the link to the appropriate person.</p>
         <p>Should you have any questions or concerns about this process, please discuss with your key contact at ${organizationName}.</p>
         <p>
-          <a href="${inviteUrl}" style="padding: 10px 20px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px;">
-            Click here to begin your pre-qualification
-          </a>
+          <a href="${inviteUrl}" target="_blank" style="padding: 10px 20px; background-color: #007BFF; color: white; text-decoration: none; border-radius: 5px;">
+  Click here to begin your pre-qualification
+</a>
+
         </p>
         <p>Best regards,<br>${organizationName} Team</p>
       </body>
