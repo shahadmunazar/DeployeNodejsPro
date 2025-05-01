@@ -19,7 +19,10 @@ const {
   UploadSafetyMNContractor,
   GetInsuranceContractor,
   GetPublicLiabilityContractor,
-  GetSafetyMangmentContractor
+  GetSafetyMangmentContractor,
+  DeleteInsuranceContrator,
+  DeletePublicLContrator,
+  DeleteSafetyMContrator
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
@@ -40,8 +43,13 @@ router.post("/upload-public-liability", uploadFiles, UploadPublicLiability);
 router.post("/upload-safety-managment", uploadFiles, UploadSafetyMNContractor);
 
 router.get("/get-insurance-contractor", GetInsuranceContractor);
-router.get("/get-insurance-contractor", GetPublicLiabilityContractor);
-router.get("/get-insurance-contractor", GetSafetyMangmentContractor);
+router.get("/get-public-liability-contractor", GetPublicLiabilityContractor);
+router.get("/get-safety-managment-contractor", GetSafetyMangmentContractor);
+
+router.delete("/delete-insurance-contractor", DeleteInsuranceContrator);
+router.delete("/public-liability-contractor", DeletePublicLContrator);
+router.delete("/delete-safety-managment-contractor", DeleteSafetyMContrator);
+
 
 router.get("/admin-details", ...WithOrginazationAdminAndRole(GetOrginazationDetails));
 router.post("/logout", ...WithOrginazationAdminAndRole(OrginazationAdminLogout));
