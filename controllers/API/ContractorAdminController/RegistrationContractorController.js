@@ -8,6 +8,7 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
 const https = require("https");
+require('dotenv').config();
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
@@ -276,9 +277,147 @@ const UploadSafetyMNContractor = async (req, res) => {
   }
 };
 
+
+const GetInsuranceContractor = async (req, res) => {
+    try {
+        const { contractor_id } = req.query;
+
+        if (!contractor_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Contractor ID is required",
+            });
+        }
+
+        const findInsDet = await ContractorRegisterInsurance.findOne({
+            where: {
+                contractor_id: contractor_id,
+            },
+        });
+
+        if (!findInsDet) {
+            return res.status(404).json({
+                success: false,
+                message: "No insurance details found for this contractor.",
+            });
+        }
+
+        const full_doc_url = findInsDet.document_url;
+        const full_url = `${process.env.BACKEND_URL}/${full_doc_url}`;
+
+        return res.status(200).json({
+            success: true,
+            message: "Contractor insurance details retrieved successfully.",
+            data: findInsDet,
+            fullUrl: full_url,
+        });
+    } catch (error) {
+        console.error("Error in GetInsuranceContractor:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+
+  
+  
+
+const GetPublicLiabilityContractor = async (req, res) => {
+    try {
+        const { contractor_id } = req.query;
+
+        if (!contractor_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Contractor ID is required",
+            });
+        }
+
+        const findInsDet = await ContractorPublicLiability.findOne({
+            where: {
+                contractor_id: contractor_id,
+            },
+        });
+
+        if (!findInsDet) {
+            return res.status(404).json({
+                success: false,
+                message: "No insurance details found for this contractor.",
+            });
+        }
+
+        const full_doc_url = findInsDet.document_url;
+        const full_url = `${process.env.BACKEND_URL}/${full_doc_url}`;
+
+        return res.status(200).json({
+            success: true,
+            message: "Contractor public liability insurance details retrieved successfully.",
+            data: findInsDet,
+            fullUrl: full_url,
+        });
+    } catch (error) {
+        console.error("Error in GetPublicLiabilityContractor:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+
+
+const GetSafetyMangmentContractor = async (req, res) => {
+    try {
+        const { contractor_id } = req.query;
+
+        if (!contractor_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Contractor ID is required",
+            });
+        }
+
+        const findInsDet = await ContractorOrganizationSafetyManagement.findOne({
+            where: {
+                contractor_id: contractor_id,
+            },
+        });
+
+        if (!findInsDet) {
+            return res.status(404).json({
+                success: false,
+                message: "No safety management details found for this contractor.",
+            });
+        }
+
+        const full_doc_url = findInsDet.document_url;
+        const full_url = `${process.env.BACKEND_URL}/${full_doc_url}`;
+
+        return res.status(200).json({
+            success: true,
+            message: "Contractor safety management details retrieved successfully.",
+            data: findInsDet,
+            fullUrl: full_url,
+        });
+    } catch (error) {
+        console.error("Error in GetSafetyManagementContractor:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
+};
+
+
 module.exports = {
   CreateContractorRegistration,
   UploadInsuranceContrator,
   UploadPublicLiability,
   UploadSafetyMNContractor,
+  GetInsuranceContractor,
+  GetPublicLiabilityContractor,
+  GetSafetyMangmentContractor
 };
