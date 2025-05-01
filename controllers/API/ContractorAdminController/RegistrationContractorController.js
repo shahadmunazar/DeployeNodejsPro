@@ -8,7 +8,7 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
 const https = require("https");
-require('dotenv').config();
+require("dotenv").config();
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
@@ -75,7 +75,7 @@ const CreateContractorRegistration = async (req, res) => {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { id, contractor_invitation_id, abn_number } = req.body; 
+    const { id, contractor_invitation_id, abn_number } = req.body;
 
     if (!id) {
       return res.status(400).json({
@@ -97,14 +97,12 @@ const CreateContractorRegistration = async (req, res) => {
     }
     const existing = await ContractorRegistration.findOne({ where: { id } });
 
-
     if (!existing) {
       return res.status(404).json({
         success: false,
         message: "Contractor registration not found.",
       });
     }
-
 
     const updatableFields = [
       "contractor_invitation_id",
@@ -146,20 +144,21 @@ const CreateContractorRegistration = async (req, res) => {
     ];
 
     if (abn_number) {
-        const abnExists = await ContractorRegistration.findOne({
-          where: {
-            abn_number,
-            id: { [Op.ne]: id }
-          }
+      const abnExists = await ContractorRegistration.findOne({
+        where: {
+          abn_number,
+          id: { [Op.ne]: id },
+        },
+      });
+
+      if (abnExists) {
+        return res.status(400).json({
+          success: false,
+          status: 400,
+          message: "This ABN number is already used by another contractor.",
         });
-      
-        if (abnExists) {
-          return res.status(400).json({
-            success: false,
-            message: "This ABN number is already used by another contractor."
-          });
-        }
       }
+    }
     const fieldsToUpdate = {};
     updatableFields.forEach(field => {
       if (req.body[field] !== undefined) {
@@ -171,6 +170,7 @@ const CreateContractorRegistration = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      status: 200,
       message: "Contractor registration updated successfully",
       data: existing,
     });
@@ -206,6 +206,7 @@ const UploadInsuranceContrator = async (req, res) => {
       employee_insure_doc_id: newInsurance.id,
     });
     return res.status(201).json({
+      status: 200,
       message: "Contractor insurance uploaded and updated successfully.",
       data: newInsurance,
     });
@@ -238,6 +239,7 @@ const UploadPublicLiability = async (req, res) => {
       public_liability_doc_id: newInsurance.id,
     });
     return res.status(201).json({
+      status: 200,
       message: "Contractor insurance uploaded and updated successfully.",
       data: newInsurance,
     });
@@ -268,6 +270,7 @@ const UploadSafetyMNContractor = async (req, res) => {
       public_liability_doc_id: newInsurance.id,
     });
     return res.status(201).json({
+      status: 200,
       message: "Contractor insurance uploaded and updated successfully.",
       data: newInsurance,
     });
@@ -277,140 +280,137 @@ const UploadSafetyMNContractor = async (req, res) => {
   }
 };
 
-
 const GetInsuranceContractor = async (req, res) => {
-    try {
-        const { contractor_id } = req.query;
+  try {
+    const { contractor_id } = req.query;
 
-        if (!contractor_id) {
-            return res.status(400).json({
-                success: false,
-                message: "Contractor ID is required",
-            });
-        }
-
-        const findInsDet = await ContractorRegisterInsurance.findOne({
-            where: {
-                contractor_id: contractor_id,
-            },
-        });
-
-        if (!findInsDet) {
-            return res.status(404).json({
-                success: false,
-                message: "No insurance details found for this contractor.",
-            });
-        }
-
-        const full_doc_url = findInsDet.document_url;
-        const full_url = `${process.env.BACKEND_URL}/${full_doc_url}`;
-
-        return res.status(200).json({
-            success: true,
-            message: "Contractor insurance details retrieved successfully.",
-            data: findInsDet,
-            fullUrl: full_url,
-        });
-    } catch (error) {
-        console.error("Error in GetInsuranceContractor:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-            error: error.message,
-        });
+    if (!contractor_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Contractor ID is required",
+      });
     }
-};
 
-  
-  
+    const findInsDet = await ContractorRegisterInsurance.findOne({
+      where: {
+        contractor_id: contractor_id,
+      },
+    });
+
+    if (!findInsDet) {
+      return res.status(404).json({
+        success: false,
+        message: "No insurance details found for this contractor.",
+      });
+    }
+
+    const full_doc_url = findInsDet.document_url;
+    const full_url = `${process.env.BACKEND_URL}/${full_doc_url}`;
+
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Contractor insurance details retrieved successfully.",
+      data: findInsDet,
+      fullUrl: full_url,
+    });
+  } catch (error) {
+    console.error("Error in GetInsuranceContractor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
 
 const GetPublicLiabilityContractor = async (req, res) => {
-    try {
-        const { contractor_id } = req.query;
+  try {
+    const { contractor_id } = req.query;
 
-        if (!contractor_id) {
-            return res.status(400).json({
-                success: false,
-                message: "Contractor ID is required",
-            });
-        }
-
-        const findInsDet = await ContractorPublicLiability.findOne({
-            where: {
-                contractor_id: contractor_id,
-            },
-        });
-
-        if (!findInsDet) {
-            return res.status(404).json({
-                success: false,
-                message: "No insurance details found for this contractor.",
-            });
-        }
-
-        const full_doc_url = findInsDet.document_url;
-        const full_url = `${process.env.BACKEND_URL}/${full_doc_url}`;
-
-        return res.status(200).json({
-            success: true,
-            message: "Contractor public liability insurance details retrieved successfully.",
-            data: findInsDet,
-            fullUrl: full_url,
-        });
-    } catch (error) {
-        console.error("Error in GetPublicLiabilityContractor:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-            error: error.message,
-        });
+    if (!contractor_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Contractor ID is required",
+      });
     }
-};
 
+    const findInsDet = await ContractorPublicLiability.findOne({
+      where: {
+        contractor_id: contractor_id,
+      },
+    });
+
+    if (!findInsDet) {
+      return res.status(404).json({
+        success: false,
+        message: "No insurance details found for this contractor.",
+      });
+    }
+
+    const full_doc_url = findInsDet.document_url;
+    const full_url = `${process.env.BACKEND_URL}/${full_doc_url}`;
+
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Contractor public liability insurance details retrieved successfully.",
+      data: findInsDet,
+      fullUrl: full_url,
+    });
+  } catch (error) {
+    console.error("Error in GetPublicLiabilityContractor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
 
 const GetSafetyMangmentContractor = async (req, res) => {
-    try {
-        const { contractor_id } = req.query;
+  try {
+    const { contractor_id } = req.query;
 
-        if (!contractor_id) {
-            return res.status(400).json({
-                success: false,
-                message: "Contractor ID is required",
-            });
-        }
-
-        const findInsDet = await ContractorOrganizationSafetyManagement.findOne({
-            where: {
-                contractor_id: contractor_id,
-            },
-        });
-
-        if (!findInsDet) {
-            return res.status(404).json({
-                success: false,
-                message: "No safety management details found for this contractor.",
-            });
-        }
-
-        const full_doc_url = findInsDet.document_url;
-        const full_url = `${process.env.BACKEND_URL}/${full_doc_url}`;
-
-        return res.status(200).json({
-            success: true,
-            message: "Contractor safety management details retrieved successfully.",
-            data: findInsDet,
-            fullUrl: full_url,
-        });
-    } catch (error) {
-        console.error("Error in GetSafetyManagementContractor:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error",
-            error: error.message,
-        });
+    if (!contractor_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Contractor ID is required",
+      });
     }
-};
 
+    const findInsDet = await ContractorOrganizationSafetyManagement.findOne({
+      where: {
+        contractor_id: contractor_id,
+      },
+    });
+
+    if (!findInsDet) {
+      return res.status(404).json({
+        success: false,
+        message: "No safety management details found for this contractor.",
+      });
+    }
+
+    const full_doc_url = findInsDet.document_url;
+    const full_url = `${process.env.BACKEND_URL}/${full_doc_url}`;
+
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: "Contractor safety management details retrieved successfully.",
+      data: findInsDet,
+      fullUrl: full_url,
+    });
+  } catch (error) {
+    console.error("Error in GetSafetyManagementContractor:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
 
 module.exports = {
   CreateContractorRegistration,
@@ -419,5 +419,5 @@ module.exports = {
   UploadSafetyMNContractor,
   GetInsuranceContractor,
   GetPublicLiabilityContractor,
-  GetSafetyMangmentContractor
+  GetSafetyMangmentContractor,
 };
