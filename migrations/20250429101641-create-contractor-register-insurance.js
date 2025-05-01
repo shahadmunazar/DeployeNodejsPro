@@ -21,24 +21,23 @@ module.exports = {
       },
       policy_number: {
         type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
+        allowNull: true,
       },
       provider: {
         type: Sequelize.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       coverage_amount: {
         type: Sequelize.DECIMAL(12, 2),
-        allowNull: false,
+        allowNull: true,
       },
       start_date: {
         type: Sequelize.DATE,
-        allowNull: false,
+        allowNull: true,
       },
       end_date: {
         type: Sequelize.DATE,
-        allowNull: false,
+        allowNull: true,
       },
       document_url: {
         type: Sequelize.STRING,

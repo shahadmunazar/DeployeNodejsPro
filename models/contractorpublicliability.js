@@ -1,6 +1,8 @@
-import { Model, DataTypes } from 'sequelize';
+'use strict';
 
-export default (sequelize) => {
+const { Model, DataTypes } = require('sequelize');
+
+module.exports = (sequelize) => {
   class ContractorPublicLiability extends Model {
     static associate(models) {
       ContractorPublicLiability.belongsTo(models.ContractorRegistration, {
@@ -47,11 +49,11 @@ export default (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    created_at: {
+    createdAt: {
       type: DataTypes.DATE,
       defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
     },
@@ -59,7 +61,7 @@ export default (sequelize) => {
     sequelize,
     modelName: 'ContractorPublicLiability',
     tableName: 'contractor_public_liability',
-    timestamps: false, // You're using custom timestamps: created_at and updated_at
+    timestamps: false,
   });
 
   return ContractorPublicLiability;

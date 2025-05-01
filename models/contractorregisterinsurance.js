@@ -1,6 +1,6 @@
-import { Model, DataTypes } from 'sequelize';
-
-export default (sequelize) => {
+'use strict';
+const { Model, DataTypes } = require('sequelize');
+module.exports = (sequelize) => {
   class ContractorRegisterInsurance extends Model {
     static associate(models) {
       ContractorRegisterInsurance.belongsTo(models.ContractorRegistration, {
@@ -24,24 +24,23 @@ export default (sequelize) => {
     },
     policy_number: {
       type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
+      allowNull: true,
     },
     provider: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     coverage_amount: {
       type: DataTypes.DECIMAL(12, 2),
-      allowNull: false,
+      allowNull: true,
     },
     start_date: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true,
     },
     end_date: {
       type: DataTypes.DATE,
-      allowNull: false,
+      allowNull: true,
     },
     document_url: {
       type: DataTypes.STRING,
@@ -63,7 +62,7 @@ export default (sequelize) => {
     modelName: 'ContractorRegisterInsurance',
     tableName: 'contractor_register_insurance',
     timestamps: true,
-    paranoid: true, // Enables soft deletes
+    paranoid: true,
   });
 
   return ContractorRegisterInsurance;

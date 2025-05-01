@@ -1,6 +1,8 @@
-import { Model, DataTypes } from 'sequelize';
+'use strict';
 
-export default (sequelize) => {
+const { Model, DataTypes } = require('sequelize');
+
+module.exports = (sequelize) => {
   class ContractorOrganizationSafetyManagement extends Model {
     static associate(models) {
       ContractorOrganizationSafetyManagement.belongsTo(models.ContractorRegistration, {
@@ -26,12 +28,12 @@ export default (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    created_at: {
+    createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),

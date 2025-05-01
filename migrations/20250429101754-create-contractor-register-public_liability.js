@@ -22,7 +22,6 @@ module.exports = {
       policy_number: {
         type: Sequelize.STRING,
         allowNull: true,
-        unique: true,
       },
       provider: {
         type: Sequelize.STRING,
@@ -44,12 +43,12 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true,
       },
-      created_at: {
+      createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-      updated_at: {
+      updatedAt: {
         allowNull: false,
         type: Sequelize.DATE,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),

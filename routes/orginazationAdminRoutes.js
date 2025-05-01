@@ -7,6 +7,7 @@ const {
   OrginazationAdminLogout,
   SendIvitationLinkContractor,GetInviationLinksList,ResendInvitationEmail,handleContractorTokenInvitation,SendverificationCode,VerifyMultifactorAuth
 } = require("../controllers/API/OrginazationAdminController/OrginazationControllerAdmin");
+const {CreateContractorRegistration,UploadInsuranceContrator,UploadPublicLiability,UploadSafetyMNContractor} = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 
@@ -14,8 +15,20 @@ const WithOrginazationAdminAndRole = (handler, role = "organization") => {
   return [authenticateUser, authorizeRoles(role), handler];
 };
 
+const uploadFiles = require("../middleware/uploadOrganizationFiles");
+
+
 router.post("/send-multifactor-verification", SendverificationCode);
 router.post("/verify-multifactor-authentication", VerifyMultifactorAuth)
+
+
+router.post("/create-registration-contractor", CreateContractorRegistration);
+
+router.post("/upload-insurace-contractor", uploadFiles, UploadInsuranceContrator);
+
+router.post("/upload-public-liability", uploadFiles,UploadPublicLiability);
+router.post("/upload-safety-managment", uploadFiles,UploadSafetyMNContractor);
+
 router.get("/admin-details", ...WithOrginazationAdminAndRole(GetOrginazationDetails));
 router.post("/logout", ...WithOrginazationAdminAndRole(OrginazationAdminLogout));
 router.post("/send-contract-invitation-link", ...WithOrginazationAdminAndRole(SendIvitationLinkContractor));
