@@ -188,7 +188,15 @@ function generateInviteHTML(senderName, organizationName, inviteUrl) {
 
 const GetInviationLinksList = async (req, res) => {
   try {
-    const invitation_list = await ContractorInvitation.findAll();
+    const user = req.user;
+    const user_id = user.id;
+    console.log("user",user_id);
+
+    const invitation_list = await ContractorInvitation.findAll({
+      where:{
+        invited_by:user_id
+      }
+    });
 
     return res.status(200).json({
       status: 200,
