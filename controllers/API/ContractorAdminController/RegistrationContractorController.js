@@ -300,18 +300,15 @@ const UploadSafetyMNContractor = async (req, res) => {
         });
       }
   
-      // Check if a record already exists for the contractor
       let safetyRecord = await ContractorOrganizationSafetyManagement.findOne({
         where: { contractor_id },
       });
   
       if (safetyRecord) {
-        // Update existing record
         await safetyRecord.update({
           does_organization_safety_management_system_filename,
         });
       } else {
-        // Create new record
         safetyRecord = await ContractorOrganizationSafetyManagement.create({
           contractor_id,
           does_organization_safety_management_system_filename,
@@ -597,6 +594,7 @@ const DeleteInsuranceContrator = async (req, res) => {
         }
         return res.status(200).json({
           success: true,
+          status:200,
           message: `${documentConfig.label} record deleted and contractor reference updated.`,
         });
     
