@@ -456,11 +456,17 @@ const VerifyMultifactorAuth = async (req, res) => {
       contractor_invitation_id: invitation.id,
     });
 
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const tokenFind = invitation.invite_token;
+    
+    const fullUrl = `${frontendUrl}/contractor/prequalification/${tokenFind}`;
+    
     // Step 8: Return the success message with registration details
     return res.status(200).json({
       message: "OTP verified successfully",
       status:200,
       registration: contractorRegistration,
+      contractor_url:fullUrl
     });
   } catch (error) {
     console.error("Error verifying OTP:", error);
