@@ -222,6 +222,7 @@ const UploadInsuranceContrator = async (req, res) => {
       });
       return res.status(200).json({
         success: true,
+        status:200,
         message: "Contractor insurance uploaded and updated successfully.",
         data: insuranceRecord,
       });
@@ -321,6 +322,7 @@ const UploadSafetyMNContractor = async (req, res) => {
   
       return res.status(200).json({
         success: true,
+        status:200,
         message: "Contractor safety management document uploaded and updated successfully.",
         data: safetyRecord,
       });
