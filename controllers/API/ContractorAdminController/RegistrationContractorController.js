@@ -44,7 +44,7 @@ const validateContractorRegistration = [
     .withMessage("Invalid phone number format"),
   body("service_to_be_provided").optional().isString(),
   body("covered_amount").optional().isInt(),
-  body("have_professional_indemnity_insurance").optional().isBoolean(),
+  body("have_professional_indemnity_insurance").optional().isIn(["Yes", "No", "N/A"]),
   body("is_staff_member_nominated").optional().isIn(["Yes", "No"]),
   body("provide_name_position_mobile_no").optional().isObject(),
   body("are_employees_provided_with_health_safety").optional().isIn(["Yes", "No"]),
