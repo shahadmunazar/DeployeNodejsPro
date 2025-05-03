@@ -33,6 +33,10 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    original_file_name: {
+      type: DataTypes.STRING,
+      allowNull: true, // Set to false if the field is mandatory
+    },
     coverage_amount: {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: true,

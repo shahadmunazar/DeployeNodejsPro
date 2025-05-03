@@ -5,27 +5,22 @@ const puppeteer = require('puppeteer');
 
 const generatePdf = async (data) => {
   try {
+    // Define the path for the EJS template
     const templatePath = path.join(__dirname, 'views/contractor_template.ejs');
     const html = await ejs.renderFile(templatePath, data);
 
+    // Launch Puppeteer to generate the PDF from HTML
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
+    // Generate the PDF buffer
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-
-    // (Optional) Save locally
-    const outputDir = path.join(__dirname, 'generated_pdfs');
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
-    }
-
-    const pdfPath = path.join(outputDir, `contractor_registration_${Date.now()}.pdf`);
-    fs.writeFileSync(pdfPath, pdfBuffer);
 
     await browser.close();
 
-    return pdfBuffer; // ✅ Return buffer (NOT path)
+    // Return the PDF buffer directly (no need to save it locally)
+    return pdfBuffer;
   } catch (error) {
     console.error('❌ Error generating PDF:', error);
     throw error;

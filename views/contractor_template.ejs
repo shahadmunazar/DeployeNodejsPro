@@ -1,54 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Contractor Registration Details</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: #f5f5f5;
       margin: 0;
-      padding: 0;
       color: #333;
     }
+
     header {
-      background-color: #4CAF50;
-      color: white;
-      text-align: center;
-      padding: 10px 0;
-    }
-    .container {
+      background-color: #2e7d32;
+      color: #fff;
       padding: 20px;
-      max-width: 800px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 1000px;
       margin: 0 auto;
+      background: #fff;
+      padding: 20px 30px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
     }
+
     .section {
-      margin-bottom: 20px;
+      margin: 0; /* No margin between sections */
+      padding: 0;
     }
+
     .section-title {
-      font-size: 1.2em;
-      font-weight: bold;
+      font-size: 22px;
+      color: #2e7d32;
+      border-bottom: 2px solid #2e7d32;
       margin-bottom: 10px;
-      color: #4CAF50;
+      padding-bottom: 5px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
+      margin-bottom: 10px; /* Reduced bottom margin */
     }
+
     table th, table td {
       border: 1px solid #ddd;
-      padding: 8px;
+      padding: 10px 8px; /* Reduced padding */
       text-align: left;
+      vertical-align: top;
+      font-size: 14px;
     }
+
     table th {
-      background-color: #f2f2f2;
+      background-color: #f0f0f0;
+      font-weight: 600;
     }
+
     .footer {
       text-align: center;
-      font-size: 0.9em;
-      color: #777;
-      margin-top: 20px;
+      color: #888;
+      font-size: 1em;
+      margin-top: 10px; /* Reduced margin for footer */
+      padding-top: 10px;
+      border-top: 1px solid #ccc;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    @media print {
+      body {
+        background: none;
+      }
+
+      .container {
+        box-shadow: none;
+      }
+
+      header, .footer {
+        page-break-before: avoid;
+        page-break-after: avoid;
+      }
+
+      .section {
+        page-break-inside: avoid;
+      }
     }
   </style>
 </head>
@@ -60,196 +105,82 @@
     <div class="section">
       <div class="section-title">Contractor Information</div>
       <table>
-        <tr>
-          <th>Field</th>
-          <th>Details</th>
-        </tr>
-        <tr>
-          <td>Form#</td>
-          <td><%= registration.id %></td>
-        </tr>
-        <tr>
-          <td>Submited By</td>
-          <td><%= invitation.contractor_email %></td>
-        </tr>
-        <tr>
-          <td>Submitted On</td>
-          <td><%= invitation.createdAt %></td>
-        </tr>
+        <tr><th>Field</th><th>Details</th></tr>
+        <tr><td>Form#</td><td><%= registration.id %></td></tr>
+        <tr><td>Submitted By</td><td><%= invitation.contractor_email %></td></tr>
+        <tr><td>Submitted On</td><td><%= new Date(invitation.createdAt).toLocaleString('en-GB') %></td></tr>
       </table>
     </div>
+
     <div class="section">
       <div class="section-title">Company Details</div>
       <table>
         <thead>
-          <tr>
-            <th>Question</th>
-            <th>Answer</th>
-            <th>Attachments</th>
-          </tr>
+          <tr><th>Question</th><th>Answer</th><th>Attachments</th></tr>
         </thead>
         <tbody>
-          <tr>
-            <td>ABN</td>
-            <td><%= registration.abn_number %></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>Company name:</td>
-            <td><%= registration.contractor_company_name %></td>
-            <td></td>
-
-          </tr>
-          <tr>
-            <td>Trading name(s):</td>
-            <td><%= registration.contractor_trading_name %></td>
-            <td></td>
-
-          </tr>
-          <tr>
-            <td>Company structure:</td>
-            <td><%= registration.company_structure %></td>
-            <td></td>
-
-          </tr>
-          <tr>
-            <td>Company representative first name:</td>
-            <td><%= registration.company_representative_first_name %></td>
-            <td></td>
-
-          </tr>
-          <!-- Company representative last name: -->
-          <tr>
-            <td>Company representative last name::</td>
-            <td><%= registration.company_representative_first_name %></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>Your position:</td>
-            <td><%= registration.position_at_company %></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>Address</td>
-            <td><%= registration.address %></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>Street:</td>
-            <td><%= registration.street %></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>Suburb:</td>
-            <td><%= registration.suburb %></td>
-            <th></th>
-          </tr>
-          <tr>
-            <td>State:</td>
-            <td><%= registration.state %></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>Post Code:</td>
-            <td><%= registration.postal_code %></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>Phone:</td>
-            <td><%= registration.contractor_phone_number %></td>
-            <td></td>
-          </tr>
-          
-          <tr>
-            <td>Phone:</td>
-            <td><%= registration.service_to_be_provided %></td>
-            <td></td>
-          </tr>
-
-          <h1>Insurance</h1>
-          <tr>
-            <td>Do you employ people other than
-                independent contractors?:</td>
-            <td><%= registration.employee_insure_doc_id %></td>
-            <td><%= attachments.insurance.document_url %>,<%= attachments.insurance.end_date %></td>
-          </tr>
-          <tr>
-            <td>Please attach a copy of your Public
-                Liability Insurance certificate of
-                currency?:</td>
-            <td><%= registration.public_liability_doc_id %></td>
-            <td><%= attachments.publicLiability.public_liabilty_file_url %>,<%= attachments.publicLiability.end_date %></td>
-          </tr>
-          <tr>
-            <td>Enter the amount covered (numbers
-                only) $:</td>
-            <td><%= registration.covered_amount %></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>Do you have Professional Indemnity
-                Insurance?:</td>
-            <td><%= registration.have_professional_indemnity_insurance %></td>
-            <td></td>
-          </tr>
-          <h1>Work Health & Safety</h1>
-          <!--  -->
-<tr>
-    <td>Does your organisation have a work
-        health and safety management
-        system in place?</td>
-    <td><%= registration.organization_safety_management_id %></td>
-    <td><%= attachments.safetyManagement.does_organization_safety_management_system_filename %>,<%= attachments.safetyManagement.end_date %></td>
-</tr>
-<tr>
-    <td>Is a staff member nominated to be
-        responsible for health and safety
-        and supervision of health and safety
-        activities?:</td>
-    <td><%= registration.are_employees_provided_with_health_safety %></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Are employees provided with health
-        and safety induction and training
-        into contractor safety
-        arrangements?:</td>
-    <td><%= registration.are_employees_appropriately_licensed_qualified_safety %></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Are employees appropriately
-        licensed, qualified or certified where
-        required?:</td>
-    <td><%= registration.are_employees_confirmed_as_competent_to_undertake_work %></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Are employees confirmed as
-        competent to undertake work?:</td>
-    <td><%= registration.are_employees_confirmed_as_competent_to_undertake_work %></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Do you confirm all sub-contractors
-        employed by you are competent and
-        qualified to perform the work?:</td>
-    <td><%= registration.do_you_all_sub_contractor_qualified_to_work %></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Do you confirm all sub-contractors
-        have required insurance including
-        public liability and worker
-        compensation?</td>
-    <td><%= registration.do_you_all_sub_contractor_required_insurance_public_liability %></td>
-    <td></td>
-  </tr>
+          <tr><td>ABN</td><td><%= registration.abn_number %></td><td></td></tr>
+          <tr><td>Company name</td><td><%= registration.contractor_company_name %></td><td></td></tr>
+          <tr><td>Trading name(s)</td><td><%= registration.contractor_trading_name %></td><td></td></tr>
+          <tr><td>Company structure</td><td><%= registration.company_structure %></td><td></td></tr>
+          <tr><td>Company representative first name</td><td><%= registration.company_representative_first_name %></td><td></td></tr>
+          <tr><td>Company representative last name</td><td><%= registration.company_representative_last_name || '-' %></td><td></td></tr>
+          <tr><td>Your position</td><td><%= registration.position_at_company %></td><td></td></tr>
+          <tr><td>Address</td><td><%= registration.address %></td><td></td></tr>
+          <tr><td>Street</td><td><%= registration.street %></td><td></td></tr>
+          <tr><td>Suburb</td><td><%= registration.suburb %></td><td></td></tr>
+          <tr><td>State</td><td><%= registration.state %></td><td></td></tr>
+          <tr><td>Post Code</td><td><%= registration.postal_code %></td><td></td></tr>
+          <tr><td>Phone</td><td><%= registration.contractor_phone_number %></td><td></td></tr>
+          <tr><td>Service to be provided</td><td><%= registration.service_to_be_provided %></td><td></td></tr>
         </tbody>
       </table>
     </div>
+
+    <div class="section">
+      <div class="section-title">Insurance</div>
+      <table>
+        <tr><td>Do you employ people other than independent contractors?</td>
+          <td><%= registration.employee_insure_doc_id ? 'Yes' : 'No' %></td>
+          <td><%= registration.employee_insure_doc_id ? attachments.insurance.original_file_name + ', ' + new Date(attachments.insurance.end_date).toLocaleDateString('en-GB') : 'No' %></td>
+        </tr>
+        <tr><td>Public Liability Insurance Certificate</td>
+          <td><%= registration.public_liability_doc_id ? 'Yes' : 'No' %></td>
+          <td><%= registration.public_liability_doc_id ? attachments.publicLiability.original_file_name + ', ' + new Date(attachments.publicLiability.end_date).toLocaleDateString('en-GB') : 'No' %></td>
+        </tr>
+        <tr><td>Covered Amount ($)</td><td><%= registration.covered_amount || 'No' %></td><td></td></tr>
+        <tr><td>Professional Indemnity Insurance</td><td><%= registration.have_professional_indemnity_insurance || 'No' %></td><td></td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Work Health & Safety</div>
+      <table>
+        <tbody>
+          <tr><td>WHS Management System</td>
+            <td><%= registration.organization_safety_management_id ? 'Yes' : 'No' %></td>
+            <td><%= registration.organization_safety_management_id ? attachments.safetyManagement.original_file_name + ', ' + new Date(attachments.safetyManagement.end_date).toLocaleDateString('en-GB') : 'No' %></td>
+          </tr>
+          <tr><td>Responsible Staff Member</td><td><%= registration.provide_name_position_mobile_no || 'No' %></td><td></td></tr>
+          <tr><td>Health & Safety Induction</td><td><%= registration.are_employees_provided_with_health_safety || 'No' %></td><td></td></tr>
+          <tr><td>Proper Licensing</td><td><%= registration.are_employees_appropriately_licensed_qualified_safety || 'No' %></td><td></td></tr>
+          <tr><td>Employee Competency</td><td><%= registration.are_employees_confirmed_as_competent_to_undertake_work || 'No' %></td><td></td></tr>
+          <tr><td>Subcontractor Qualification</td><td><%= registration.do_you_all_sub_contractor_qualified_to_work || 'No' %></td><td></td></tr>
+          <tr><td>Subcontractor Insurance</td><td><%= registration.do_you_all_sub_contractor_required_insurance_public_liability || 'No' %></td><td></td></tr>
+          <tr><td>Risk Management</td><td><%= registration.have_you_identified_all_health_safety_legislation || 'No' %></td><td></td></tr>
+          <tr><td>Emergency Response</td><td><%= registration.do_you_have_emergency_response || 'No' %></td><td></td></tr>
+          <tr><td>Incident Notification</td><td><%= registration.do_you_have_procedures_to_notify_the_applicable || 'No' %></td><td></td></tr>
+          <tr><td>SWMS / JSAs</td><td><%= registration.do_you_have_SWMS_JSAS_or_safe_work || 'No' %></td><td></td></tr>
+          <tr><td>Onsite Review</td><td><%= registration.do_your_workers_conduct_on_site_review || 'No' %></td><td></td></tr>
+          <tr><td>Monitor Compliance</td><td><%= registration.do_you_regularly_monitor_compliance || 'No' %></td><td></td></tr>
+          <tr><td>Update Procedures</td><td><%= registration.do_you_have_procedures_circumstances || 'No' %></td><td></td></tr>
+          <tr><td>Prosecution History</td><td><%= registration.have_you_been_prosecuted_health_regulator || 'No' %></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="footer">
-      <p>Generated on: <%= new Date().toLocaleDateString() %></p>
+      <p>Generated on: <%= new Date().toLocaleString('en-GB') %></p>
     </div>
   </div>
 </body>

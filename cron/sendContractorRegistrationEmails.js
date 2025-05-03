@@ -58,7 +58,6 @@ const sendContractorRegistrationEmails = async () => {
           }
         };
 
-        console.log("📦 Sending payload:", JSON.stringify(payload, null, 2));
 
         await sendContractorRegistrationEmail(payload);
         console.log(`✅ Email sent for: ${registration.contractor_company_name}`);

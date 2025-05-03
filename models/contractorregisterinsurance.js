@@ -34,6 +34,10 @@ module.exports = (sequelize) => {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: true,
     },
+    original_file_name: {
+      type: DataTypes.STRING,
+      allowNull: true, // Set to false if the field is mandatory
+    },
     start_date: {
       type: DataTypes.DATE,
       allowNull: true,

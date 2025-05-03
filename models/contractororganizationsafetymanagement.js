@@ -20,6 +20,10 @@ module.exports = (sequelize) => {
       autoIncrement: true,
       primaryKey: true,
     },
+    original_file_name: {
+      type: DataTypes.STRING,
+      allowNull: true, // Set to false if the field is mandatory
+    },
     contractor_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
