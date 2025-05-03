@@ -77,7 +77,7 @@ module.exports = {
         allowNull: true,
       },
       have_professional_indemnity_insurance: {
-        type: Sequelize.BOOLEAN,
+        type: Sequelize.ENUM('Yes', 'No','N/A'),
         allowNull: true,
       },
      

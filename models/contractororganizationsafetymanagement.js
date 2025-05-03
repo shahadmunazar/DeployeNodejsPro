@@ -38,11 +38,17 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
     },
+    deletedAt:{
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+    }
   }, {
     sequelize,
     modelName: 'ContractorOrganizationSafetyManagement',
     tableName: 'contractor_organization_safety_management',
     timestamps: false,
+    paranoid: true // enables deletedAt (soft delete)
   });
 
   return ContractorOrganizationSafetyManagement;

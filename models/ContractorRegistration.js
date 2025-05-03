@@ -12,6 +12,8 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'SET NULL',
       });
 
+      
+
       // Add relationship with ContractorRegisterInsurance
       ContractorRegistration.hasMany(models.ContractorRegisterInsurance, {
         foreignKey: 'contractor_id',
@@ -69,7 +71,7 @@ module.exports = (sequelize, DataTypes) => {
       service_to_be_provided: DataTypes.TEXT,
       covered_amount: DataTypes.INTEGER,
       have_professional_indemnity_insurance: {
-        type: DataTypes.BOOLEAN,
+        type: DataTypes.ENUM('Yes', 'No','N/A'),
         allowNull: true,
           },
       is_staff_member_nominated: {

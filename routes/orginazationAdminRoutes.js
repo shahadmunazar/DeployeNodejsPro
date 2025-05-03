@@ -22,7 +22,10 @@ const {
   GetSafetyMangmentContractor,
   DeleteInsuranceContrator,
   DeletePublicLContrator,
-  DeleteSafetyMContrator
+  DeleteSafetyMContrator,
+  CheckContractorRegisterStatus,
+  DeleteContractorRecords
+  
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
@@ -49,7 +52,8 @@ router.get("/get-safety-managment-contractor", GetSafetyMangmentContractor);
 router.delete("/delete-insurance-contractor", DeleteInsuranceContrator);
 router.delete("/public-liability-contractor", DeletePublicLContrator);
 router.delete("/delete-safety-managment-contractor", DeleteSafetyMContrator);
-
+router.get("/check-contractor-register", CheckContractorRegisterStatus);
+router.delete("/delete-contractor-records",DeleteContractorRecords);
 
 router.get("/admin-details", ...WithOrginazationAdminAndRole(GetOrginazationDetails));
 router.post("/logout", ...WithOrginazationAdminAndRole(OrginazationAdminLogout));

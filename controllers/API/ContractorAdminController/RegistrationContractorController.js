@@ -696,6 +696,184 @@ const DeleteSafetyMContrator = async(req,res)=>{
       }
 }
 
+const CheckContractorRegisterStatus = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required." });
+    }
+    const getTimeAgo = (timestamp) => {
+      const now = new Date();
+      const past = new Date(timestamp);
+      const diffInMs = now - past;
+      const seconds = Math.floor(diffInMs / 1000);
+      const minutes = Math.floor(diffInMs / (1000 * 60));
+      const hours = Math.floor(diffInMs / (1000 * 60 * 60));
+      const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+      const months = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 30));
+      const years = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 365));
+      if (years > 0) return `${years} year${years > 1 ? 's' : ''} ago`;
+      if (months > 0) return `${months} month${months > 1 ? 's' : ''} ago`;
+      if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+      if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+      return `${seconds} second${seconds !== 1 ? 's' : ''} ago`;
+    };
+    const findRecordContractor = await ContractorInvitation.findAll({
+      where: {
+        contractor_email: email
+      }
+    });
+    if (findRecordContractor.length === 0) {
+      return res.status(200).json({
+        registered: false,
+        message: "No contractor record found with this email."
+      });
+    }
+    const enrichedData = await Promise.all(
+      findRecordContractor.map(async (record) => {
+        const plainRecord = record.toJSON();
+        const registration = await ContractorRegistration.findOne({
+          where: {
+            contractor_invitation_id: plainRecord.id
+          },
+          attributes: [
+            'id',
+            'invited_organization_by',
+            'abn_number',
+            'contractor_company_name',
+            'contractor_trading_name',
+            'company_structure',
+            'company_representative_first_name',
+            'company_representative_last_name',
+            'position_at_company',
+            'address',
+            'street',
+            'suburb',
+            'state',
+            'contractor_phone_number',
+            'service_to_be_provided',
+            'employee_insure_doc_id',
+            'public_liability_doc_id',
+            'organization_safety_management_id',
+            'submission_status'
+          ]
+        });
+        let incompletePage = null;
+        let formStatus = 'incomplete';
+        if (registration) {
+          if (registration.submission_status === 'confirm_submit') {
+            incompletePage = null;
+            formStatus = 'complete';
+          } else {
+            const requiredPage1Fields = [
+              'invited_organization_by',
+              'abn_number',
+              'contractor_company_name',
+              'contractor_trading_name',
+              'company_structure',
+              'company_representative_first_name',
+              'company_representative_last_name',
+              'position_at_company',
+              'address',
+              'street',
+              'suburb',
+              'state',
+              'contractor_phone_number',
+              'service_to_be_provided'
+            ];
+            const isPage1Incomplete = requiredPage1Fields.some(
+              (field) => registration[field] === null || registration[field] === ''
+            );
+            if (isPage1Incomplete) {
+              incompletePage = 1;
+            } else if (!registration.employee_insure_doc_id) {
+              incompletePage = 2;
+            } else if (!registration.public_liability_doc_id) {
+              incompletePage = 3;
+            } else if (!registration.organization_safety_management_id) {
+              incompletePage = 4;
+            } else {
+              formStatus = 'complete';
+            }
+          }
+        }
+        return {
+          ...plainRecord,
+          lastUpdatedAgo: getTimeAgo(plainRecord.updatedAt),
+          registrationInfo: registration || null,
+          incompletePage,
+          formStatus
+        };
+      })
+    );
+
+    return res.status(200).json({
+      registered: true,
+      status: 200,
+      data: enrichedData
+    });
+  } catch (error) {
+    console.error("Error checking contractor register status:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+
+
+const DeleteContractorRecords = async (req, res) => {
+  try {
+    const { contractor_id } = req.body;
+
+    if (!contractor_id) {
+      return res.status(400).json({ message: "Contractor ID is required." });
+    }
+    const contractorDel = await ContractorInvitation.findOne({
+      where: { id: contractor_id }
+    });
+
+    if (!contractorDel) {
+      return res.status(404).json({ message: "Contractor invitation not found." });
+    }
+    const deleteContractorReg = await ContractorRegistration.findOne({
+      where: { contractor_invitation_id: contractorDel.id }
+    });
+    if (deleteContractorReg) {
+      await ContractorRegisterInsurance.destroy({
+        where: { contractor_id: deleteContractorReg.id }
+      });
+      await ContractorPublicLiability.destroy({
+        where: { contractor_id: deleteContractorReg.id }
+      });
+      await ContractorOrganizationSafetyManagement.destroy({
+        where: { contractor_id: deleteContractorReg.id }
+      });
+      await ContractorRegistration.destroy({
+        where: { id: deleteContractorReg.id }
+      });
+    }
+    await ContractorInvitation.destroy({
+      where: { id: contractor_id }
+    });
+
+    return res.status(200).json({
+      message: "Contractor and related records deleted successfully."
+    });
+  } catch (error) {
+    console.error("Error deleting contractor records:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+
+
+
 module.exports = {
   CreateContractorRegistration,
   UploadInsuranceContrator,
@@ -706,5 +884,7 @@ module.exports = {
   GetSafetyMangmentContractor,
   DeleteInsuranceContrator,
   DeletePublicLContrator,
-  DeleteSafetyMContrator
+  DeleteSafetyMContrator,
+  CheckContractorRegisterStatus,
+  DeleteContractorRecords
 };

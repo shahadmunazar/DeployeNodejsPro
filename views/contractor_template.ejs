@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contractor Registration Details</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background-color: #4CAF50;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+    }
+    .container {
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .section {
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #4CAF50;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    table th, table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    table th {
+      background-color: #f2f2f2;
+    }
+    .footer {
+      text-align: center;
+      font-size: 0.9em;
+      color: #777;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Contractor Registration Details</h1>
+  </header>
+  <div class="container">
+    <div class="section">
+      <div class="section-title">Contractor Information</div>
+      <table>
+        <tr>
+          <th>Field</th>
+          <th>Details</th>
+        </tr>
+        <tr>
+          <td>Form#</td>
+          <td><%= registration.id %></td>
+        </tr>
+        <tr>
+          <td>Submited By</td>
+          <td><%= invitation.contractor_email %></td>
+        </tr>
+        <tr>
+          <td>Submitted On</td>
+          <td><%= invitation.createdAt %></td>
+        </tr>
+      </table>
+    </div>
+    <div class="section">
+      <div class="section-title">Company Details</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Question</th>
+            <th>Answer</th>
+            <th>Attachments</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ABN</td>
+            <td><%= registration.abn_number %></td>
+          </tr>
+          <tr>
+            <td>Company name:</td>
+            <td><%= registration.contractor_company_name %></td>
+          </tr>
+          <tr>
+            <td>Trading name(s):</td>
+            <td><%= registration.contractor_trading_name %></td>
+          </tr>
+          <tr>
+            <td>Company structure:</td>
+            <td><%= registration.company_structure %></td>
+          </tr>
+          <tr>
+            <td>Company representative first name:</td>
+            <td><%= registration.company_representative_first_name %></td>
+          </tr>
+          <!-- Company representative last name: -->
+          <tr>
+            <td>Company representative last name::</td>
+            <td><%= registration.company_representative_first_name %></td>
+          </tr>
+          <tr>
+            <td>Company representative first name:</td>
+            <td><%= registration.company_representative_first_name %></td>
+          </tr>
+          <tr>
+            <td>Company representative first name:</td>
+            <td><%= registration.company_representative_first_name %></td>
+          </tr>
+          <tr>
+            <td>Company representative first name:</td>
+            <td><%= registration.company_representative_first_name %></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="footer">
+      <p>Generated on: <%= new Date().toLocaleDateString() %></p>
+    </div>
+  </div>
+</body>
+</html>

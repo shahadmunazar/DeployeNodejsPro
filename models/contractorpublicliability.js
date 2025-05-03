@@ -57,11 +57,17 @@ module.exports = (sequelize) => {
       type: DataTypes.DATE,
       defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
     },
+    deletedAt:{
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
+    }
   }, {
     sequelize,
     modelName: 'ContractorPublicLiability',
     tableName: 'contractor_public_liability',
     timestamps: false,
+    paranoid: true 
   });
 
   return ContractorPublicLiability;
