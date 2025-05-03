@@ -92,40 +92,115 @@
           <tr>
             <td>ABN</td>
             <td><%= registration.abn_number %></td>
+            <td></td>
           </tr>
           <tr>
             <td>Company name:</td>
             <td><%= registration.contractor_company_name %></td>
+            <td></td>
+
           </tr>
           <tr>
             <td>Trading name(s):</td>
             <td><%= registration.contractor_trading_name %></td>
+            <td></td>
+
           </tr>
           <tr>
             <td>Company structure:</td>
             <td><%= registration.company_structure %></td>
+            <td></td>
+
           </tr>
           <tr>
             <td>Company representative first name:</td>
             <td><%= registration.company_representative_first_name %></td>
+            <td></td>
+
           </tr>
           <!-- Company representative last name: -->
           <tr>
             <td>Company representative last name::</td>
             <td><%= registration.company_representative_first_name %></td>
+            <td></td>
           </tr>
           <tr>
-            <td>Company representative first name:</td>
-            <td><%= registration.company_representative_first_name %></td>
+            <td>Your position:</td>
+            <td><%= registration.position_at_company %></td>
+            <td></td>
           </tr>
           <tr>
-            <td>Company representative first name:</td>
-            <td><%= registration.company_representative_first_name %></td>
+            <td>Address</td>
+            <td><%= registration.address %></td>
+            <td></td>
           </tr>
           <tr>
-            <td>Company representative first name:</td>
-            <td><%= registration.company_representative_first_name %></td>
+            <td>Street:</td>
+            <td><%= registration.street %></td>
+            <td></td>
           </tr>
+          <tr>
+            <td>Suburb:</td>
+            <td><%= registration.suburb %></td>
+            <th></th>
+          </tr>
+          <tr>
+            <td>State:</td>
+            <td><%= registration.state %></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Post Code:</td>
+            <td><%= registration.postal_code %></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Phone:</td>
+            <td><%= registration.contractor_phone_number %></td>
+            <td></td>
+          </tr>
+          
+          <tr>
+            <td>Phone:</td>
+            <td><%= registration.service_to_be_provided %></td>
+            <td></td>
+          </tr>
+
+          <h1>Insurance</h1>
+          <tr>
+            <td>Do you employ people other than
+                independent contractors?:</td>
+            <td><%= registration.employee_insure_doc_id %></td>
+            <td><%= attachments.insurance.document_url %>,<%= attachments.insurance.end_date %></td>
+          </tr>
+          <tr>
+            <td>Please attach a copy of your Public
+                Liability Insurance certificate of
+                currency?:</td>
+            <td><%= registration.public_liability_doc_id %></td>
+            <td><%= attachments.publicLiability.public_liabilty_file_url %>,<%= attachments.publicLiability.end_date %></td>
+          </tr>
+          <tr>
+            <td>Enter the amount covered (numbers
+                only) $:</td>
+            <td><%= registration.covered_amount %></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>Do you have Professional Indemnity
+                Insurance?:</td>
+            <td><%= registration.have_professional_indemnity_insurance %></td>
+            <td></td>
+          </tr>
+          <h1>Work Health & Safety</h1>
+          <!--  -->
+<tr>
+    <td>Does your organisation have a work
+        health and safety management
+        system in place?</td>
+    <td><%= registration.organization_safety_management_id %></td>
+    <td><%= attachments.safetyManagement.does_organization_safety_management_system_filename %>,<%= attachments.safetyManagement.end_date %></td>
+</tr>
         </tbody>
       </table>
     </div>
