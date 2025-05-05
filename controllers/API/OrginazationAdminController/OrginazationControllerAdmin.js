@@ -4,6 +4,9 @@ const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
 const moment = require("moment");
 const Role = require("../../../models/role");
+const momentTimeZone = require("moment-timezone"); // Import moment-timezone
+const { v4: uuidv4 } = require("uuid");
+
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
@@ -19,6 +22,10 @@ const Organization = require("../../../models/organization")(sequelize, DataType
 // const OrganizationSubscribeUser = require("../../../models/organization_subscribeuser")(sequelize, DataTypes);
 const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
 const { response } = require("express");
+const organization = require("../../../models/organization");
+const ContractorOrganizationSafetyManagement = require("../../../models/contractororganizationsafetymanagement")(sequelize, DataTypes);
+const ContractorPublicLiability = require("../../../models/contractorpublicliability")(sequelize, DataTypes);
+const ContractorRegisterInsurance = require("../../../models/contractorregisterinsurance")(sequelize, DataTypes);
 
 const GetOrginazationDetails = async (req, res) => {
   try {
@@ -190,12 +197,12 @@ const GetInviationLinksList = async (req, res) => {
   try {
     const user = req.user;
     const user_id = user.id;
-    console.log("user",user_id);
+    console.log("user", user_id);
 
     const invitation_list = await ContractorInvitation.findAll({
-      where:{
-        invited_by:user_id
-      }
+      where: {
+        invited_by: user_id,
+      },
     });
 
     return res.status(200).json({
@@ -353,33 +360,45 @@ const handleContractorTokenInvitation = async (req, res) => {
 
 const SendverificationCode = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, new_form } = req.body;
 
     const otp = Math.floor(10000000 + Math.random() * 90000000).toString(); // 8-digit OTP
     const otpExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes expiry
 
-    let invitation = await ContractorInvitation.findOne({ where: { contractor_email: email } });
+    let existingInvitation = await ContractorInvitation.findOne({ where: { contractor_email: email } });
+    let invitation;
 
-    if (invitation) {
-      await invitation.update({ OneTimePass: otp, otpExpiresAt });
-    } else {
+    // 1. Case: Email not found OR new_form is true => create new record
+    if (!existingInvitation || new_form === true) {
       invitation = await ContractorInvitation.create({
         contractor_email: email,
         OneTimePass: otp,
+        invited_by: existingInvitation?.invited_by || null,
         otpExpiresAt,
       });
+    } else {
+      // 2. Case: Existing record found, just update OTP
+      invitation = existingInvitation;
+      await invitation.update({
+        OneTimePass: otp,
+        otpExpiresAt
+      });
     }
-    const organizationName = invitation ? invitation.contractor_name : "James Milson Villages";
-    console.log("orginazationName", organizationName);
+
+    const organizationName = invitation.contractor_name || "James Milson Villages";
+
+    console.log("organizationName", organizationName);
+
+    // Add job to email queue
     await emailQueue.add("sendOtpEmail", {
       to: email,
       subject: "Your OTP Code",
       text: `Hi there,
-  Your passcode is: ${otp}
-  Copy and paste this into the passcode field on your web browser.
-  Please note that this code is only valid for 30 minutes. You can generate another passcode, if required.
-  Thank you,
-  ${organizationName}`,
+Your passcode is: ${otp}
+Copy and paste this into the passcode field on your web browser.
+Please note that this code is only valid for 30 minutes. You can generate another passcode, if required.
+Thank you,
+${organizationName}`,
       html: `
         <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
           <div style="text-align: center; margin-bottom: 20px;">
@@ -409,20 +428,23 @@ const SendverificationCode = async (req, res) => {
         </div>
       `,
     });
-    return res.status(200).json({ status:200,message: "OTP sent successfully" });
+
+    return res.status(200).json({ status: 200, message: "OTP sent successfully" });
+
   } catch (error) {
     console.error("Error sending OTP:", error);
     return res.status(500).json({ error: "Failed to send OTP" });
   }
 };
 
+
+
 const VerifyMultifactorAuth = async (req, res) => {
   try {
     const { email, otp } = req.body;
-
-    // Step 1: Find the invitation by email
     const invitation = await ContractorInvitation.findOne({
       where: { contractor_email: email },
+      order: [['id', 'DESC']],
     });
     if (!invitation) {
       return res.status(404).json({ error: "Invitation not found for this email" });
@@ -466,19 +488,202 @@ const VerifyMultifactorAuth = async (req, res) => {
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     const tokenFind = invitation.invite_token;
-    
+
     const fullUrl = `${frontendUrl}/contractor/prequalification/${tokenFind}`;
-    
+
     // Step 8: Return the success message with registration details
     return res.status(200).json({
       message: "OTP verified successfully",
-      status:200,
+      status: 200,
       registration: contractorRegistration,
-      contractor_url:fullUrl
+      contractor_url: fullUrl,
     });
   } catch (error) {
     console.error("Error verifying OTP:", error);
     return res.status(500).json({ error: "Failed to verify OTP" });
+  }
+};
+
+const GetDetailsInvitationDetails = async (req, res) => {
+  try {
+    const { req_id, query_req } = req.query;
+
+    const findRecordContractor = await ContractorRegistration.findOne({
+      where: { id: req_id },
+    });
+
+    if (!findRecordContractor) {
+      return res.status(404).json({ error: "Contractor not found" });
+    }
+
+    if (query_req === "form_details") {
+      const findOrganizationDet = await Organization.findOne({
+        where: { id: findRecordContractor.invited_organization_by },
+      });
+
+      const findUser = await User.findOne({
+        where: { id: findOrganizationDet?.user_id },
+      });
+
+      const findDetails = await ContractorInvitation.findOne({
+        where: { id: findRecordContractor.contractor_invitation_id },
+      });
+
+      const responseData = {
+        company_name: findRecordContractor.contractor_company_name,
+        invitedBy: findOrganizationDet?.organization_name || null,
+        Name: findUser?.name || null,
+        Email_Address: findDetails?.contractor_email || null,
+        Phone_No: findRecordContractor.contractor_phone_number,
+        Status: "Approved Current",
+        Expires: "16/04/2026", // Optional: compute dynamically
+        Renewal: "On",
+      };
+
+      return res.status(200).json({ status: 200, data: responseData });
+    } else if (query_req === "submission") {
+      const findInsurance = await ContractorRegisterInsurance.findOne({
+        where: { contractor_id: findRecordContractor.id },
+        attributes: ["document_url", "original_file_name", "end_date"],
+      });
+
+      const findPublicLiability = await ContractorPublicLiability.findOne({
+        where: { contractor_id: findRecordContractor.id },
+        attributes: ["public_liabilty_file_url", "end_date", "original_file_name"],
+      });
+
+      const findSafetyManagement = await ContractorOrganizationSafetyManagement.findOne({
+        where: { contractor_id: findRecordContractor.id },
+        attributes: ["does_organization_safety_management_system_filename", "original_file_name"],
+      });
+
+      const Completeurl = process.env.BACKEND_URL || "";
+
+      let staffMemberDetails = {};
+      try {
+        staffMemberDetails = JSON.parse(findRecordContractor.provide_name_position_mobile_no || "{}");
+      } catch (e) {}
+
+      const responseData = {
+        InsuranceDoc_full_url: findInsurance?.document_url ? `${Completeurl}/${findInsurance.document_url}` : null,
+        insurance_expire_date: findInsurance?.end_date || null,
+        insurance_original_file_name: findInsurance?.original_file_name || null,
+
+        PublicLiability_doc_url: findPublicLiability?.public_liabilty_file_url ? `${Completeurl}/${findPublicLiability.public_liabilty_file_url}` : null,
+        PublicLiability_expiry: findPublicLiability?.end_date || null,
+        PublicLiability_original_name: findPublicLiability?.original_file_name || null,
+        SafetyManagement_doc_url: findSafetyManagement?.does_organization_safety_management_system_filename
+          ? `${Completeurl}/${findSafetyManagement.does_organization_safety_management_system_filename}`
+          : null,
+        contractor_company_name: findRecordContractor.name,
+        contractor_trading_name: findRecordContractor.contractor_trading_name,
+        company_structure: findRecordContractor.company_structure,
+        contractor_invitation_id: findRecordContractor.contractor_invitation_id,
+        company_representative_first_name: findRecordContractor.company_representative_first_name,
+        company_representative_last_name: findRecordContractor.company_representative_last_name,
+        position_at_company: findRecordContractor.position_at_company,
+        address: findRecordContractor.address,
+        street: findRecordContractor.street,
+        suburb: findRecordContractor.suburb,
+        state: findRecordContractor.state,
+        postal_code: findRecordContractor.postal_code,
+        contractor_phone_number: findRecordContractor.contractor_phone_number,
+        service_to_be_provided: findRecordContractor.service_to_be_provided,
+        covered_amount: findRecordContractor.covered_amount,
+        have_professional_indemnity_insurance: findRecordContractor.have_professional_indemnity_insurance,
+        is_staff_member_nominated: findRecordContractor.is_staff_member_nominated,
+        provide_name_position_mobile_no: staffMemberDetails,
+
+        are_employees_provided_with_health_safety: findRecordContractor.are_employees_provided_with_health_safety,
+        are_employees_appropriately_licensed_qualified_safety: findRecordContractor.are_employees_appropriately_licensed_qualified_safety,
+        are_employees_confirmed_as_competent_to_undertake_work: findRecordContractor.are_employees_confirmed_as_competent_to_undertake_work,
+        do_you_all_sub_contractor_qualified_to_work: findRecordContractor.do_you_all_sub_contractor_qualified_to_work,
+        do_you_all_sub_contractor_required_insurance_public_liability: findRecordContractor.do_you_all_sub_contractor_required_insurance_public_liability,
+        have_you_identified_all_health_safety_legislation: findRecordContractor.have_you_identified_all_health_safety_legislation,
+        do_you_have_emergency_response: findRecordContractor.do_you_have_emergency_response,
+        do_you_have_procedures_to_notify_the_applicable: findRecordContractor.do_you_have_procedures_to_notify_the_applicable,
+        do_you_have_SWMS_JSAS_or_safe_work: findRecordContractor.do_you_have_SWMS_JSAS_or_safe_work,
+        do_your_workers_conduct_on_site_review: findRecordContractor.do_your_workers_conduct_on_site_review,
+        do_you_regularly_monitor_compliance: findRecordContractor.do_you_regularly_monitor_compliance,
+        do_you_have_procedures_circumstances: findRecordContractor.do_you_have_procedures_circumstances,
+        have_you_been_prosecuted_health_regulator: findRecordContractor.have_you_been_prosecuted_health_regulator,
+        submission_status: findRecordContractor.submission_status,
+      };
+      return res.status(200).json({ status: 200, data: responseData });
+    } else if (query_req === "revision_history") {
+      // Implement logic and return appropriate response
+      return res.status(200).json({ status: 200, message: "Revision history not yet implemented" });
+    } else if (query_req === "comments") {
+      let comments = findRecordContractor.comments_history;
+      if (typeof comments === "string") {
+        try {
+          comments = JSON.parse(comments);
+        } catch (error) {
+          console.error("Failed to parse comments_history:", error);
+          return res.status(500).json({ message: "Invalid comments format" });
+        }
+      }
+      return res.status(200).json({
+        status: 200,
+        message: "Comments fetched successfully",
+        data: comments,
+      });
+    } else {
+      return res.status(400).json({ error: "Invalid query request type" });
+    }
+  } catch (error) {
+    console.error("Error fetching invitation details:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const UpdateContractorComments = async (req, res) => {
+  try {
+    const { req_id, comment } = req.body;
+    const userId = req.user.id;
+    const userName = req.user.name;
+    const contractor = await ContractorRegistration.findOne({
+      where: { id: req_id },
+    });
+
+    if (!contractor) {
+      return res.status(404).json({ error: "Contractor not found" });
+    }
+
+    let existingComments = [];
+
+    if (Array.isArray(contractor.comments_history)) {
+      existingComments = contractor.comments_history;
+    } else if (typeof contractor.comments_history === "string") {
+      try {
+        const parsed = JSON.parse(contractor.comments_history);
+        existingComments = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        existingComments = [];
+      }
+    } else {
+      existingComments = [];
+    }
+    const dateAdded = moment().tz("Australia/Sydney").format("DD-MM-YYYY HH:mm");
+    const newComment = {
+      id: Number(`${Date.now()}${Math.floor(100 + Math.random() * 900)}`),
+      user_id: userId,
+      comment: comment,
+      date_added: dateAdded,
+      CommentsBy: userName,
+    };
+    existingComments.push(newComment);
+    await contractor.update({
+      comments_history: existingComments,
+    });
+
+    return res.status(200).json({
+      message: "Comment added successfully",
+      comments_history: existingComments,
+    });
+  } catch (error) {
+    console.error("Error updating contractor comments:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -491,4 +696,6 @@ module.exports = {
   handleContractorTokenInvitation,
   SendverificationCode,
   VerifyMultifactorAuth,
+  GetDetailsInvitationDetails,
+  UpdateContractorComments,
 };

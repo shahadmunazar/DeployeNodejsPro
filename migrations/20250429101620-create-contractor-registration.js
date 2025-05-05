@@ -142,7 +142,7 @@ module.exports = {
         allowNull: true,
       },
       submission_status: {
-        type: Sequelize.ENUM('confirm_submit', 'let_me_check', 'i_do_it_later', 'save_and_come_back_later'),
+        type: Sequelize.ENUM('confirm_submit', 'let_me_check', 'i_do_it_later', 'save_and_come_back_later','approved','rejected','save','pause'),
         allowNull: true,
       },
       createdAt: {

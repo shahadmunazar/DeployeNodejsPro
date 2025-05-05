@@ -778,7 +778,7 @@ const CheckContractorRegisterStatus = async (req, res) => {
     const enrichedData = await Promise.all(
       findRecordContractor.map(async (record) => {
         const plainRecord = record.toJSON();
-        const registration = await ContractorRegistration.findOne({
+        const registration = await ContractorRegistration.findAll({
           where: {
             contractor_invitation_id: plainRecord.id
           },

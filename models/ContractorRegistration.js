@@ -133,7 +133,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       submission_status: {
-        type: DataTypes.ENUM('confirm_submit', 'let_me_check', 'i_do_it_later', 'save_and_come_back_later'),
+        type: DataTypes.ENUM('confirm_submit', 'let_me_check', 'i_do_it_later', 'save_and_come_back_later','approved','rejected','save','pause'),
         allowNull: true,
       },
       employee_insure_doc_id: {
@@ -148,6 +148,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: true,
       },
+      comments_history: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },      
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
