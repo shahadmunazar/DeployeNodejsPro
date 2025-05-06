@@ -75,7 +75,7 @@ const CreateContractorRegistration = async (req, res) => {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
 
-    const { id, contractor_invitation_id, abn_number } = req.body;
+    const { id, contractor_invitation_id, abn_number, new_start } = req.body;
 
     if (!id) {
       return res.status(400).json({
@@ -83,6 +83,16 @@ const CreateContractorRegistration = async (req, res) => {
         message: "Contractor registration ID is required.",
       });
     }
+
+    const existing = await ContractorRegistration.findOne({ where: { id } });
+
+    if (!existing) {
+      return res.status(404).json({
+        success: false,
+        message: "Contractor registration not found.",
+      });
+    }
+
     if (contractor_invitation_id) {
       const invitationExists = await ContractorInvitation.findOne({
         where: { id: contractor_invitation_id },
@@ -94,14 +104,6 @@ const CreateContractorRegistration = async (req, res) => {
           message: "Invalid contractor_invitation_id: no matching record found.",
         });
       }
-    }
-    const existing = await ContractorRegistration.findOne({ where: { id } });
-
-    if (!existing) {
-      return res.status(404).json({
-        success: false,
-        message: "Contractor registration not found.",
-      });
     }
 
     const updatableFields = [
@@ -142,46 +144,80 @@ const CreateContractorRegistration = async (req, res) => {
       "public_liability_doc_id",
       "organization_safety_management_id",
     ];
-
-    if (abn_number) {
-      const abnExists = await ContractorRegistration.findOne({
-        where: {
-          abn_number,
-          id: { [Op.ne]: id },
-        },
-      });
-
-      if (abnExists) {
-        return res.status(400).json({
-          success: false,
-          status: 400,
-          message: "This ABN number is already used by another contractor.",
-        });
-      }
-    }
-    const fieldsToUpdate = {};
+    const fieldsToUse = {};
     updatableFields.forEach(field => {
       if (req.body[field] !== undefined) {
-        fieldsToUpdate[field] = req.body[field];
+        fieldsToUse[field] = req.body[field];
       }
     });
+    if (new_start === true) {
+      if (abn_number) {
+        const abnExists = await ContractorRegistration.findOne({
+          where: {
+            abn_number,
+            id: { [Op.ne]: id },
+          },
+        });
 
-    await existing.update(fieldsToUpdate);
+        if (abnExists) {
+          return res.status(400).json({
+            success: false,
+            message: "This ABN number is already used by another contractor.",
+          });
+        }
+      }
 
-    return res.status(200).json({
-      success: true,
-      status: 200,
-      message: "Contractor registration updated successfully",
-      data: existing,
-    });
+      fieldsToUse.contractor_invitation_id = existing.contractor_invitation_id;
+      fieldsToUse.invited_organization_by = existing.invited_organization_by;
+
+      const newRegistration = await ContractorRegistration.create(fieldsToUse);
+
+      return res.status(200).json({
+        success: true,
+        status: 200,
+        message: "New contractor registration created successfully.",
+        data: newRegistration,
+      });
+
+    } else {
+      if (abn_number && abn_number !== existing.abn_number) {
+        const abnExists = await ContractorRegistration.findOne({
+          where: {
+            abn_number,
+            id: { [Op.ne]: id },
+          },
+        });
+
+        // if (abnExists) {
+        //   return res.status(400).json({
+        //     success: false,
+        //     message: "This ABN number is already used by another contractorss.",
+        //   });
+        // }
+      }
+
+      await existing.update(fieldsToUse);
+
+      return res.status(200).json({
+        success: true,
+        status: 200,
+        message: "Contractor registration updated successfully.",
+        data: existing,
+      });
+    }
+
   } catch (error) {
     console.error("Error in ContractorRegistration:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
+      error: error.message,
     });
   }
 };
+
+
+
 
 const UploadInsuranceContrator = async (req, res) => {
   try {

@@ -12,7 +12,8 @@ const {
   SendverificationCode,
   VerifyMultifactorAuth,
   GetDetailsInvitationDetails,
-  UpdateContractorComments
+  UpdateContractorComments,
+  UpdateSubmissionStatus
 } = require("../controllers/API/OrginazationAdminController/OrginazationControllerAdmin");
 const {
   CreateContractorRegistration,
@@ -63,6 +64,7 @@ router.post("/send-contract-invitation-link", ...WithOrginazationAdminAndRole(Se
 router.get("/get-all-invitation-link", ...WithOrginazationAdminAndRole(GetInviationLinksList));
 router.get("/get-details-of-invitation", ...WithOrginazationAdminAndRole(GetDetailsInvitationDetails));
 router.post("/update-comments-of-contructor", ...WithOrginazationAdminAndRole(UpdateContractorComments));
+router.put("/update-submission-status",...WithOrginazationAdminAndRole(UpdateSubmissionStatus));
 router.post("/resend-email-to-invitation", ...WithOrginazationAdminAndRole(ResendInvitationEmail));
 
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);

@@ -381,7 +381,7 @@ const SendverificationCode = async (req, res) => {
       invitation = existingInvitation;
       await invitation.update({
         OneTimePass: otp,
-        otpExpiresAt
+        otpExpiresAt,
       });
     }
 
@@ -430,38 +430,32 @@ ${organizationName}`,
     });
 
     return res.status(200).json({ status: 200, message: "OTP sent successfully" });
-
   } catch (error) {
     console.error("Error sending OTP:", error);
     return res.status(500).json({ error: "Failed to send OTP" });
   }
 };
 
-
-
 const VerifyMultifactorAuth = async (req, res) => {
   try {
     const { email, otp } = req.body;
     const invitation = await ContractorInvitation.findOne({
       where: { contractor_email: email },
-      order: [['id', 'DESC']],
+      order: [["id", "DESC"]],
     });
     if (!invitation) {
       return res.status(404).json({ error: "Invitation not found for this email" });
     }
 
-    // Step 2: Check if OTP has expired
     const currentTime = new Date();
     if (invitation.otpExpiresAt < currentTime) {
       return res.status(400).json({ error: "OTP has expired. Please request a new OTP." });
     }
 
-    // Step 3: Check if the OTP is valid
     if (invitation.OneTimePass !== otp) {
       return res.status(400).json({ error: "Invalid OTP. Please try again." });
     }
 
-    // Step 4: Find the user who invited the contractor
     const findUser = await User.findOne({
       where: { id: invitation.invited_by },
     });
@@ -469,7 +463,6 @@ const VerifyMultifactorAuth = async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    // Step 5: Find the organization associated with the user
     const findOrganization = await Organization.findOne({
       where: { user_id: findUser.id },
     });
@@ -477,10 +470,8 @@ const VerifyMultifactorAuth = async (req, res) => {
       return res.status(404).json({ error: "Organization not found" });
     }
 
-    // Step 6: Clear the OTP fields in the invitation
     await invitation.update({ OneTimePass: null, otpExpiresAt: null });
 
-    // Step 7: Create the contractor registration with the correct organization ID
     const contractorRegistration = await ContractorRegistration.create({
       invited_organization_by: findOrganization.id,
       contractor_invitation_id: invitation.id,
@@ -491,7 +482,6 @@ const VerifyMultifactorAuth = async (req, res) => {
 
     const fullUrl = `${frontendUrl}/contractor/prequalification/${tokenFind}`;
 
-    // Step 8: Return the success message with registration details
     return res.status(200).json({
       message: "OTP verified successfully",
       status: 200,
@@ -563,7 +553,6 @@ const GetDetailsInvitationDetails = async (req, res) => {
       try {
         staffMemberDetails = JSON.parse(findRecordContractor.provide_name_position_mobile_no || "{}");
       } catch (e) {}
-
       const responseData = {
         InsuranceDoc_full_url: findInsurance?.document_url ? `${Completeurl}/${findInsurance.document_url}` : null,
         insurance_expire_date: findInsurance?.end_date || null,
@@ -611,7 +600,6 @@ const GetDetailsInvitationDetails = async (req, res) => {
       };
       return res.status(200).json({ status: 200, data: responseData });
     } else if (query_req === "revision_history") {
-      // Implement logic and return appropriate response
       return res.status(200).json({ status: 200, message: "Revision history not yet implemented" });
     } else if (query_req === "comments") {
       let comments = findRecordContractor.comments_history;
@@ -645,13 +633,10 @@ const UpdateContractorComments = async (req, res) => {
     const contractor = await ContractorRegistration.findOne({
       where: { id: req_id },
     });
-
     if (!contractor) {
       return res.status(404).json({ error: "Contractor not found" });
     }
-
     let existingComments = [];
-
     if (Array.isArray(contractor.comments_history)) {
       existingComments = contractor.comments_history;
     } else if (typeof contractor.comments_history === "string") {
@@ -676,9 +661,8 @@ const UpdateContractorComments = async (req, res) => {
     await contractor.update({
       comments_history: existingComments,
     });
-
     return res.status(200).json({
-      message: "Comment added successfully",
+      message: "Comment added Successfully",
       comments_history: existingComments,
     });
   } catch (error) {
@@ -686,6 +670,118 @@ const UpdateContractorComments = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+
+
+const UpdateSubmissionStatus = async (req, res) => {
+  try {
+    const { req_id, submission_status, comments } = req.body;
+    const userId = req.user?.id || null;
+    const userName = req.user?.name || "Admin";
+    if (!req_id || !submission_status) {
+      return res.status(400).json({ message: "req_id and submission_status are required." });
+    }
+    const contractor = await ContractorRegistration.findOne({ where: { id: req_id } });
+    if (!contractor) {
+      return res.status(404).json({ message: "Contractor registration not found." });
+    }
+
+    let updatedComments = [];
+    if (contractor.comments_history) {
+      try {
+        const parsed = JSON.parse(contractor.comments_history);
+        updatedComments = Array.isArray(parsed) ? parsed : [];
+      } catch (e) {
+        console.warn("Invalid comments_history format. Resetting to empty array.");
+      }
+    }
+    const dateAdded = moment().tz("Australia/Sydney").format("DD-MM-YYYY HH:mm");
+    if (comments) {
+      updatedComments.push({
+        id: Number(`${Date.now()}${Math.floor(100 + Math.random() * 900)}`),
+        user_id: userId,
+        comment: comments,
+        date_added: dateAdded,
+        CommentsBy: userName,
+      });
+    }
+    await contractor.update({
+      submission_status,
+      comments_history: updatedComments,
+    });
+    const invitation = await ContractorInvitation.findOne({
+      where: { id: contractor.contractor_invitation_id },
+      attributes: ["contractor_email", "invited_by"]
+    });
+
+    if (!invitation) {
+      console.warn("No matching invitation found for contractor.");
+    }
+    let organizationName = "James Milson Villages";
+    if (invitation?.invited_by) {
+      const inviter = await User.findOne({ where: { id: invitation.invited_by } });
+      const org = await Organization.findOne({
+        where: { user_id: inviter?.id },
+        attributes: ["organization_name"]
+      });
+      if (org) organizationName = org.organization_name;
+    }
+
+    // Send email only if status is approved/rejected
+    if (["approved", "rejected"].includes(submission_status.toLowerCase()) && invitation?.contractor_email) {
+      await emailQueue.add("sendSubmissionStatusEmail", {
+        to: invitation.contractor_email,
+        subject: `Contractor Submission ${submission_status.toUpperCase()} - ${organizationName}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 30px;">
+            <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 20px;">
+                <img src="https://your-logo-url.com/logo.png" alt="${organizationName}" style="max-width: 200px;" />
+              </div>
+              <h2 style="color: #007bff;">Contractor Submission Status: ${submission_status.charAt(0).toUpperCase() + submission_status.slice(1)}</h2>
+              <p>Dear Contractor,</p>
+              <p>We would like to inform you that your contractor registration submission has been <strong style="color: ${
+                submission_status === 'approved' ? '#28a745' : '#dc3545'
+              }">${submission_status.toUpperCase()}</strong>.</p>
+              ${
+                comments
+                  ? `<p><strong>Reviewer Comments:</strong></p>
+                     <blockquote style="border-left: 4px solid #ccc; margin: 10px 0; padding-left: 15px; color: #555;">
+                       ${comments}
+                     </blockquote>`
+                  : ''
+              }
+              <p><strong>Reviewed by:</strong> ${userName}</p>
+              <p><strong>Date:</strong> ${dateAdded}</p>
+              <hr style="margin: 30px 0;">
+              <p>If you have any questions or need to make changes to your submission, please reply to this email or contact our office.</p>
+              <p>Thank you for working with <strong>${organizationName}</strong>.</p>
+              <br>
+              <p style="color: #888;">Kind regards,<br>The ${organizationName} Team</p>
+            </div>
+          </div>
+        `
+      });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "Submission status and comments updated successfully.",
+      updated_status: submission_status,
+      comments_history: updatedComments,
+    });
+
+  } catch (error) {
+    console.error("Error updating submission status:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
+  }
+};
+
+
+
 
 module.exports = {
   GetOrginazationDetails,
@@ -698,4 +794,5 @@ module.exports = {
   VerifyMultifactorAuth,
   GetDetailsInvitationDetails,
   UpdateContractorComments,
+  UpdateSubmissionStatus
 };
