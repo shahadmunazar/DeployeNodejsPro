@@ -472,10 +472,10 @@ const VerifyMultifactorAuth = async (req, res) => {
 
     await invitation.update({ OneTimePass: null, otpExpiresAt: null });
 
-    const contractorRegistration = await ContractorRegistration.create({
+    const contractorRegistration = {
       invited_organization_by: findOrganization.id,
       contractor_invitation_id: invitation.id,
-    });
+    };
 
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     const tokenFind = invitation.invite_token;

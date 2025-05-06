@@ -69,27 +69,20 @@ const validateContractorRegistration = [
 const CreateContractorRegistration = async (req, res) => {
   try {
     await Promise.all(validateContractorRegistration.map(validation => validation.run(req)));
-
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, errors: errors.array() });
     }
-
     const { id, contractor_invitation_id, abn_number, new_start } = req.body;
-
-    if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: "Contractor registration ID is required.",
-      });
+    let existing = null;
+    if (id) {
+      existing = await ContractorRegistration.findOne({ where: { id } });
     }
 
-    const existing = await ContractorRegistration.findOne({ where: { id } });
-
-    if (!existing) {
+    if (!existing && !new_start) {
       return res.status(404).json({
         success: false,
-        message: "Contractor registration not found.",
+        message: "Contractor registration not found and new_start is false.",
       });
     }
 
@@ -144,18 +137,20 @@ const CreateContractorRegistration = async (req, res) => {
       "public_liability_doc_id",
       "organization_safety_management_id",
     ];
+
     const fieldsToUse = {};
     updatableFields.forEach(field => {
       if (req.body[field] !== undefined) {
         fieldsToUse[field] = req.body[field];
       }
     });
-    if (new_start === true) {
+
+    if (new_start === true || !existing) {
+      // Check ABN duplication for new
       if (abn_number) {
         const abnExists = await ContractorRegistration.findOne({
           where: {
             abn_number,
-            id: { [Op.ne]: id },
           },
         });
 
@@ -167,19 +162,22 @@ const CreateContractorRegistration = async (req, res) => {
         }
       }
 
-      fieldsToUse.contractor_invitation_id = existing.contractor_invitation_id;
-      fieldsToUse.invited_organization_by = existing.invited_organization_by;
+      // Fallback to values from old record if it existed
+      if (existing) {
+        fieldsToUse.contractor_invitation_id = existing.contractor_invitation_id;
+        fieldsToUse.invited_organization_by = existing.invited_organization_by;
+      }
 
       const newRegistration = await ContractorRegistration.create(fieldsToUse);
 
-      return res.status(200).json({
+      return res.status(201).json({
         success: true,
-        status: 200,
+        status: 201,
         message: "New contractor registration created successfully.",
         data: newRegistration,
       });
-
     } else {
+      
       if (abn_number && abn_number !== existing.abn_number) {
         const abnExists = await ContractorRegistration.findOne({
           where: {
@@ -191,7 +189,7 @@ const CreateContractorRegistration = async (req, res) => {
         // if (abnExists) {
         //   return res.status(400).json({
         //     success: false,
-        //     message: "This ABN number is already used by another contractorss.",
+        //     message: "This ABN number is already used by another contractor.",
         //   });
         // }
       }
@@ -205,7 +203,6 @@ const CreateContractorRegistration = async (req, res) => {
         data: existing,
       });
     }
-
   } catch (error) {
     console.error("Error in ContractorRegistration:", error);
     return res.status(500).json({
@@ -215,6 +212,7 @@ const CreateContractorRegistration = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -953,6 +951,47 @@ const DeleteContractorRecords = async (req, res) => {
 };
 
 
+const GetContractorDetails = async (req, res) => {
+  try {
+    const { contractor_id } = req.query;
+
+    if (!contractor_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Contractor ID is required.",
+      });
+    }
+
+    const findDetails = await ContractorRegistration.findOne({
+      where: {
+        id: contractor_id
+      }
+    });
+
+    if (!findDetails) {
+      return res.status(404).json({
+        success: false,
+        message: "Contractor not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Contractor details fetched successfully.",
+      data: findDetails
+    });
+
+  } catch (error) {
+    console.error("Error fetching contractor details:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+      error: error.message
+    });
+  }
+};
+
+
 
 
 module.exports = {
@@ -967,5 +1006,6 @@ module.exports = {
   DeletePublicLContrator,
   DeleteSafetyMContrator,
   CheckContractorRegisterStatus,
-  DeleteContractorRecords
+  DeleteContractorRecords,
+  GetContractorDetails
 };

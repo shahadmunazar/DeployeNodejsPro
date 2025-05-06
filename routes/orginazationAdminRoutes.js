@@ -27,7 +27,8 @@ const {
   DeletePublicLContrator,
   DeleteSafetyMContrator,
   CheckContractorRegisterStatus,
-  DeleteContractorRecords
+  DeleteContractorRecords,
+  GetContractorDetails
   
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
@@ -51,6 +52,8 @@ router.post("/upload-safety-managment", uploadFiles, UploadSafetyMNContractor);
 router.get("/get-insurance-contractor", GetInsuranceContractor);
 router.get("/get-public-liability-contractor", GetPublicLiabilityContractor);
 router.get("/get-safety-managment-contractor", GetSafetyMangmentContractor);
+
+router.get("/get-details-of-contructor", GetContractorDetails)
 
 router.delete("/delete-insurance-contractor", DeleteInsuranceContrator);
 router.delete("/public-liability-contractor", DeletePublicLContrator);
