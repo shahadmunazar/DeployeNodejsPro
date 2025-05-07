@@ -777,10 +777,12 @@ const DeleteSafetyMContrator = async(req,res)=>{
 
 const CheckContractorRegisterStatus = async (req, res) => {
   try {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ message: "Email is required." });
+    const { contractor_invitation_id } = req.body;
+
+    if (!contractor_invitation_id) {
+      return res.status(400).json({ message: "Contractor invitation ID is required." });
     }
+
     const getTimeAgo = (timestamp) => {
       const now = new Date();
       const past = new Date(timestamp);
@@ -798,108 +800,109 @@ const CheckContractorRegisterStatus = async (req, res) => {
       if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
       return `${seconds} second${seconds !== 1 ? 's' : ''} ago`;
     };
-    const findRecordContractor = await ContractorInvitation.findAll({
-      where: {
-        contractor_email: email
-      }
+
+    // Fetch the registrations for the given contractor invitation ID
+    const registrations = await ContractorRegistration.findAll({
+      where: { contractor_invitation_id },
+      attributes: [
+        'id',
+        'invited_organization_by',
+        'abn_number',
+        'contractor_company_name',
+        'contractor_trading_name',
+        'company_structure',
+        'company_representative_first_name',
+        'company_representative_last_name',
+        'position_at_company',
+        'address',
+        'street',
+        'suburb',
+        'state',
+        'contractor_phone_number',
+        'service_to_be_provided',
+        'employee_insure_doc_id',
+        'public_liability_doc_id',
+        'organization_safety_management_id',
+        'submission_status',
+        'updatedAt'
+      ]
     });
-    if (findRecordContractor.length === 0) {
+
+    if (!registrations || registrations.length === 0) {
       return res.status(200).json({
         registered: false,
-        message: "No contractor record found with this email."
+        message: "No contractor registration found for the provided invitation ID."
       });
     }
-    const enrichedData = await Promise.all(
-      findRecordContractor.map(async (record) => {
-        const plainRecord = record.toJSON();
-        const registration = await ContractorRegistration.findAll({
-          where: {
-            contractor_invitation_id: plainRecord.id
-          },
-          attributes: [
-            'id',
-            'invited_organization_by',
-            'abn_number',
-            'contractor_company_name',
-            'contractor_trading_name',
-            'company_structure',
-            'company_representative_first_name',
-            'company_representative_last_name',
-            'position_at_company',
-            'address',
-            'street',
-            'suburb',
-            'state',
-            'contractor_phone_number',
-            'service_to_be_provided',
-            'employee_insure_doc_id',
-            'public_liability_doc_id',
-            'organization_safety_management_id',
-            'submission_status'
-          ]
-        });
-        let incompletePage = null;
-        let formStatus = 'incomplete';
-        if (registration) {
-          if (registration.submission_status === 'confirm_submit') {
-            incompletePage = null;
-            formStatus = 'complete';
-          } else {
-            const requiredPage1Fields = [
-              'invited_organization_by',
-              'abn_number',
-              'contractor_company_name',
-              'contractor_trading_name',
-              'company_structure',
-              'company_representative_first_name',
-              'company_representative_last_name',
-              'position_at_company',
-              'address',
-              'street',
-              'suburb',
-              'state',
-              'contractor_phone_number',
-              'service_to_be_provided'
-            ];
-            const isPage1Incomplete = requiredPage1Fields.some(
-              (field) => registration[field] === null || registration[field] === ''
-            );
-            if (isPage1Incomplete) {
-              incompletePage = 1;
-            } else if (!registration.employee_insure_doc_id) {
-              incompletePage = 2;
-            } else if (!registration.public_liability_doc_id) {
-              incompletePage = 3;
-            } else if (!registration.organization_safety_management_id) {
-              incompletePage = 4;
-            } else {
-              formStatus = 'complete';
-            }
-          }
+
+    // Map through registrations and flatten the structure
+    const enrichedData = registrations.map((registration) => {
+      const plain = registration.toJSON();
+
+      let incompletePage = null;
+      let formStatus = 'incomplete';
+
+      if (plain.submission_status === 'confirm_submit') {
+        formStatus = 'complete';
+      } else {
+        const requiredPage1Fields = [
+          'invited_organization_by',
+          'abn_number',
+          'contractor_company_name',
+          'contractor_trading_name',
+          'company_structure',
+          'company_representative_first_name',
+          'company_representative_last_name',
+          'position_at_company',
+          'address',
+          'street',
+          'suburb',
+          'state',
+          'contractor_phone_number',
+          'service_to_be_provided'
+        ];
+
+        const isPage1Incomplete = requiredPage1Fields.some(
+          (field) => !plain[field]
+        );
+
+        if (isPage1Incomplete) {
+          incompletePage = 1;
+        } else if (!plain.employee_insure_doc_id) {
+          incompletePage = 2;
+        } else if (!plain.public_liability_doc_id) {
+          incompletePage = 3;
+        } else if (!plain.organization_safety_management_id) {
+          incompletePage = 4;
+        } else {
+          formStatus = 'complete';
         }
-        return {
-          ...plainRecord,
-          lastUpdatedAgo: getTimeAgo(plainRecord.updatedAt),
-          registrationInfo: registration || null,
-          incompletePage,
-          formStatus
-        };
-      })
-    );
+      }
+
+      return {
+        ...plain, 
+        lastUpdatedAgo: getTimeAgo(plain.updatedAt),
+        incompletePage,
+        formStatus
+      };
+    });
 
     return res.status(200).json({
       registered: true,
       status: 200,
       data: enrichedData
     });
+
   } catch (error) {
-    console.error("Error checking contractor register status:", error);
+    console.error("Error checking contractor registration status:", error);
     return res.status(500).json({
       message: "Internal server error",
       error: error.message
     });
   }
 };
+
+
 
 
 
@@ -982,6 +985,24 @@ const GetContractorDetails = async (req, res) => {
 };
 
 
+const MakePdfToAllContractorForm = async(req,res)=>{
+  try {
+    const {contractor_id} = req.body;
+    const findAllfields = await ContractorRegistration.findOne({
+      where:{
+        id:contractor_id
+      }
+    })
+
+    return res.status(200).json({
+      status:200,message:'All Data Retrieved Succesfully',
+      data:findAllfields
+    })
+  } catch (error) {
+    
+  }
+}
+
 
 
 module.exports = {
@@ -997,5 +1018,6 @@ module.exports = {
   DeleteSafetyMContrator,
   CheckContractorRegisterStatus,
   DeleteContractorRecords,
-  GetContractorDetails
+  GetContractorDetails,
+  MakePdfToAllContractorForm
 };
