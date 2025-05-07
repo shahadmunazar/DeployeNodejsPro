@@ -170,9 +170,9 @@ const CreateContractorRegistration = async (req, res) => {
 
       const newRegistration = await ContractorRegistration.create(fieldsToUse);
 
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
-        status: 201,
+        status: 200,
         message: "New contractor registration created successfully.",
         data: newRegistration,
       });
@@ -778,11 +778,9 @@ const DeleteSafetyMContrator = async(req,res)=>{
 const CheckContractorRegisterStatus = async (req, res) => {
   try {
     const { contractor_invitation_id } = req.query;
-
     if (!contractor_invitation_id) {
       return res.status(400).json({ message: "Contractor invitation ID is required." });
     }
-
     const getTimeAgo = (timestamp) => {
       const now = new Date();
       const past = new Date(timestamp);
@@ -800,8 +798,6 @@ const CheckContractorRegisterStatus = async (req, res) => {
       if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
       return `${seconds} second${seconds !== 1 ? 's' : ''} ago`;
     };
-
-    // Fetch the registrations for the given contractor invitation ID
     const registrations = await ContractorRegistration.findAll({
       where: { contractor_invitation_id },
       attributes: [
@@ -846,7 +842,6 @@ const CheckContractorRegisterStatus = async (req, res) => {
         formStatus = 'complete';
       } else {
         const requiredPage1Fields = [
-          'invited_organization_by',
           'abn_number',
           'contractor_company_name',
           'contractor_trading_name',
@@ -861,11 +856,9 @@ const CheckContractorRegisterStatus = async (req, res) => {
           'contractor_phone_number',
           'service_to_be_provided'
         ];
-
         const isPage1Incomplete = requiredPage1Fields.some(
           (field) => !plain[field]
         );
-
         if (isPage1Incomplete) {
           incompletePage = 1;
         } else if (!plain.employee_insure_doc_id) {
@@ -878,7 +871,6 @@ const CheckContractorRegisterStatus = async (req, res) => {
           formStatus = 'complete';
         }
       }
-
       return {
         ...plain, 
         lastUpdatedAgo: getTimeAgo(plain.updatedAt),
