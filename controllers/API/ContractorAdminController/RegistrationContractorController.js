@@ -777,7 +777,7 @@ const DeleteSafetyMContrator = async(req,res)=>{
 
 const CheckContractorRegisterStatus = async (req, res) => {
   try {
-    const { contractor_invitation_id } = req.body;
+    const { contractor_invitation_id } = req.query;
 
     if (!contractor_invitation_id) {
       return res.status(400).json({ message: "Contractor invitation ID is required." });
