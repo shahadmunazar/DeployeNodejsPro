@@ -906,49 +906,39 @@ const CheckContractorRegisterStatus = async (req, res) => {
 const DeleteContractorRecords = async (req, res) => {
   try {
     const { contractor_id } = req.body;
-
     if (!contractor_id) {
       return res.status(400).json({ message: "Contractor ID is required." });
     }
-    const contractorDel = await ContractorInvitation.findOne({
+    const contractorReg = await ContractorRegistration.findOne({
       where: { id: contractor_id }
     });
-
-    if (!contractorDel) {
-      return res.status(404).json({ message: "Contractor invitation not found." });
+    if (!contractorReg) {
+      return res.status(404).json({ message: "Contractor registration not found." });
     }
-    const deleteContractorReg = await ContractorRegistration.findOne({
-      where: { contractor_invitation_id: contractorDel.id }
+    await ContractorRegisterInsurance.destroy({
+      where: { contractor_id: contractorReg.id }
     });
-    if (deleteContractorReg) {
-      await ContractorRegisterInsurance.destroy({
-        where: { contractor_id: deleteContractorReg.id }
-      });
-      await ContractorPublicLiability.destroy({
-        where: { contractor_id: deleteContractorReg.id }
-      });
-      await ContractorOrganizationSafetyManagement.destroy({
-        where: { contractor_id: deleteContractorReg.id }
-      });
-      await ContractorRegistration.destroy({
-        where: { id: deleteContractorReg.id }
-      });
-    }
-    await ContractorInvitation.destroy({
-      where: { id: contractor_id }
+    await ContractorPublicLiability.destroy({
+      where: { contractor_id: contractorReg.id }
     });
-
+    await ContractorOrganizationSafetyManagement.destroy({
+      where: { contractor_id: contractorReg.id }
+    });
+    await ContractorRegistration.destroy({
+      where: { id: contractorReg.id }
+    });
     return res.status(200).json({
-      message: "Contractor and related records deleted successfully."
+      message: "Contractor registration and related documents deleted successfully."
     });
   } catch (error) {
-    console.error("Error deleting contractor records:", error);
+    console.error("Error deleting contractor registration:", error);
     return res.status(500).json({
       message: "Internal server error",
       error: error.message
     });
   }
 };
+
 
 
 const GetContractorDetails = async (req, res) => {

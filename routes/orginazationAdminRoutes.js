@@ -61,6 +61,8 @@ router.delete("/delete-safety-managment-contractor", DeleteSafetyMContrator);
 router.get("/check-contractor-register", CheckContractorRegisterStatus);
 router.delete("/delete-contractor-records",DeleteContractorRecords);
 
+
+
 router.get("/admin-details", ...WithOrginazationAdminAndRole(GetOrginazationDetails));
 router.post("/logout", ...WithOrginazationAdminAndRole(OrginazationAdminLogout));
 router.post("/send-contract-invitation-link", ...WithOrginazationAdminAndRole(SendIvitationLinkContractor));
