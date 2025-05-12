@@ -33,6 +33,8 @@ const {
   
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
+// const {TestingRoute} = require('../controllers/testingController')
+
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 
 const WithOrginazationAdminAndRole = (handler, role = "organization") => {
@@ -72,7 +74,11 @@ router.get("/get-details-of-invitation", ...WithOrginazationAdminAndRole(GetDeta
 router.post("/update-comments-of-contructor", ...WithOrginazationAdminAndRole(UpdateContractorComments));
 router.put("/update-submission-status",...WithOrginazationAdminAndRole(UpdateSubmissionStatus));
 router.post("/resend-email-to-invitation", ...WithOrginazationAdminAndRole(ResendInvitationEmail));
-router.post("/make-pdf-to-contractor-form", ...WithOrginazationAdminAndRole(MakePdfToAllContractorForm));
+// router.post("/make-pdf-to-contractor-form", ...WithOrginazationAdminAndRole(MakePdfToAllContractorForm));
+router.post("/make-pdf-to-contractor-form",MakePdfToAllContractorForm);
+
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
+
+// router.get("/testing-routes",TestingRoute );
 
 module.exports = router;

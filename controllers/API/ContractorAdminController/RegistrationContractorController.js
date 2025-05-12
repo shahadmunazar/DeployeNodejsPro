@@ -12,6 +12,9 @@ require("dotenv").config();
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
+const generateContractorFormDetailsPdf = require('../../../PdfGenerator/generateContractorFormDetailsPdf');
+
+const { generateContractorPdfs } = require("../../../PdfGenerator/generateContractorFormDetailsPdf")
 const ContractorOrganizationSafetyManagement = require("../../../models/contractororganizationsafetymanagement")(sequelize, DataTypes);
 const ContractorPublicLiability = require("../../../models/contractorpublicliability")(sequelize, DataTypes);
 const ContractorRegisterInsurance = require("../../../models/contractorregisterinsurance")(sequelize, DataTypes);
@@ -781,6 +784,7 @@ const CheckContractorRegisterStatus = async (req, res) => {
     if (!contractor_invitation_id) {
       return res.status(400).json({ message: "Contractor invitation ID is required." });
     }
+
     const getTimeAgo = (timestamp) => {
       const now = new Date();
       const past = new Date(timestamp);
@@ -791,6 +795,7 @@ const CheckContractorRegisterStatus = async (req, res) => {
       const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
       const months = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 30));
       const years = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 365));
+
       if (years > 0) return `${years} year${years > 1 ? 's' : ''} ago`;
       if (months > 0) return `${months} month${months > 1 ? 's' : ''} ago`;
       if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
@@ -798,6 +803,7 @@ const CheckContractorRegisterStatus = async (req, res) => {
       if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
       return `${seconds} second${seconds !== 1 ? 's' : ''} ago`;
     };
+
     const registrations = await ContractorRegistration.findAll({
       where: { contractor_invitation_id },
       attributes: [
@@ -820,7 +826,23 @@ const CheckContractorRegisterStatus = async (req, res) => {
         'public_liability_doc_id',
         'organization_safety_management_id',
         'submission_status',
-        'updatedAt'
+        'updatedAt',
+        'have_professional_indemnity_insuranc',
+        'is_staff_member_nominated',
+        'provide_name_position_mobile_no',
+        'are_employees_provided_with_health_safety',
+        'are_employees_appropriately_licensed_qualified_safety',
+        'are_employees_confirmed_as_competent_to_undertake_work',
+        'do_you_all_sub_contractor_qualified_to_work',
+        'do_you_all_sub_contractor_required_insurance_public_liability',
+        'have_you_identified_all_health_safety_legislation',
+        'do_you_have_emergency_response',
+        'do_you_have_procedures_to_notify_the_applicable',
+        'do_you_have_SWMS_JSAS_or_safe_work',
+        'do_your_workers_conduct_on_site_review',
+        'do_you_regularly_monitor_compliance',
+        'do_you_have_procedures_circumstances',
+        'have_you_been_prosecuted_health_regulator',
       ]
     });
 
@@ -831,9 +853,43 @@ const CheckContractorRegisterStatus = async (req, res) => {
       });
     }
 
-    // Map through registrations and flatten the structure
     const enrichedData = registrations.map((registration) => {
       const plain = registration.toJSON();
+
+      const requiredPage1Fields = [
+        'abn_number',
+        'contractor_company_name',
+        'contractor_trading_name',
+        'company_structure',
+        'company_representative_first_name',
+        'company_representative_last_name',
+        'position_at_company',
+        'address',
+        'street',
+        'suburb',
+        'state',
+        'contractor_phone_number',
+        'service_to_be_provided'
+      ];
+
+      const requiredPage5Fields = [
+        'have_professional_indemnity_insurance',
+        'is_staff_member_nominated',
+        'provide_name_position_mobile_no',
+        'are_employees_provided_with_health_safety',
+        'are_employees_appropriately_licensed_qualified_safety',
+        'are_employees_confirmed_as_competent_to_undertake_work',
+        'do_you_all_sub_contractor_qualified_to_work',
+        'do_you_all_sub_contractor_required_insurance_public_liability',
+        'have_you_identified_all_health_safety_legislation',
+        'do_you_have_emergency_response',
+        'do_you_have_procedures_to_notify_the_applicable',
+        'do_you_have_SWMS_JSAS_or_safe_work',
+        'do_your_workers_conduct_on_site_review',
+        'do_you_regularly_monitor_compliance',
+        'do_you_have_procedures_circumstances',
+        'have_you_been_prosecuted_health_regulator'
+      ];
 
       let incompletePage = null;
       let formStatus = 'incomplete';
@@ -841,24 +897,9 @@ const CheckContractorRegisterStatus = async (req, res) => {
       if (plain.submission_status === 'confirm_submit') {
         formStatus = 'complete';
       } else {
-        const requiredPage1Fields = [
-          'abn_number',
-          'contractor_company_name',
-          'contractor_trading_name',
-          'company_structure',
-          'company_representative_first_name',
-          'company_representative_last_name',
-          'position_at_company',
-          'address',
-          'street',
-          'suburb',
-          'state',
-          'contractor_phone_number',
-          'service_to_be_provided'
-        ];
-        const isPage1Incomplete = requiredPage1Fields.some(
-          (field) => !plain[field]
-        );
+        const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
+        const isPage5Incomplete = requiredPage5Fields.some(field => !plain[field]);
+
         if (isPage1Incomplete) {
           incompletePage = 1;
         } else if (!plain.employee_insure_doc_id) {
@@ -867,12 +908,15 @@ const CheckContractorRegisterStatus = async (req, res) => {
           incompletePage = 3;
         } else if (!plain.organization_safety_management_id) {
           incompletePage = 4;
+        } else if (isPage5Incomplete) {
+          incompletePage = 5;
         } else {
-          formStatus = 'complete';
+          formStatus = 'complete'; // Only mark complete if all validations pass
         }
       }
+
       return {
-        ...plain, 
+        ...plain,
         lastUpdatedAgo: getTimeAgo(plain.updatedAt),
         incompletePage,
         formStatus
@@ -893,6 +937,8 @@ const CheckContractorRegisterStatus = async (req, res) => {
     });
   }
 };
+
+
 
 
 
@@ -977,23 +1023,74 @@ const GetContractorDetails = async (req, res) => {
 };
 
 
-const MakePdfToAllContractorForm = async(req,res)=>{
+const MakePdfToAllContractorForm = async (req, res) => {
   try {
-    const {contractor_id} = req.body;
-    const findAllfields = await ContractorRegistration.findOne({
-      where:{
-        id:contractor_id
-      }
-    })
+    const { contractor_id, preview_html } = req.body
+    if (!contractor_id) {
+      return res.status(400).json({ status: 400, message: 'contractor_id is required' });
+    }
+    const contractorDetails = await ContractorRegistration.findOne({ where: { id: contractor_id } });
+    if (!contractorDetails) {
+      return res.status(404).json({ status: 404, message: 'Contractor not found' });
+    }
 
-    return res.status(200).json({
-      status:200,message:'All Data Retrieved Succesfully',
-      data:findAllfields
-    })
+    const [
+      insuranceDetails,
+      publicLiability,
+      safetyManagement,
+      invitedOrganization,
+      contractorInvitation
+    ] = await Promise.all([
+      ContractorRegisterInsurance.findOne({ where: { contractor_id } }),
+      ContractorPublicLiability.findOne({ where: { contractor_id } }),
+      ContractorOrganizationSafetyManagement.findOne({ where: { contractor_id } }),
+      Organization.findOne({ where: { id: contractorDetails.invited_organization_by } }),
+      ContractorInvitation.findOne({ where: { id: contractorDetails.contractor_invitation_id } })
+    ]);
+
+    const invitedUser = invitedOrganization?.user_id
+      ? await User.findOne({ where: { id: invitedOrganization.user_id } })
+      : null;
+
+    const responseData = {
+      contractorDetails,
+      insuranceDetails,
+      publicLiability,
+      safetyManagement,
+      invitedOrganization,
+      invitedUser,
+      contractorInvitation
+    };
+
+    console.log("Make Pdf Response", responseData);
+    if (preview_html) {
+      const html = await ejs.renderFile(
+        path.join(__dirname, '..', '..', 'views', 'contractor_form_details.ejs'),
+        responseData
+      );
+      return res.send(html);
+    }
+    const filePath = await generateContractorFormDetailsPdf(responseData, contractor_id);
+    // return res.status(200).json({
+    //   message:"All Data Retrieved Successfully",
+    //   data:responseData
+    // })
+    return res.download(filePath);
+
   } catch (error) {
-    
+    console.error('Error generating contractor PDF:', error);
+    return res.status(500).json({
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message
+    });
   }
-}
+};
+
+
+
+
+
 
 
 
