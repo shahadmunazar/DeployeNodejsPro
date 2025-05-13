@@ -3,7 +3,7 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     // Step 1: Add column without NOT NULL constraint
-    await queryInterface.addColumn('users', 'username', {
+    await queryInterface.addColumn('Users', 'username', {
       type: Sequelize.STRING,
       allowNull: true, // Temporarily allow NULL
     });
