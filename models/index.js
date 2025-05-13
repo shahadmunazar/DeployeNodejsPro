@@ -32,11 +32,16 @@ fs.readdirSync(__dirname)
 // Setup model relationships
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
-    db[modelName].associate(db); // This is what links them
+    db[modelName].associate(db);
   }
 });
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+
+// ✅ Auto-sync models to DB (only for dev/test)
+sequelize.sync({ alter: true }) 
+  .then(() => console.log('✅ Database synced'))
+  .catch(err => console.error('❌ Sync error:', err));
 
 module.exports = db;
