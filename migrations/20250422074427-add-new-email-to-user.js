@@ -1,7 +1,7 @@
 // migrations/YYYYMMDDHHMMSS-add-new-email-to-user.js
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('users', 'new_email', {
+    await queryInterface.addColumn('Users', 'new_email', {
       type: Sequelize.STRING,
       allowNull: true,
     });
@@ -9,6 +9,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeColumn('users', 'new_email');
+    await queryInterface.removeColumn('Users', 'new_email');
   }
 };

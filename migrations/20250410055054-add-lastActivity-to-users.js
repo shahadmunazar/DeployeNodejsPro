@@ -2,13 +2,13 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('users', 'lastActivity', {
+    await queryInterface.addColumn('Users', 'lastActivity', {
       type: Sequelize.DATE,
       allowNull: true,
     });
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn('users', 'lastActivity');
+    await queryInterface.removeColumn('Users', 'lastActivity');
   }
 };
