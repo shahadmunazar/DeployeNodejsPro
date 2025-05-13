@@ -49,7 +49,7 @@ const validateContractorRegistration = [
   body("covered_amount").optional().isInt(),
   body("have_professional_indemnity_insurance").optional().isIn(["Yes", "No", "N/A"]),
   body("is_staff_member_nominated").optional().isIn(["Yes", "No"]),
-  body("provide_name_position_mobile_no").optional().isObject(),
+  body("provide_name_position_mobile_no").optional().isString(),
   body("are_employees_provided_with_health_safety").optional().isIn(["Yes", "No"]),
   body("are_employees_appropriately_licensed_qualified_safety").optional().isIn(["Yes", "No", "N/A"]),
   body("are_employees_confirmed_as_competent_to_undertake_work").optional().isIn(["Yes", "No"]),
