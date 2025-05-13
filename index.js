@@ -24,8 +24,6 @@ app.use(bodyParser.json()); // For parsing application/json
 app.use(bodyParser.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 
 
-app.use()
-
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 
