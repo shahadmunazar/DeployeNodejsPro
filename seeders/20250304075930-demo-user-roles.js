@@ -1,7 +1,7 @@
 module.exports = {
   async up(queryInterface) {
     // Fetch user and role IDs dynamically
-    const users = await queryInterface.sequelize.query(`SELECT id, email FROM Users`);
+    const users = await queryInterface.sequelize.query(`SELECT id, email FROM users`);
     const roles = await queryInterface.sequelize.query(`SELECT id, name FROM Roles`);
 
     // Convert query result into an easy-to-access object
