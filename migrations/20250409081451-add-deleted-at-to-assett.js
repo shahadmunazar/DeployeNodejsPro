@@ -3,13 +3,13 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('Assets', 'deletedAt', {
+    await queryInterface.addColumn('assets', 'deletedAt', {
       type: Sequelize.DATE,
       allowNull: true,
     });
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeColumn('Assets', 'deletedAt');
+    await queryInterface.removeColumn('assets', 'deletedAt');
   }
 };

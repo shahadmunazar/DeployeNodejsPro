@@ -2,7 +2,7 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('Users', 'passwordChanged', {
+    await queryInterface.addColumn('users', 'passwordChanged', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false, // or true based on your logic
@@ -10,6 +10,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeColumn('Users', 'passwordChanged');
+    await queryInterface.removeColumn('users', 'passwordChanged');
   },
 };
