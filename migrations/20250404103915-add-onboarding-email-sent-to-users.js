@@ -2,7 +2,7 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.addColumn('Users', 'onboarding_email_sent', {
+    await queryInterface.addColumn('users', 'onboarding_email_sent', {
       type: Sequelize.BOOLEAN,
       allowNull: false,
       defaultValue: false,
@@ -10,6 +10,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.removeColumn('Users', 'onboarding_email_sent');
+    await queryInterface.removeColumn('users', 'onboarding_email_sent');
   }
 };

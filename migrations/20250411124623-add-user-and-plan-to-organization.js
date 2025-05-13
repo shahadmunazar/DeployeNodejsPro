@@ -6,7 +6,7 @@ module.exports = {
       type: Sequelize.INTEGER,
       allowNull: true,
       references: {
-        model: 'Users', // Make sure this matches your Users table name
+        model: 'users', // Make sure this matches your users table name
         key: 'id'
       },
       onUpdate: 'CASCADE',

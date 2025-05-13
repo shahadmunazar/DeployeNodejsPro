@@ -17,7 +17,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'Users', // assumes you already have Users table
+          model: 'users', // assumes you already have users table
           key: 'id'
         },
         onDelete: 'CASCADE'
