@@ -827,7 +827,7 @@ const CheckContractorRegisterStatus = async (req, res) => {
         'organization_safety_management_id',
         'submission_status',
         'updatedAt',
-        'have_professional_indemnity_insuranc',
+        'have_professional_indemnity_insurance',
         'is_staff_member_nominated',
         'provide_name_position_mobile_no',
         'are_employees_provided_with_health_safety',

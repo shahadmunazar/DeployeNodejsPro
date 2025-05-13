@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 const fs = require('fs');
 const path = require('path');
 const ejs = require('ejs');
@@ -6,14 +5,26 @@ const puppeteer = require('puppeteer');
 
 const generatePdf = async (data) => {
   try {
+    // Path to the EJS template
     const templatePath = path.join(__dirname, 'views/contractor_template.ejs');
+    
+    // Render the HTML from the EJS template and data
     const html = await ejs.renderFile(templatePath, data);
+    
+    // Launch Puppeteer browser instance
     const browser = await puppeteer.launch();
+    
+    // Create a new page and set the rendered HTML content
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    // Generate the PDF from the page content
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
+    
+    // Close the browser instance
     await browser.close();
-    return pdfBuffer;
+    
+    return pdfBuffer; // Return the PDF buffer
   } catch (error) {
     console.error('❌ Error generating PDF:', error);
     throw error;
@@ -21,27 +32,3 @@ const generatePdf = async (data) => {
 };
 
 module.exports = generatePdf;
-=======
-const fs = require('fs');
-const path = require('path');
-const ejs = require('ejs');
-const puppeteer = require('puppeteer');
-
-const generatePdf = async (data) => {
-  try {
-    const templatePath = path.join(__dirname, 'views/contractor_template.ejs');
-    const html = await ejs.renderFile(templatePath, data);
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-    const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
-    await browser.close();
-    return pdfBuffer;
-  } catch (error) {
-    console.error('❌ Error generating PDF:', error);
-    throw error;
-  }
-};
-
-module.exports = generatePdf;
->>>>>>> 8080c4e194ea4569188fe7ddb15a8d5a36457120
