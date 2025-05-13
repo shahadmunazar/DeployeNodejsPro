@@ -2,8 +2,8 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Create the Organizations table with a foreign key to Industries
-    await queryInterface.createTable('Organizations', {
+    // Create the organizations table with a foreign key to Industries
+    await queryInterface.createTable('organizations', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -93,7 +93,7 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    // Dropping the Organizations table in case we need to revert the migration
-    await queryInterface.dropTable('Organizations');
+    // Dropping the organizations table in case we need to revert the migration
+    await queryInterface.dropTable('organizations');
   }
 };
