@@ -6,7 +6,7 @@ module.exports = {
       type: Sequelize.INTEGER,
       allowNull: true,
       references: {
-        model: 'Users', // Make sure this matches your Users table name
+        model: 'users', 
         key: 'id'
       },
       onUpdate: 'CASCADE',
@@ -17,7 +17,7 @@ module.exports = {
       type: Sequelize.INTEGER,
       allowNull: true,
       references: {
-        model: 'Plans', // Make sure this matches your Plans table name
+        model: 'Plans', 
         key: 'id'
       },
       onUpdate: 'CASCADE',

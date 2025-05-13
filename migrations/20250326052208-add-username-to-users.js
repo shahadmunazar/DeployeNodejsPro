@@ -3,7 +3,7 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     // Step 1: Add column without NOT NULL constraint
-    await queryInterface.addColumn('users', 'username', {
+    await queryInterface.addColumn('Users', 'username', {
       type: Sequelize.STRING,
       allowNull: true, // Temporarily allow NULL
     });
@@ -14,13 +14,13 @@ module.exports = {
     );
 
     // Step 3: Alter column to enforce NOT NULL
-    await queryInterface.changeColumn('users', 'username', {
+    await queryInterface.changeColumn('Users', 'username', {
       type: Sequelize.STRING,
       allowNull: true,
     });
 
     // Step 4: Add unique constraint
-    await queryInterface.addConstraint('users', {
+    await queryInterface.addConstraint('Users', {
       fields: ['username'],
       type: 'unique',
       name: 'unique_username_constraint'
@@ -28,7 +28,7 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeConstraint('users', 'unique_username_constraint');
-    await queryInterface.removeColumn('users', 'username');
+    await queryInterface.removeConstraint('Users', 'unique_username_constraint');
+    await queryInterface.removeColumn('Users', 'username');
   }
 };
