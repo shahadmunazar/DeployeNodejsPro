@@ -92,6 +92,7 @@ User.init(
   },
   {
     sequelize,
+    tableName: "users",
     modelName: "User",
     paranoid: true, // Enables Soft Delete (keeps deletedAt)
     timestamps: true, // Keeps createdAt & updatedAt
