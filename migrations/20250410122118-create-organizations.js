@@ -3,7 +3,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     // Create the Organizations table with a foreign key to Industries
-    await queryInterface.createTable('Organizations', {
+    await queryInterface.createTable('organizations', {
       id: {
         allowNull: false,
         autoIncrement: true,
