@@ -4,7 +4,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     // Insert data into the 'industries' table using queryInterface.bulkInsert
-    await queryInterface.bulkInsert('industries', [
+    await queryInterface.bulkInsert('Industries', [
       {
         name: 'Technology',
         createdAt: new Date(),
@@ -60,6 +60,6 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     // Remove all industries (in case we need to rollback)
-    await queryInterface.bulkDelete('industries', null, {});
+    await queryInterface.bulkDelete('Industries', null, {});
   }
 };
