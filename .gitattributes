@@ -5,3 +5,4 @@ node_modules/html-pdf-node/node_modules/puppeteer/.local-chromium/win64-901912/c
 node_modules/html-pdf-node/node_modules/puppeteer/.local-chromium/win64-901912/chrome-win/interactive_ui_tests.exe filter=lfs diff=lfs merge=lfs -text
 node_modules/html-pdf-node/node_modules/puppeteer/.local-chromium/win64-901912/chrome-win/chrome.dll filter=lfs diff=lfs merge=lfs -text
 >>>>>>> 8080c4e194ea4569188fe7ddb15a8d5a36457120
+node_modules/html-pdf-node/node_modules/puppeteer/.local-chromium/** filter=lfs diff=lfs merge=lfs -text
