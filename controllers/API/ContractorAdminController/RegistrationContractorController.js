@@ -235,7 +235,7 @@ const CreateContractorRegistration = async (req, res) => {
 
 const UploadInsuranceContrator = async (req, res) => {
   try {
-    const { contractor_id, end_date, coverage_amount } = req.body;
+    const { contractor_id, end_date, covered_amount } = req.body;
 
     if (!contractor_id || !end_date) {
       return res.status(400).json({ message: "Contractor ID and insurance end date are required." });
@@ -264,7 +264,7 @@ const UploadInsuranceContrator = async (req, res) => {
     if (insuranceRecord) {
       await insuranceRecord.update({
         end_date,
-        coverage_amount,
+        coverage_amount:covered_amount,
         document_url,
         original_file_name,
       });
@@ -272,7 +272,7 @@ const UploadInsuranceContrator = async (req, res) => {
       insuranceRecord = await ContractorRegisterInsurance.create({
         contractor_id,
         end_date,
-        coverage_amount,
+        coverage_amount:covered_amount,
         document_url,
         original_file_name,
       });
@@ -280,7 +280,7 @@ const UploadInsuranceContrator = async (req, res) => {
 
     await contractor.update({
       employee_insure_doc_id: insuranceRecord.id,
-      covered_amount: coverage_amount
+      covered_amount: covered_amount
     });
 
     return res.status(200).json({
