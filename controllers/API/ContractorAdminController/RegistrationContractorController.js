@@ -907,26 +907,35 @@ const CheckContractorRegisterStatus = async (req, res) => {
       let incompletePage = null;
       let formStatus = 'incomplete';
 
-      if (plain.submission_status === 'confirm_submit') {
-        formStatus = 'complete';
-      } else {
-        const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
-        const isPage5Incomplete = requiredPage5Fields.some(field => !plain[field]);
+if (plain.submission_status === 'confirm_submit') {
+  formStatus = 'complete';
+} else {
+  const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
+  const isPage5Incomplete = requiredPage5Fields.some(field => !plain[field]);
 
-        if (isPage1Incomplete) {
-          incompletePage = 1;
-        } else if (!plain.employee_insure_doc_id) {
-          incompletePage = 2;
-        } else if (!plain.public_liability_doc_id) {
-          incompletePage = 3;
-        } else if (!plain.organization_safety_management_id) {
-          incompletePage = 4;
-        } else if (isPage5Incomplete) {
-          incompletePage = 5;
-        } else {
-          formStatus = 'complete'; // Only mark complete if all validations pass
-        }
-      }
+  if (isPage1Incomplete) {
+    incompletePage = 1;
+
+  } else if (!plain.employee_insure_doc_id) {
+    if (plain.public_liability_doc_id && plain.organization_safety_management_id) {
+      incompletePage = isPage5Incomplete ? 5 : 5;
+    } else if (plain.public_liability_doc_id) {
+      incompletePage = 4;
+    } else {
+      incompletePage = 2;
+    }
+  } else if (!plain.public_liability_doc_id) {
+    incompletePage = 3;
+  } else if (!plain.organization_safety_management_id) {
+    incompletePage = 4;
+  } else if (isPage5Incomplete) {
+    incompletePage = 5;
+  } else {
+    formStatus = 'complete';
+  }
+}
+
+
 
       return {
         ...plain,
