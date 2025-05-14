@@ -164,14 +164,12 @@ const CreateContractorRegistration = async (req, res) => {
     });
 
     if (new_start === true || !existing) {
-      // Check ABN duplication for new
       if (abn_number) {
         const abnExists = await ContractorRegistration.findOne({
           where: {
             abn_number,
           },
         });
-
         if (abnExists) {
           return res.status(400).json({
             success: false,
@@ -843,6 +841,7 @@ const CheckContractorRegisterStatus = async (req, res) => {
         'organization_safety_management_id',
         'submission_status',
         'updatedAt',
+        'covered_amount',
         'have_professional_indemnity_insurance',
         'is_staff_member_nominated',
         'provide_name_position_mobile_no',
