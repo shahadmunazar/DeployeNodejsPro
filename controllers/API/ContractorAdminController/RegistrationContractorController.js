@@ -301,12 +301,13 @@ const UploadInsuranceContrator = async (req, res) => {
 
 const UploadPublicLiability = async (req, res) => {
   try {
-    const { contractor_id, end_date } = req.body;
+    const { contractor_id, end_date,covered_amount } = req.body;
 
     if (!contractor_id || !end_date) {
       return res.status(400).json({ message: "Contractor ID and insurance end date are required." });
     }
 
+  
     const file = req.files?.contractor_liability?.[0];
     if (!file) {
       return res.status(400).json({ message: "Public liability document file is required." });
@@ -348,6 +349,7 @@ const UploadPublicLiability = async (req, res) => {
     // Update contractor with reference ID
     await contractor.update({
       public_liability_doc_id: liabilityRecord.id,
+      covered_amount:covered_amount
     });
 
     return res.status(200).json({
