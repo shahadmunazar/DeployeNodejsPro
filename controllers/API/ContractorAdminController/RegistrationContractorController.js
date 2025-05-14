@@ -27,6 +27,19 @@ const Organization = require("../../../models/organization")(sequelize, DataType
 const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
 const { response } = require("express");
 
+const formatDate = date => {
+  const formattedDate = new Date(date);
+  const day = String(formattedDate.getDate()).padStart(2, "0");
+  const month = String(formattedDate.getMonth() + 1).padStart(2, "0");
+  const year = formattedDate.getFullYear();
+  let hours = formattedDate.getHours();
+  const minutes = String(formattedDate.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  return `${day}-${month}-${year} ${hours}:${minutes} ${ampm}`;
+};
+
 const validateContractorRegistration = [
   body("contractor_invitation_id").notEmpty().isInt().withMessage("Contractor invitation ID is required"),
   body("invited_organization_by").optional().isInt(),
@@ -968,7 +981,8 @@ const DeleteContractorRecords = async (req, res) => {
     await ContractorRegistration.destroy({
       where: { id: contractorReg.id }
     });
-    return res.status(200).json({
+    return res.status(200).json({status:200,
+      success: true,
       message: "Contractor registration and related documents deleted successfully."
     });
   } catch (error) {
@@ -985,33 +999,98 @@ const DeleteContractorRecords = async (req, res) => {
 const GetContractorDetails = async (req, res) => {
   try {
     const { contractor_id } = req.query;
-
     if (!contractor_id) {
       return res.status(400).json({
         success: false,
         message: "Contractor ID is required.",
       });
     }
-
-    const findDetails = await ContractorRegistration.findOne({
-      where: {
-        id: contractor_id
-      }
+    const contractor = await ContractorRegistration.findOne({
+      where: { id: contractor_id },
+      raw: true,
     });
-
-    if (!findDetails) {
+    if (!contractor) {
       return res.status(404).json({
         success: false,
         message: "Contractor not found.",
       });
     }
-
+    const insurance = await ContractorRegisterInsurance.findOne({
+      where: { contractor_id: contractor.id },
+      raw: true,
+    });
+    const publicLiability = await ContractorPublicLiability.findOne({
+      where: { contractor_id: contractor.id },
+      raw: true,
+    });
+    const safetyManagement = await ContractorOrganizationSafetyManagement.findOne({
+      where: { contractor_id: contractor.id },
+      raw: true,
+    });
+    const requiredPage1Fields = [
+      'abn_number', 'contractor_company_name', 'contractor_trading_name', 'company_structure',
+      'company_representative_first_name', 'company_representative_last_name', 'position_at_company',
+      'address', 'street', 'suburb', 'state', 'contractor_phone_number', 'service_to_be_provided'
+    ];
+    const requiredPage5Fields = [
+      'have_professional_indemnity_insurance', 'is_staff_member_nominated', 'provide_name_position_mobile_no',
+      'are_employees_provided_with_health_safety', 'are_employees_appropriately_licensed_qualified_safety',
+      'are_employees_confirmed_as_competent_to_undertake_work', 'do_you_all_sub_contractor_qualified_to_work',
+      'do_you_all_sub_contractor_required_insurance_public_liability', 'have_you_identified_all_health_safety_legislation',
+      'do_you_have_emergency_response', 'do_you_have_procedures_to_notify_the_applicable', 'do_you_have_SWMS_JSAS_or_safe_work',
+      'do_your_workers_conduct_on_site_review', 'do_you_regularly_monitor_compliance', 'do_you_have_procedures_circumstances',
+      'have_you_been_prosecuted_health_regulator'
+    ];
+    let incompletePage = null;
+    let formStatus = 'incomplete';
+    if (contractor.submission_status === 'confirm_submit') {
+      formStatus = 'complete';
+    } else {
+      const isPage1Incomplete = requiredPage1Fields.some(field => !contractor[field]);
+      const isPage5Incomplete = requiredPage5Fields.some(field => !contractor[field]);
+      if (isPage1Incomplete) {
+        incompletePage = 1;
+      } else if (!contractor.employee_insure_doc_id) {
+        incompletePage = 2;
+      } else if (!contractor.public_liability_doc_id) {
+        incompletePage = 3;
+      } else if (!contractor.organization_safety_management_id) {
+        incompletePage = 4;
+      } else if (isPage5Incomplete) {
+        incompletePage = 5;
+      } else {
+        formStatus = 'complete';
+      }
+    }
+    const SERVER_BASE_URL = process.env.BACKEND_URL || 'http://localhost:5000/';
+    const mergedData = {
+      ...contractor,
+      Insuranceid: insurance?.id || null,
+      coverage_amount_insurance: insurance?.coverage_amount || null,
+      original_file_name_insurance: insurance?.original_file_name || null,
+        end_date_insurance_formatted: insurance?.end_date ? formatDate(insurance.end_date) : null,
+      full_doc_url_insurance: insurance?.document_url ? SERVER_BASE_URL + insurance.document_url : null,
+      publicid: publicLiability?.id || null,
+      policy_number_public: publicLiability?.policy_number || null,
+      provider_public: publicLiability?.provider || null,
+      original_file_name_public_liability: publicLiability?.original_file_name || null,
+        end_date_public_formatted: publicLiability?.end_date ? formatDate(publicLiability.end_date) : null,
+      full_doc_url_public_liability: publicLiability?.public_liabilty_file_url
+        ? SERVER_BASE_URL + publicLiability.public_liabilty_file_url
+        : null,
+      Safetyid: safetyManagement?.id || null,
+      original_file_name_safety: safetyManagement?.original_file_name || null,
+      full_doc_url_safety: safetyManagement?.does_organization_safety_management_system_filename
+        ? SERVER_BASE_URL + safetyManagement.does_organization_safety_management_system_filename
+        : null,
+      formStatus,
+      incompletePage
+    };
     return res.status(200).json({
       success: true,
       message: "Contractor details fetched successfully.",
-      data: findDetails
+      data: mergedData,
     });
-
   } catch (error) {
     console.error("Error fetching contractor details:", error);
     return res.status(500).json({
@@ -1021,6 +1100,10 @@ const GetContractorDetails = async (req, res) => {
     });
   }
 };
+
+
+
+
 
 
 const MakePdfToAllContractorForm = async (req, res) => {

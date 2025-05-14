@@ -18,15 +18,9 @@ app.use(cors({
     methods: "GET, POST, PUT, DELETE, OPTIONS",
     allowedHeaders: "*",
 }));
-
-
-app.use(bodyParser.json()); // For parsing application/json
-app.use(bodyParser.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
-
-
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-
 cron.schedule('* * * * *', async () => {
     console.log('🔁 Running onboarding email cron job...');
     await sendPendingOnboardingEmails();
@@ -36,7 +30,6 @@ const server = http.createServer(app);
 const io = initSocket(server); 
 app.use(cors());
 app.use(express.json());
-
 app.use("/api/superadmin",SuperAdminRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/api", LoginRoutes);
