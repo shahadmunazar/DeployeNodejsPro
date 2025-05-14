@@ -915,11 +915,9 @@ if (plain.submission_status === 'confirm_submit') {
   formStatus = 'complete';
 } else {
   const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
-  const isPage5Incomplete = requiredPage5Fields.some(field => !plain[field]);
-
+  const isPage5Incomplete = requiredPage5Fields.some(field => plain[field]);
   if (isPage1Incomplete) {
     incompletePage = 1;
-
   } else if (!plain.employee_insure_doc_id) {
     if (plain.public_liability_doc_id && plain.organization_safety_management_id) {
       incompletePage = isPage5Incomplete ? 5 : 5;
