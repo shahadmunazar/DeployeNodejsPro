@@ -831,6 +831,7 @@ const CheckContractorRegisterStatus = async (req, res) => {
         'position_at_company',
         'address',
         'street',
+        'postal_code',
         'suburb',
         'state',
         'contractor_phone_number',
