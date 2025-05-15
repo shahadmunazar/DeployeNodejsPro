@@ -104,7 +104,7 @@ const sendPendingOnboardingEmails = async () => {
         attributes: ["organization_name"],
       });
       const orgName = organization?.organization_name?.replace(/\s+/g, "-").toLowerCase() || "user-login";
-      const activationLink = `http://localhost:5173/${orgName}/login`;
+      const activationLink = `http://3.107.26.110:3000/${orgName}/login`;
       if (!user.onboarding_email_sent) {
         await user.update({
           password: await bcrypt.hash(tempPassword, 10),

@@ -122,7 +122,7 @@ const SendIvitationLinkContractor = async (req, res) => {
         },
         { where: { id: existing.id } }
       );
-      // http://localhost:5173/contractor-pre
+      // http://3.107.26.110:3000/contractor-pre
       const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register/token=${token}`;
       const htmlContent = generateInviteHTML(user.name || user.email, organization.organization_name, inviteUrl);
       await emailQueue.add("sendContractorInvite", {
@@ -140,7 +140,7 @@ const SendIvitationLinkContractor = async (req, res) => {
     }
 
     // No existing invitation: create a new one
-    // http://localhost:5173/contractor-pre
+    // http://3.107.26.110:3000/contractor-pre
     const inviteUrl = `${process.env.FRONTEND_URL}/contractor/register/token=${token}`;
     const htmlContent = generateInviteHTML(user.name || user.email, organization.organization_name, inviteUrl);
 
@@ -477,7 +477,7 @@ const VerifyMultifactorAuth = async (req, res) => {
       contractor_invitation_id: invitation.id,
     };
 
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const frontendUrl = process.env.FRONTEND_URL || "http://3.107.26.110:3000/";
     const tokenFind = invitation.invite_token;
 
     const fullUrl = `${frontendUrl}/contractor/prequalification/${tokenFind}`;
