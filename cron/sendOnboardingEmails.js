@@ -117,6 +117,7 @@ const sendPendingOnboardingEmails = async () => {
           email: user.email,
           name: user.name,
           tempPassword,
+          orgName,
           activationLink,
         });
         if (emailSent) {

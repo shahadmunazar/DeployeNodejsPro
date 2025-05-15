@@ -15,9 +15,10 @@ const transporter = nodemailer.createTransport({
  * @param {string} params.name
  * @param {string} params.tempPassword
  * @param {string} params.activationLink
+ * @param {string} params.orgName
  * @returns {Promise<boolean>}
  */
-const sendOnboardingEmail = async ({ email, name, tempPassword, activationLink }) => {
+const sendOnboardingEmail = async ({ email, name, tempPassword, activationLink,orgName }) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
@@ -27,7 +28,7 @@ const sendOnboardingEmail = async ({ email, name, tempPassword, activationLink }
       <p>Thank you for joining our platform! Please use the details below to activate your account:</p>
       <ul>
         <li><strong>Temporary Password:</strong> ${tempPassword}</li>
-        <li><strong>Activation Link:</strong> <a href="${activationLink}">${activationLink}</a></li>
+        <li><strong>Activation Link:</strong> <a href="http://3.107.26.110:3000/${orgName}/login">${activationLink}</a></li>
       </ul>
       <p>This link and temporary password will expire in 24 hours for security reasons.</p>
       <p>If you need help, please contact support.</p>
