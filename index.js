@@ -22,7 +22,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 cron.schedule('* * * * *', async () => {
-    console.log('🔁 Running onboarding email cron job...');
+    console.log('🔁 Running onboarding email cron job And Send Invitation Link...');
     await sendPendingOnboardingEmails();
     await sendContractorRegistrationEmail();
   });
