@@ -1,7 +1,7 @@
-const puppeteer = require('puppeteer');
+const fs = require('fs');
 const path = require('path');
 const ejs = require('ejs');
-const fs = require('fs');
+const puppeteer = require('puppeteer');
 
 const generatePdf = async (data) => {
   try {
@@ -11,7 +11,7 @@ const generatePdf = async (data) => {
     // Render the HTML from the EJS template and data
     const html = await ejs.renderFile(templatePath, data);
     
-    // Launch Puppeteer browser instance with `--no-sandbox` if required
+    // Launch Puppeteer browser instance with no-sandbox and disable-setuid-sandbox arguments
     const browser = await puppeteer.launch({
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
@@ -20,15 +20,15 @@ const generatePdf = async (data) => {
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
     
-   
+    // Generate the PDF from the page content
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
     
-    
+    // Close the browser instance
     await browser.close();
     
-    return pdfBuffer; 
+    return pdfBuffer; // Return the PDF buffer
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error('❌ Error generating PDF in new:', error);
     throw error;
   }
 };
