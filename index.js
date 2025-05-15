@@ -24,7 +24,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 cron.schedule('* * * * *', async () => {
     console.log('🔁 Running onboarding email cron job...');
     await sendPendingOnboardingEmails();
-    // await sendContractorRegistrationEmail();
+    await sendContractorRegistrationEmail();
   });
 const server = http.createServer(app);
 const io = initSocket(server); 
