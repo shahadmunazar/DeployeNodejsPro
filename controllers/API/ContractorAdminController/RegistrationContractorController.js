@@ -1073,7 +1073,7 @@ const GetContractorDetails = async (req, res) => {
         formStatus = 'complete';
       }
     }
-    const SERVER_BASE_URL = process.env.BACKEND_URL || 'http://localhost:5000/';
+    const SERVER_BASE_URL = process.env.BACKEND_URL || 'http://13.238.194.121:5000/';
     const mergedData = {
       ...contractor,
       Insuranceid: insurance?.id || null,
