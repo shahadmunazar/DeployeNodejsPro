@@ -11,10 +11,15 @@ const generatePdf = async (data) => {
     // Render the HTML from the EJS template and data
     const html = await ejs.renderFile(templatePath, data);
     
+    // Path to Chromium (You can set it to your specific path if needed)
+    const chromiumPath = '/usr/bin/chromium-browser'; // Or wherever Chromium is installed
+    
     // Launch Puppeteer browser instance with no-sandbox and disable-setuid-sandbox arguments
     const browser = await puppeteer.launch({
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox']
+});
+
     
     // Create a new page and set the rendered HTML content
     const page = await browser.newPage();

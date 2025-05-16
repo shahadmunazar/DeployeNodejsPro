@@ -36,7 +36,7 @@ const worker = new Worker('email-queue', async (job) => {
 
   try {
     await transporter.sendMail({
-      from: `"Node SaaS BackEnd" <${process.env.EMAIL_USER}>`,
+      from: `"Konnect Verification Code" <${process.env.EMAIL_USER}>`,
       to,
       subject,
       text,
