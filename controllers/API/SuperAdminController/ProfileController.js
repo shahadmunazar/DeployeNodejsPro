@@ -7,6 +7,7 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
 const https = require("https");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
@@ -228,26 +229,22 @@ const SuperAdminLogout = async (req, res) => {
     const authHeader = req.headers.authorization;
     const token = authHeader?.split(" ")[1];
 
+    console.log("Token", token);
     if (!token) {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
-
-    // Verify the token
     let decoded;
     console.log("Decoded",decoded);
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
+      console.log("Decoded JWT:", decoded);
     } catch (err) {
       return res.status(401).json({ error: "Unauthorized: Invalid token" });
     }
-
-    // Find the user
     const admin = await User.findByPk(decoded.id);
     if (!admin) {
       return res.status(404).json({ error: "Admin user not found" });
     }
-
-    // Delete refresh token from DB
     const deleted = await RefreshToken.destroy({
       where: {
         userId: admin.id,
