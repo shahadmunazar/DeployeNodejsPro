@@ -259,6 +259,7 @@ const SuperAdminLogout = async (req, res) => {
     });
 
     return res.status(200).json({
+      status:200,
       message: deleted ? "Admin successfully logged out, refresh token deleted" : "Admin logged out, but no matching refresh token found",
     });
   } catch (error) {
