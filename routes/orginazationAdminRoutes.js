@@ -29,7 +29,8 @@ const {
   CheckContractorRegisterStatus,
   DeleteContractorRecords,
   GetContractorDetails,
-  MakePdfToAllContractorForm
+  MakePdfToAllContractorForm,
+  SearchLocation
   
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
@@ -42,6 +43,7 @@ const WithOrginazationAdminAndRole = (handler, role = "organization") => {
 };
 
 const uploadFiles = require("../middleware/uploadOrganizationFiles");
+const { route } = require("./userRoutes");
 
 router.post("/send-multifactor-verification", SendverificationCode);
 router.post("/verify-multifactor-authentication", VerifyMultifactorAuth);
@@ -79,6 +81,8 @@ router.post("/make-pdf-to-contractor-form",MakePdfToAllContractorForm);
 
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
 
+
+router.get("/search-location", SearchLocation);
 // router.get("/testing-routes",TestingRoute );
 
 module.exports = router;

@@ -521,134 +521,133 @@ const VerifyMultifactorAuth = async (req, res) => {
 
 const GetDetailsInvitationDetails = async (req, res) => {
   try {
-    const { req_id, query_req } = req.query;
+    const { req_id } = req.query;
 
-    const findRecordContractor = await ContractorRegistration.findOne({
-      where: { id: req_id },
-    });
+    const contractor = await ContractorRegistration.findOne({ where: { id: req_id } });
 
-    if (!findRecordContractor) {
+    if (!contractor) {
       return res.status(404).json({ error: "Contractor not found" });
     }
 
-    if (query_req === "form_details") {
-      const findOrganizationDet = await Organization.findOne({
-        where: { id: findRecordContractor.invited_organization_by },
-      });
+    const organization = await Organization.findOne({
+      where: { id: contractor.invited_organization_by },
+    });
 
-      const findUser = await User.findOne({
-        where: { id: findOrganizationDet?.user_id },
-      });
+    const user = await User.findOne({
+      where: { id: organization?.user_id },
+    });
 
-      const findDetails = await ContractorInvitation.findOne({
-        where: { id: findRecordContractor.contractor_invitation_id },
-      });
+    const invitation = await ContractorInvitation.findOne({
+      where: { id: contractor.contractor_invitation_id },
+    });
 
-      const responseData = {
-        company_name: findRecordContractor.contractor_company_name,
-        invitedBy: findOrganizationDet?.organization_name || null,
-        Name: findUser?.name || null,
-        Email_Address: findDetails?.contractor_email || null,
-        Phone_No: findRecordContractor.contractor_phone_number,
-        Status: "Approved Current",
-        Expires: "16/04/2026", // Optional: compute dynamically
-        Renewal: "On",
-      };
+    const insurance = await ContractorRegisterInsurance.findOne({
+      where: { contractor_id: contractor.id },
+      attributes: ["document_url", "original_file_name", "end_date"],
+    });
 
-      return res.status(200).json({ status: 200, data: responseData });
-    } else if (query_req === "submission") {
-      const findInsurance = await ContractorRegisterInsurance.findOne({
-        where: { contractor_id: findRecordContractor.id },
-        attributes: ["document_url", "original_file_name", "end_date"],
-      });
+    const publicLiability = await ContractorPublicLiability.findOne({
+      where: { contractor_id: contractor.id },
+      attributes: ["public_liabilty_file_url", "end_date", "original_file_name"],
+    });
 
-      const findPublicLiability = await ContractorPublicLiability.findOne({
-        where: { contractor_id: findRecordContractor.id },
-        attributes: ["public_liabilty_file_url", "end_date", "original_file_name"],
-      });
+    const safetyManagement = await ContractorOrganizationSafetyManagement.findOne({
+      where: { contractor_id: contractor.id },
+      attributes: ["does_organization_safety_management_system_filename", "original_file_name"],
+    });
 
-      const findSafetyManagement = await ContractorOrganizationSafetyManagement.findOne({
-        where: { contractor_id: findRecordContractor.id },
-        attributes: ["does_organization_safety_management_system_filename", "original_file_name"],
-      });
+    const backendUrl = process.env.BACKEND_URL || "";
 
-      const Completeurl = process.env.BACKEND_URL || "";
-
-      let staffMemberDetails = {};
-      try {
-        staffMemberDetails = JSON.parse(findRecordContractor.provide_name_position_mobile_no || "{}");
-      } catch (e) {}
-      const responseData = {
-        InsuranceDoc_full_url: findInsurance?.document_url ? `${Completeurl}/${findInsurance.document_url}` : null,
-        insurance_expire_date: findInsurance?.end_date || null,
-        insurance_original_file_name: findInsurance?.original_file_name || null,
-
-        PublicLiability_doc_url: findPublicLiability?.public_liabilty_file_url ? `${Completeurl}/${findPublicLiability.public_liabilty_file_url}` : null,
-        PublicLiability_expiry: findPublicLiability?.end_date || null,
-        PublicLiability_original_name: findPublicLiability?.original_file_name || null,
-        SafetyManagement_doc_url: findSafetyManagement?.does_organization_safety_management_system_filename
-          ? `${Completeurl}/${findSafetyManagement.does_organization_safety_management_system_filename}`
-          : null,
-        contractor_company_name: findRecordContractor.name,
-        contractor_trading_name: findRecordContractor.contractor_trading_name,
-        company_structure: findRecordContractor.company_structure,
-        contractor_invitation_id: findRecordContractor.contractor_invitation_id,
-        company_representative_first_name: findRecordContractor.company_representative_first_name,
-        company_representative_last_name: findRecordContractor.company_representative_last_name,
-        position_at_company: findRecordContractor.position_at_company,
-        address: findRecordContractor.address,
-        street: findRecordContractor.street,
-        suburb: findRecordContractor.suburb,
-        state: findRecordContractor.state,
-        postal_code: findRecordContractor.postal_code,
-        contractor_phone_number: findRecordContractor.contractor_phone_number,
-        service_to_be_provided: findRecordContractor.service_to_be_provided,
-        covered_amount: findRecordContractor.covered_amount,
-        have_professional_indemnity_insurance: findRecordContractor.have_professional_indemnity_insurance,
-        is_staff_member_nominated: findRecordContractor.is_staff_member_nominated,
-        provide_name_position_mobile_no: staffMemberDetails,
-
-        are_employees_provided_with_health_safety: findRecordContractor.are_employees_provided_with_health_safety,
-        are_employees_appropriately_licensed_qualified_safety: findRecordContractor.are_employees_appropriately_licensed_qualified_safety,
-        are_employees_confirmed_as_competent_to_undertake_work: findRecordContractor.are_employees_confirmed_as_competent_to_undertake_work,
-        do_you_all_sub_contractor_qualified_to_work: findRecordContractor.do_you_all_sub_contractor_qualified_to_work,
-        do_you_all_sub_contractor_required_insurance_public_liability: findRecordContractor.do_you_all_sub_contractor_required_insurance_public_liability,
-        have_you_identified_all_health_safety_legislation: findRecordContractor.have_you_identified_all_health_safety_legislation,
-        do_you_have_emergency_response: findRecordContractor.do_you_have_emergency_response,
-        do_you_have_procedures_to_notify_the_applicable: findRecordContractor.do_you_have_procedures_to_notify_the_applicable,
-        do_you_have_SWMS_JSAS_or_safe_work: findRecordContractor.do_you_have_SWMS_JSAS_or_safe_work,
-        do_your_workers_conduct_on_site_review: findRecordContractor.do_your_workers_conduct_on_site_review,
-        do_you_regularly_monitor_compliance: findRecordContractor.do_you_regularly_monitor_compliance,
-        do_you_have_procedures_circumstances: findRecordContractor.do_you_have_procedures_circumstances,
-        have_you_been_prosecuted_health_regulator: findRecordContractor.have_you_been_prosecuted_health_regulator,
-        submission_status: findRecordContractor.submission_status,
-      };
-      return res.status(200).json({ status: 200, data: responseData });
-    } else if (query_req === "revision_history") {
-      return res.status(200).json({ status: 200, message: "Revision history not yet implemented" });
-    } else if (query_req === "comments") {
-      let comments = findRecordContractor.comments_history;
-      if (typeof comments === "string") {
-        try {
-          comments = JSON.parse(comments);
-        } catch (error) {
-          console.error("Failed to parse comments_history:", error);
-          return res.status(500).json({ message: "Invalid comments format" });
-        }
-      }
-      return res.status(200).json({
-        status: 200,
-        message: "Comments fetched successfully",
-        data: comments,
-      });
-    } else {
-      return res.status(400).json({ error: "Invalid query request type" });
+    let staffMemberDetails = {};
+    try {
+      staffMemberDetails = JSON.parse(contractor.provide_name_position_mobile_no || "{}");
+    } catch (e) {
+      console.warn("Invalid staff member JSON");
     }
+
+    let comments = contractor.comments_history;
+    if (typeof comments === "string") {
+      try {
+        comments = JSON.parse(comments);
+      } catch (err) {
+        console.warn("Invalid comments JSON");
+        comments = [];
+      }
+    }
+
+    const createdAt = new Date(contractor.createdAt);
+const expiresDate = new Date(createdAt);
+expiresDate.setFullYear(createdAt.getFullYear() + 1);
+const formattedExpires = expiresDate.toLocaleDateString('en-GB'); // Format: dd/mm/yyyy
+const renewalStatus = new Date() <= expiresDate ? "On" : "Off";
+    const allData = {
+      company_name: contractor.contractor_company_name,
+      invitedBy: organization?.organization_name || null,
+      Name: user?.name || null,
+      Email_Address: invitation?.contractor_email || null,
+      Phone_No: contractor.contractor_phone_number,
+      Status: contractor.submission_status,
+      Expires: formattedExpires,
+Renewal: renewalStatus,
+
+      InsuranceDoc_full_url: insurance?.document_url ? `${backendUrl}/${insurance.document_url}` : null,
+      insurance_expire_date: insurance?.end_date || null,
+      insurance_original_file_name: insurance?.original_file_name || null,
+
+      PublicLiability_doc_url: publicLiability?.public_liabilty_file_url
+        ? `${backendUrl}/${publicLiability.public_liabilty_file_url}`
+        : null,
+      PublicLiability_expiry: publicLiability?.end_date || null,
+      PublicLiability_original_name: publicLiability?.original_file_name || null,
+
+      SafetyManagement_doc_url: safetyManagement?.does_organization_safety_management_system_filename
+        ? `${backendUrl}/${safetyManagement.does_organization_safety_management_system_filename}`
+        : null,
+
+      contractor_company_name: contractor.name,
+      contractor_trading_name: contractor.contractor_trading_name,
+      company_structure: contractor.company_structure,
+      contractor_invitation_id: contractor.contractor_invitation_id,
+      company_representative_first_name: contractor.company_representative_first_name,
+      company_representative_last_name: contractor.company_representative_last_name,
+      position_at_company: contractor.position_at_company,
+      address: contractor.address,
+      street: contractor.street,
+      suburb: contractor.suburb,
+      state: contractor.state,
+      postal_code: contractor.postal_code,
+      contractor_phone_number: contractor.contractor_phone_number,
+      service_to_be_provided: contractor.service_to_be_provided,
+      covered_amount: contractor.covered_amount,
+      have_professional_indemnity_insurance: contractor.have_professional_indemnity_insurance,
+      is_staff_member_nominated: contractor.is_staff_member_nominated,
+      provide_name_position_mobile_no: staffMemberDetails,
+
+      are_employees_provided_with_health_safety: contractor.are_employees_provided_with_health_safety,
+      are_employees_appropriately_licensed_qualified_safety: contractor.are_employees_appropriately_licensed_qualified_safety,
+      are_employees_confirmed_as_competent_to_undertake_work: contractor.are_employees_confirmed_as_competent_to_undertake_work,
+      do_you_all_sub_contractor_qualified_to_work: contractor.do_you_all_sub_contractor_qualified_to_work,
+      do_you_all_sub_contractor_required_insurance_public_liability: contractor.do_you_all_sub_contractor_required_insurance_public_liability,
+      have_you_identified_all_health_safety_legislation: contractor.have_you_identified_all_health_safety_legislation,
+      do_you_have_emergency_response: contractor.do_you_have_emergency_response,
+      do_you_have_procedures_to_notify_the_applicable: contractor.do_you_have_procedures_to_notify_the_applicable,
+      do_you_have_SWMS_JSAS_or_safe_work: contractor.do_you_have_SWMS_JSAS_or_safe_work,
+      do_your_workers_conduct_on_site_review: contractor.do_your_workers_conduct_on_site_review,
+      do_you_regularly_monitor_compliance: contractor.do_you_regularly_monitor_compliance,
+      do_you_have_procedures_circumstances: contractor.do_you_have_procedures_circumstances,
+      have_you_been_prosecuted_health_regulator: contractor.have_you_been_prosecuted_health_regulator,
+      submission_status: contractor.submission_status,
+
+      comments,
+    };
+
+    return res.status(200).json({ status: 200, data: allData });
   } catch (error) {
-    console.error("Error fetching invitation details:", error);
+    console.error("Error fetching contractor details:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 const UpdateContractorComments = async (req, res) => {
   try {

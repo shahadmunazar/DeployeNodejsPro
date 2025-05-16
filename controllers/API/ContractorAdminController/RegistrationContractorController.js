@@ -8,6 +8,7 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
 const https = require("https");
+
 require("dotenv").config();
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
@@ -1184,7 +1185,49 @@ const MakePdfToAllContractorForm = async (req, res) => {
 
 
 
+const API_KEY = 'c117a93b877d4fcda16cdc627932302b';
 
+const SearchLocation = async (req, res) => {
+  try {
+    const place = req.query.name;
+    if (!place) {
+      return res.status(400).json({ error: 'Missing "name" query parameter' });
+    }
+
+    const encodedPlace = encodeURIComponent(place);
+    const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodedPlace}&key=${API_KEY}&language=en&pretty=1`;
+
+    https.get(url, (apiRes) => {
+      let data = '';
+
+      apiRes.on('data', chunk => {
+        data += chunk;
+      });
+
+      apiRes.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          const results = result.results.map(loc => ({
+            formatted: loc.formatted,
+            geometry: loc.geometry,
+            components: loc.components
+          }));
+
+          return res.status(200).json({ results });
+        } catch (err) {
+          console.error('Parse error:', err);
+          return res.status(500).json({ error: 'Failed to parse API response' });
+        }
+      });
+    }).on('error', (err) => {
+      console.error('API request error:', err);
+      return res.status(500).json({ error: 'API request failed', details: err.message });
+    });
+  } catch (error) {
+    console.error('SearchLocation error:', error);
+    return res.status(500).json({ error: 'Server error', details: error.message });
+  }
+};
 
 
 
@@ -1202,5 +1245,6 @@ module.exports = {
   CheckContractorRegisterStatus,
   DeleteContractorRecords,
   GetContractorDetails,
-  MakePdfToAllContractorForm
+  MakePdfToAllContractorForm,
+  SearchLocation
 };
