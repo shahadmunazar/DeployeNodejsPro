@@ -199,16 +199,40 @@ const GetInviationLinksList = async (req, res) => {
     const user_id = user.id;
     console.log("user", user_id);
 
+    // 1. Get all invitations by this user
     const invitation_list = await ContractorInvitation.findAll({
       where: {
         invited_by: user_id,
       },
     });
 
+    // 2. Attach registration info to each invitation (if exists)
+    const enrichedInvitations = await Promise.all(
+      invitation_list.map(async (invitation) => {
+        const registration = await ContractorRegistration.findOne({
+          where: {
+            contractor_invitation_id: invitation.id,
+          },
+          attributes: [
+            'submission_status',
+            'contractor_company_name',
+            'company_representative_first_name',
+            'company_representative_last_name',
+            'state',
+          ],
+        });
+
+        return {
+          ...invitation.toJSON(),
+          registration: registration ? registration.toJSON() : null,
+        };
+      })
+    );
+
     return res.status(200).json({
       status: 200,
       message: "Invitation list fetched successfully",
-      data: invitation_list,
+      data: enrichedInvitations,
     });
   } catch (error) {
     console.error("Error fetching invitation links:", error);
@@ -219,6 +243,7 @@ const GetInviationLinksList = async (req, res) => {
     });
   }
 };
+
 
 const ResendInvitationEmail = async (req, res) => {
   try {

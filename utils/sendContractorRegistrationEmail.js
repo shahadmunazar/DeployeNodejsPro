@@ -12,10 +12,10 @@ module.exports = async function sendContractorRegistrationEmail(data) {
 
     // Configure the email transport using nodemailer
     const transporter = nodemailer.createTransport({
-      service: "gmail", // You can change this to your email provider
+      service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER,  // Make sure to set the EMAIL_USER in your .env file
-        pass: process.env.EMAIL_PASS   // Make sure to set the EMAIL_PASS in your .env file
+        user: process.env.EMAIL_USER,  
+        pass: process.env.EMAIL_PASS   
       }
     });
 
