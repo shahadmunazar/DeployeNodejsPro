@@ -734,6 +734,7 @@ const UpdateSubmissionStatus = async (req, res) => {
     }
 
     const dateAdded = moment().tz("Australia/Sydney").format("DD-MM-YYYY HH:mm");
+
     if (comments) {
       updatedComments.push({
         id: Number(`${Date.now()}${Math.floor(100 + Math.random() * 900)}`),
@@ -744,9 +745,10 @@ const UpdateSubmissionStatus = async (req, res) => {
       });
     }
 
+    // Update contractor submission status and comment history
     await contractor.update({
       submission_status,
-      comments_history: updatedComments,
+      comments_history: comments ? updatedComments : null,
     });
 
     const invitation = await ContractorInvitation.findOne({
@@ -754,17 +756,19 @@ const UpdateSubmissionStatus = async (req, res) => {
       attributes: ["contractor_email", "invited_by", "approval_type", "inclusion_list", "minimum_hours", "bcc_email"]
     });
 
-    const startDate = moment().tz("Australia/Sydney");
-    const endDate = startDate.clone().add(Number(minimum_hours), 'hours');
     if (invitation) {
+      const startDate = moment().tz("Australia/Sydney");
+      const endDate = startDate.clone().add(Number(minimum_hours), 'hours');
+
       await invitation.update({
         approval_type,
         inclusion_list,
-        minimum_hours:endDate,
+        minimum_hours: endDate, // Save future date/time
         bcc_email
       });
 
       let organizationName = "James Milson Villages";
+
       if (invitation.invited_by) {
         const inviter = await User.findOne({ where: { id: invitation.invited_by } });
         const org = await Organization.findOne({
@@ -774,7 +778,7 @@ const UpdateSubmissionStatus = async (req, res) => {
         if (org) organizationName = org.organization_name;
       }
 
-      // Send email if status is approved or rejected
+      // Send email if approved/rejected
       if (["approved", "rejected"].includes(submission_status.toLowerCase()) && invitation.contractor_email) {
         await emailQueue.add("sendSubmissionStatusEmail", {
           to: invitation.contractor_email,
@@ -819,7 +823,7 @@ const UpdateSubmissionStatus = async (req, res) => {
       status: 200,
       message: "Submission status and comments updated successfully.",
       updated_status: submission_status,
-      comments_history: updatedComments,
+      comments_history: comments ? updatedComments : null,
     });
 
   } catch (error) {
@@ -830,6 +834,7 @@ const UpdateSubmissionStatus = async (req, res) => {
     });
   }
 };
+
 
 
 
