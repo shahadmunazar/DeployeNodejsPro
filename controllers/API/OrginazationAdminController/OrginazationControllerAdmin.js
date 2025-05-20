@@ -751,10 +751,10 @@ const UpdateSubmissionStatus = async (req, res) => {
       comments_history: comments ? updatedComments : null,
     });
 
-    const invitation = await ContractorInvitation.findOne({
-      where: { id: contractor.contractor_invitation_id },
-      attributes: ["contractor_email", "invited_by", "approval_type", "inclusion_list", "minimum_hours", "bcc_email"]
-    });
+  const invitation = await ContractorInvitation.findOne({
+  where: { id: contractor.contractor_invitation_id },
+  attributes: ["id", "contractor_email", "invited_by", "approval_type", "inclusion_list", "minimum_hours", "bcc_email"]
+});
 
     if (invitation) {
       const startDate = moment().tz("Australia/Sydney");
