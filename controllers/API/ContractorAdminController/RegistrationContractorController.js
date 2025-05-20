@@ -1348,6 +1348,18 @@ const SendInductionEmail = async (req, res) => {
   }
 };
 
+const RegitserContractiorInducation = async (req,res)=>{
+  try {
+   const {verifyEmail} = req.body;
+
+   const CheckEmail = await User.findOne({
+    
+   })
+
+  } catch (error) {
+    
+  }
+}
 
 
 module.exports = {
@@ -1366,5 +1378,6 @@ module.exports = {
   GetContractorDetails,
   MakePdfToAllContractorForm,
   SearchLocation,
-  SendInductionEmail
+  SendInductionEmail,
+  RegitserContractiorInducation
 };

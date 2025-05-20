@@ -45,6 +45,22 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
       },
+      approval_type: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      inclusion_list: {
+        type: DataTypes.STRING, // Or DataTypes.JSON if structured
+        allowNull: true,
+      },
+      minimum_hours: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      bcc_email: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       expires_at: {
         type: DataTypes.DATE,
         allowNull: true,
