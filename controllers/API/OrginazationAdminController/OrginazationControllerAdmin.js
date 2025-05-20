@@ -754,11 +754,13 @@ const UpdateSubmissionStatus = async (req, res) => {
       attributes: ["contractor_email", "invited_by", "approval_type", "inclusion_list", "minimum_hours", "bcc_email"]
     });
 
+    const startDate = moment().tz("Australia/Sydney");
+    const endDate = startDate.clone().add(Number(minimum_hours), 'hours');
     if (invitation) {
       await invitation.update({
         approval_type,
         inclusion_list,
-        minimum_hours,
+        minimum_hours:endDate,
         bcc_email
       });
 
