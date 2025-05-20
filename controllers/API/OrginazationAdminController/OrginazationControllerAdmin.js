@@ -701,27 +701,42 @@ const UpdateContractorComments = async (req, res) => {
 
 const UpdateSubmissionStatus = async (req, res) => {
   try {
-    const { req_id, submission_status, comments,approval_type,inclusion_list,minimum_hours,bcc_email } = req.body;
+    const {
+      req_id,
+      submission_status,
+      comments,
+      approval_type,
+      inclusion_list,
+      minimum_hours,
+      bcc_email
+    } = req.body;
+
     const userId = req.user?.id || null;
     const userName = req.user?.name || "Admin";
+
     if (!req_id || !submission_status) {
       return res.status(400).json({ message: "req_id and submission_status are required." });
     }
+
     const contractor = await ContractorRegistration.findOne({ where: { id: req_id } });
+
     if (!contractor) {
       return res.status(404).json({ message: "Contractor registration not found." });
     }
 
+    // Prepare comments history
     let updatedComments = [];
     if (contractor.comments_history) {
       try {
         const parsed = JSON.parse(contractor.comments_history);
         updatedComments = Array.isArray(parsed) ? parsed : [];
-      } catch (e) {
+      } catch {
         console.warn("Invalid comments_history format. Resetting to empty array.");
       }
     }
+
     const dateAdded = moment().tz("Australia/Sydney").format("DD-MM-YYYY HH:mm");
+
     if (comments) {
       updatedComments.push({
         id: Number(`${Date.now()}${Math.floor(100 + Math.random() * 900)}`),
@@ -731,40 +746,64 @@ const UpdateSubmissionStatus = async (req, res) => {
         CommentsBy: userName,
       });
     }
+
+    // Update contractor submission_status and comments_history
     await contractor.update({
       submission_status,
       comments_history: updatedComments,
     });
+
+    // Safely fetch invitation with ID for update
     const invitation = await ContractorInvitation.findOne({
       where: { id: contractor.contractor_invitation_id },
-      attributes: ["contractor_email", "invited_by","approval_type","inclusion_list","minimum_hours","bcc_email"]
+      attributes: [
+        "id", // Include primary key!
+        "contractor_email",
+        "invited_by",
+        "approval_type",
+        "inclusion_list",
+        "minimum_hours",
+        "bcc_email"
+      ]
     });
-    const startDate = moment().tz("Australia/Sydney");
-      const endDate = startDate.clone().add(Number(minimum_hours), 'hours');
-    await invitation.update({
-      approval_type,
-      inclusion_list,
-      minimum_hours:endDate,
-      bcc_email
-    })
 
-    if (!invitation) {
+    if (invitation) {
+      const startDate = moment().tz("Australia/Sydney");
+      const endDate = startDate.clone().add(Number(minimum_hours), 'hours');
+
+      // Use Model.update to avoid issues with missing primary key
+      await ContractorInvitation.update({
+        approval_type,
+        inclusion_list,
+        minimum_hours: endDate,
+        bcc_email
+      }, {
+        where: { id: invitation.id }
+      });
+    } else {
       console.warn("No matching invitation found for contractor.");
     }
+
+    // Get organization name
     let organizationName = "James Milson Villages";
+
     if (invitation?.invited_by) {
       const inviter = await User.findOne({ where: { id: invitation.invited_by } });
-      const org = await Organization.findOne({
-        where: { user_id: inviter?.id },
-        attributes: ["organization_name"]
-      });
-      if (org) organizationName = org.organization_name;
+      if (inviter) {
+        const org = await Organization.findOne({
+          where: { user_id: inviter.id },
+          attributes: ["organization_name"]
+        });
+        if (org) {
+          organizationName = org.organization_name;
+        }
+      }
     }
 
-    // Send email only if status is approved/rejected
     if (["approved", "rejected"].includes(submission_status.toLowerCase()) && invitation?.contractor_email) {
       await emailQueue.add("sendSubmissionStatusEmail", {
         to: invitation.contractor_email,
+        bcc: bcc_email || undefined, 
         subject: `Contractor Submission ${submission_status.toUpperCase()} - ${organizationName}`,
         html: `
           <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 30px;">
@@ -774,21 +813,18 @@ const UpdateSubmissionStatus = async (req, res) => {
               </div>
               <h2 style="color: #007bff;">Contractor Submission Status: ${submission_status.charAt(0).toUpperCase() + submission_status.slice(1)}</h2>
               <p>Dear Contractor,</p>
-              <p>We would like to inform you that your contractor registration submission has been <strong style="color: ${
+              <p>Your contractor registration submission has been <strong style="color: ${
                 submission_status === 'approved' ? '#28a745' : '#dc3545'
               }">${submission_status.toUpperCase()}</strong>.</p>
-              ${
-                comments
-                  ? `<p><strong>Reviewer Comments:</strong></p>
-                     <blockquote style="border-left: 4px solid #ccc; margin: 10px 0; padding-left: 15px; color: #555;">
-                       ${comments}
-                     </blockquote>`
-                  : ''
-              }
+              ${comments ? `
+                <p><strong>Reviewer Comments:</strong></p>
+                <blockquote style="border-left: 4px solid #ccc; margin: 10px 0; padding-left: 15px; color: #555;">
+                  ${comments}
+                </blockquote>` : ''}
               <p><strong>Reviewed by:</strong> ${userName}</p>
               <p><strong>Date:</strong> ${dateAdded}</p>
               <hr style="margin: 30px 0;">
-              <p>If you have any questions or need to make changes to your submission, please reply to this email or contact our office.</p>
+              <p>If you have any questions, please reply to this email or contact our office.</p>
               <p>Thank you for working with <strong>${organizationName}</strong>.</p>
               <br>
               <p style="color: #888;">Kind regards,<br>The ${organizationName} Team</p>
@@ -809,7 +845,7 @@ const UpdateSubmissionStatus = async (req, res) => {
     console.error("Error updating submission status:", error);
     return res.status(500).json({
       message: "Internal server error",
-      error: error.message
+      error: error.message,
     });
   }
 };
