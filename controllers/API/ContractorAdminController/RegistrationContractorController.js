@@ -98,8 +98,9 @@ const CreateContractorRegistration = async (req, res) => {
     }
 
     if (!existing && !new_start) {
-      return res.status(404).json({
+      return res.status(400).json({
         success: false,
+        status:400,
         message: "Contractor registration not found and new_start is false.",
       });
     }
@@ -112,6 +113,7 @@ const CreateContractorRegistration = async (req, res) => {
       if (!invitationExists) {
         return res.status(400).json({
           success: false,
+          status:400,
           message: "Invalid contractor_invitation_id: no matching record found.",
         });
       }
@@ -174,6 +176,7 @@ const CreateContractorRegistration = async (req, res) => {
         if (abnExists) {
           return res.status(400).json({
             success: false,
+            status:400,
             message: "This ABN number is already used by another contractor.",
           });
         }
@@ -1252,30 +1255,98 @@ const SearchLocation = async (req, res) => {
 };
 
 
-const SendInductionEmail = async (req,res)=>{
+const SendInductionEmail = async (req, res) => {
   try {
-    const {contractor_id} = req.body;
-    if(!contractor_id){
-      return res.status(400).json({status:400,message:"Contractor ID is required."})
-    }
-    const ContractorDetails = await ContractorInvitation.findOne({
-      where:{id:contractor_id}
-    })
-    if(!ContractorDetails){
-      return res.status(400).json({status:400,message:"Contractor ID is not Found"})
-    }
-    // contractor_invitation_id
-    const findContractorEmail = await ContractorInvitation.findOne({
-      where:{id:ContractorDetails.ContractorDetails}
-    })
+    const { contractor_id } = req.body;
 
-    const email = findContractorEmail?.contractor_name;
-    // emailQueue
+    if (!contractor_id) {
+      return res.status(400).json({
+        status: 400,
+        message: "Contractor ID is required."
+      });
+    }
+
+    // Step 1: Get contractor registration details
+    const contractorDetails = await ContractorRegistration.findOne({
+      where: { id: contractor_id }
+    });
+
+    if (!contractorDetails) {
+      return res.status(404).json({
+        status: 404,
+        message: "Contractor not found."
+      });
+    }
+
+    // Step 2: Get invitation record using contractor_invitation_id
+    const contractorInvitation = await ContractorInvitation.findOne({
+      where: { id: contractorDetails.contractor_invitation_id }
+    });
+
+    if (!contractorInvitation) {
+      return res.status(404).json({
+        status: 404,
+        message: "Contractor invitation not found."
+      });
+    }
+
+    const email = contractorInvitation.contractor_email;
+    const name = contractorInvitation.contractor_name;
+
+    if (!email) {
+      return res.status(400).json({
+        status: 400,
+        message: "No email found for this contractor."
+      });
+    }
+
+    const link = `${process.env.FRONTEND_URL}/contractor-invitation/${contractorInvitation.id}`;
+
+    // Step 3: Add email to queue
+    await emailQueue.add('sendInductionEmail', {
+      to: email,
+      subject: "Contractor Induction",
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; }
+            .button { background-color: #004b8d; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Contractor Induction Invitation</h2>
+            <p>Dear ${name || 'Contractor'},</p>
+            <p>You have been invited to complete your contractor induction process.</p>
+            <p>Please click the button below to begin:</p>
+            <p><a href="${link}" class="button">Start Induction</a></p>
+            <p>If the button doesn’t work, copy and paste this URL into your browser:</p>
+            <p><a href="${link}">${link}</a></p>
+            <p>Regards,<br/>Konnect</p>
+          </div>
+        </body>
+        </html>
+      `
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: "Induction email has been queued successfully."
+    });
 
   } catch (error) {
-    
+    console.error("Error in SendInductionEmail:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error."
+    });
   }
-}
+};
 
 
 
