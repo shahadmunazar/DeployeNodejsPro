@@ -5,6 +5,7 @@ const puppeteer = require('puppeteer');
 
 const generateContractorFormDetailsPdf = async (data, contractorId) => {
   try {
+    console.log("Genearatting Pdf For Data", data);
     const outputDir = path.join(__dirname, '..', 'generated_pdfs');
     const fileName = `contractor_form_details_${contractorId}.pdf`;
     const outputPath = path.join(outputDir, fileName);

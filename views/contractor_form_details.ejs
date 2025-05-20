@@ -1,84 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Contractor Registration Details</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contractor Registration Report</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 30px;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .section {
-      margin-bottom: 20px;
-    }
-    .section h2 {
-      margin-bottom: 10px;
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
       color: #333;
     }
-    .section p {
-      font-size: 14px;
-      margin: 5px 0;
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 30px;
+      background-color: #fff;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    header img {
+      height: 80px;
+      margin-bottom: 15px;
+    }
+
+    header h1 {
+      font-size: 32px;
+      color: #2c3e50;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .section {
+      background: #ffffff;
+      margin-bottom: 40px;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-left: 6px solid #2980b9;
+    }
+
+    .section h2 {
+      font-size: 24px;
+      color: #2980b9;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-weight: 600;
+      border-bottom: 2px solid #2980b9;
+      padding-bottom: 10px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-top: 10px;
+    }
+
+    .field {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .field strong {
+      color: #555;
+      font-weight: 600;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    .status {
+      font-weight: bold;
+    }
+
+    .status-expired {
+      color: #e74c3c;
+    }
+
+    .status-valid {
+      color: #27ae60;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      margin-top: 40px;
+      border-top: 1px solid #ddd;
+      padding-top: 15px;
+    }
+
+    .card-header {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      padding: 15px;
+      background: #2980b9;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .card {
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .page-break {
+      page-break-before: always;
     }
   </style>
 </head>
 <body>
 
-  <h1>Contractor Registration Details</h1>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <img src="https://via.placeholder.com/200x60?text=Logo" alt="Company Logo">
+      <h1>Contractor Registrations Report</h1>
+    </header>
 
-  <div class="section">
-    <h2>Submitted By</h2>
-    <p><strong>Email:</strong> <%= invitedUser.email %></p>
-    <p><strong>Submitted On:</strong> <%= new Date(contractorDetails.createdAt).toLocaleString() %></p>
+    <!-- Submitted By Section -->
+    <div class="section card">
+      <div class="card-header">Submitted By</div>
+      <div class="grid">
+        <div class="field"><strong>Email:</strong> <%= invitedUser?.email || 'N/A' %></div>
+        <div class="field"><strong>Submitted On:</strong> <%= new Date(contractorDetails?.createdAt).toLocaleString() %></div>
+      </div>
+    </div>
+
+    <!-- Company Details Section -->
+    <div class="section card">
+      <div class="card-header">Company Details</div>
+      <div class="grid">
+        <div class="field"><strong>ABN:</strong> <%= contractorDetails.abn_number %></div>
+        <div class="field"><strong>Company Name:</strong> <%= contractorDetails.contractor_company_name %></div>
+        <div class="field"><strong>Trading Name:</strong> <%= contractorDetails.contractor_trading_name %></div>
+        <div class="field"><strong>Structure:</strong> <%= contractorDetails.company_structure %></div>
+        <div class="field"><strong>Representative:</strong> <%= contractorDetails.company_representative_first_name %> <%= contractorDetails.company_representative_last_name %></div>
+        <div class="field"><strong>Position:</strong> <%= contractorDetails.position_at_company %></div>
+        <div class="field full-width"><strong>Address:</strong> <%= contractorDetails.address %>, <%= contractorDetails.suburb %>, <%= contractorDetails.state %>, <%= contractorDetails.postal_code || 'N/A' %></div>
+        <div class="field"><strong>Phone:</strong> <%= contractorDetails.contractor_phone_number %></div>
+        <div class="field"><strong>Service:</strong> <%= contractorDetails.service_to_be_provided %></div>
+      </div>
+    </div>
+
+    <!-- Insurance Section -->
+    <div class="section card page-break">
+      <div class="card-header">Insurance</div>
+      <div class="grid">
+        <div class="field"><strong>Covered Amount:</strong> $<%= contractorDetails.covered_amount.toLocaleString() %></div>
+        <div class="field"><strong>Indemnity Insurance:</strong> <%= contractorDetails.have_professional_indemnity_insurance %></div>
+        <div class="field full-width">
+          <strong>Insurance Document:</strong>
+          <% if (insuranceDetails) { %>
+            <%= insuranceDetails.original_file_name %>
+            (<span class="status <%= new Date(insuranceDetails.end_date) < new Date() ? 'status-expired' : 'status-valid' %>">
+              Expires: <%= new Date(insuranceDetails.end_date).toLocaleDateString() %>
+            </span>)
+          <% } else { %> Not Provided <% } %>
+        </div>
+        <div class="field full-width">
+          <strong>Public Liability Certificate:</strong>
+          <% if (publicLiability) { %>
+            <%= publicLiability.original_file_name %>
+            (<span class="status <%= new Date(publicLiability.end_date) < new Date() ? 'status-expired' : 'status-valid' %>">
+              Expires: <%= new Date(publicLiability.end_date).toLocaleDateString() %>
+            </span>)
+          <% } else { %> Not Provided <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Work Health & Safety Section -->
+    <div class="section card page-break">
+      <div class="card-header">Work Health & Safety</div>
+      <div class="grid">
+        <div class="field full-width"><strong>WHS Document:</strong> <%= safetyManagement ? safetyManagement.original_file_name : 'Not Provided' %></div>
+        <div class="field full-width"><strong>Responsible Staff:</strong>
+          <% try {
+            const staff = JSON.parse(contractorDetails.provide_name_position_mobile_no); %>
+            <%= staff.name %> (<%= staff.position %>) - <%= staff.mobile %>
+          <% } catch (e) { %> N/A <% } %>
+        </div>
+        <div class="field"><strong>Safety Induction:</strong> <%= contractorDetails.are_employees_provided_with_health_safety %></div>
+        <div class="field"><strong>Proper Licensing:</strong> <%= contractorDetails.are_employees_appropriately_licensed_qualified_safety %></div>
+        <div class="field"><strong>Competency Confirmed:</strong> <%= contractorDetails.are_employees_confirmed_as_competent_to_undertake_work %></div>
+        <div class="field"><strong>Subcontractor Qualified:</strong> <%= contractorDetails.do_you_all_sub_contractor_qualified_to_work %></div>
+        <div class="field"><strong>Subcontractor Insurance:</strong> <%= contractorDetails.do_you_all_sub_contractor_required_insurance_public_liability %></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      PDF Generated on: <%= new Date().toLocaleString() %>
+    </div>
   </div>
-
-  <div class="section">
-    <h2>Company Details</h2>
-    <p><strong>ABN:</strong> <%= contractorDetails.abn_number %></p>
-    <p><strong>Company Name:</strong> <%= contractorDetails.contractor_company_name %></p>
-    <p><strong>Trading Name:</strong> <%= contractorDetails.contractor_trading_name %></p>
-    <p><strong>Company Structure:</strong> <%= contractorDetails.company_structure %></p>
-    <p><strong>Representative:</strong> <%= contractorDetails.company_representative_first_name %> <%= contractorDetails.company_representative_last_name %></p>
-    <p><strong>Position:</strong> <%= contractorDetails.position_at_company %></p>
-    <p><strong>Address:</strong> <%= contractorDetails.address %>, <%= contractorDetails.suburb %>, <%= contractorDetails.state %></p>
-    <p><strong>Phone:</strong> <%= contractorDetails.contractor_phone_number %></p>
-    <p><strong>Service to be Provided:</strong> <%= contractorDetails.service_to_be_provided %></p>
-  </div>
-
-  <div class="section">
-    <h2>Insurance</h2>
-    <p><strong>Employs Others:</strong> Yes</p>
-    <p><strong>Insurance Document:</strong> <%= insuranceDetails.original_file_name %> (Expires: <%= new Date(insuranceDetails.end_date).toLocaleDateString() %>)</p>
-    <p><strong>Public Liability Certificate:</strong> <%= publicLiability.original_file_name %> (Expires: <%= new Date(publicLiability.end_date).toLocaleDateString() %>)</p>
-    <p><strong>Covered Amount:</strong> $<%= contractorDetails.covered_amount %></p>
-    <p><strong>Professional Indemnity Insurance:</strong> <%= contractorDetails.have_professional_indemnity_insurance %></p>
-  </div>
-
-  <div class="section">
-    <h2>Work Health & Safety</h2>
-    <p><strong>WHS Management System:</strong> Yes</p>
-    <p><strong>Document:</strong> <%= safetyManagement.original_file_name %></p>
-    <p><strong>Responsible Staff:</strong> <%= JSON.parse(contractorDetails.provide_name_position_mobile_no).name %>, <%= JSON.parse(contractorDetails.provide_name_position_mobile_no).position %> (Mobile: <%= JSON.parse(contractorDetails.provide_name_position_mobile_no).mobile %>)</p>
-    <p><strong>Health & Safety Induction:</strong> <%= contractorDetails.are_employees_provided_with_health_safety %></p>
-    <p><strong>Proper Licensing:</strong> <%= contractorDetails.are_employees_appropriately_licensed_qualified_safety %></p>
-    <p><strong>Employee Competency:</strong> <%= contractorDetails.are_employees_confirmed_as_competent_to_undertake_work %></p>
-    <p><strong>Subcontractor Qualification:</strong> <%= contractorDetails.do_you_all_sub_contractor_qualified_to_work %></p>
-    <p><strong>Subcontractor Insurance:</strong> <%= contractorDetails.do_you_all_sub_contractor_required_insurance_public_liability %></p>
-    <p><strong>Risk Management:</strong> <%= contractorDetails.have_you_identified_all_health_safety_legislation %></p>
-    <p><strong>Emergency Response:</strong> <%= contractorDetails.do_you_have_emergency_response %></p>
-    <p><strong>Incident Notification:</strong> <%= contractorDetails.do_you_have_procedures_to_notify_the_applicable %></p>
-    <p><strong>SWMS / JSAs:</strong> <%= contractorDetails.do_you_have_SWMS_JSAS_or_safe_work %></p>
-    <p><strong>Onsite Review:</strong> <%= contractorDetails.do_your_workers_conduct_on_site_review %></p>
-    <p><strong>Monitor Compliance:</strong> <%= contractorDetails.do_you_regularly_monitor_compliance %></p>
-    <p><strong>Update Procedures:</strong> <%= contractorDetails.do_you_have_procedures_circumstances %></p>
-    <p><strong>Prosecution History:</strong> <%= contractorDetails.have_you_been_prosecuted_health_regulator %></p>
-  </div>
-
-  <p><strong>Generated on:</strong> <%= new Date().toLocaleString() %></p>
 
 </body>
 </html>

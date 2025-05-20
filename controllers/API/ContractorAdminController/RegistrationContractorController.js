@@ -1185,17 +1185,27 @@ const MakePdfToAllContractorForm = async (req, res) => {
 
 
 
-const API_KEY = 'c117a93b877d4fcda16cdc627932302b';
 
 const SearchLocation = async (req, res) => {
   try {
     const place = req.query.name;
+
+    // Check if the 'name' query parameter is missing
     if (!place) {
       return res.status(400).json({ error: 'Missing "name" query parameter' });
     }
 
+    const API_KEY = 'AIzaSyB-EVjH_5VfSycKL4fJeLy1l-BsLWCyN6c';
+
+    // Ensure API key is present
+    if (!API_KEY) {
+      return res.status(500).json({ error: 'API key not configured' });
+    }
+
     const encodedPlace = encodeURIComponent(place);
-    const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodedPlace}&key=${API_KEY}&language=en&pretty=1`;
+
+    // Construct the Google Maps API URL
+    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodedPlace}&key=${API_KEY}`;
 
     https.get(url, (apiRes) => {
       let data = '';
@@ -1206,14 +1216,26 @@ const SearchLocation = async (req, res) => {
 
       apiRes.on('end', () => {
         try {
+          // Parse the response from Google Maps API
           const result = JSON.parse(data);
-          const results = result.results.map(loc => ({
-            formatted: loc.formatted,
-            geometry: loc.geometry,
-            components: loc.components
-          }));
+          
+          // Log the full response for debugging
+          console.log('Google Maps API Response:', result);
 
-          return res.status(200).json({ results });
+          // Handle different status cases
+          if (result.status === 'OK' && result.results) {
+            const results = result.results.map((loc) => ({
+              formatted: loc.formatted_address,
+              geometry: loc.geometry,
+              components: loc.address_components,
+            }));
+            return res.status(200).json({ results });
+          } else if (result.status === 'ZERO_RESULTS') {
+            return res.status(404).json({ error: 'No results found for the given query' });
+          } else {
+            // Handle other status codes like OVER_QUERY_LIMIT or REQUEST_DENIED
+            return res.status(500).json({ error: `Google API error: ${result.status}` });
+          }
         } catch (err) {
           console.error('Parse error:', err);
           return res.status(500).json({ error: 'Failed to parse API response' });
@@ -1228,6 +1250,7 @@ const SearchLocation = async (req, res) => {
     return res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
+
 
 
 
