@@ -1252,6 +1252,31 @@ const SearchLocation = async (req, res) => {
 };
 
 
+const SendInductionEmail = async (req,res)=>{
+  try {
+    const {contractor_id} = req.body;
+    if(!contractor_id){
+      return res.status(400).json({status:400,message:"Contractor ID is required."})
+    }
+    const ContractorDetails = await ContractorInvitation.findOne({
+      where:{id:contractor_id}
+    })
+    if(!ContractorDetails){
+      return res.status(400).json({status:400,message:"Contractor ID is not Found"})
+    }
+    // contractor_invitation_id
+    const findContractorEmail = await ContractorInvitation.findOne({
+      where:{id:ContractorDetails.ContractorDetails}
+    })
+
+    const email = findContractorEmail?.contractor_name;
+    // emailQueue
+
+  } catch (error) {
+    
+  }
+}
+
 
 
 module.exports = {
@@ -1269,5 +1294,6 @@ module.exports = {
   DeleteContractorRecords,
   GetContractorDetails,
   MakePdfToAllContractorForm,
-  SearchLocation
+  SearchLocation,
+  SendInductionEmail
 };

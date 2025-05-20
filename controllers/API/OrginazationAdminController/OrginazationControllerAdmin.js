@@ -590,7 +590,6 @@ const renewalStatus = new Date() <= expiresDate ? "On" : "Off";
       Status: contractor.submission_status,
       Expires: formattedExpires,
 Renewal: renewalStatus,
-
       InsuranceDoc_full_url: insurance?.document_url ? `${backendUrl}/${insurance.document_url}` : null,
       insurance_expire_date: insurance?.end_date || null,
       insurance_original_file_name: insurance?.original_file_name || null,
@@ -604,7 +603,7 @@ Renewal: renewalStatus,
       SafetyManagement_doc_url: safetyManagement?.does_organization_safety_management_system_filename
         ? `${backendUrl}/${safetyManagement.does_organization_safety_management_system_filename}`
         : null,
-
+      contractor_abn: contractor.abn_number,
       contractor_company_name: contractor.name,
       contractor_trading_name: contractor.contractor_trading_name,
       company_structure: contractor.company_structure,
@@ -623,7 +622,6 @@ Renewal: renewalStatus,
       have_professional_indemnity_insurance: contractor.have_professional_indemnity_insurance,
       is_staff_member_nominated: contractor.is_staff_member_nominated,
       provide_name_position_mobile_no: staffMemberDetails,
-
       are_employees_provided_with_health_safety: contractor.are_employees_provided_with_health_safety,
       are_employees_appropriately_licensed_qualified_safety: contractor.are_employees_appropriately_licensed_qualified_safety,
       are_employees_confirmed_as_competent_to_undertake_work: contractor.are_employees_confirmed_as_competent_to_undertake_work,
@@ -638,10 +636,13 @@ Renewal: renewalStatus,
       do_you_have_procedures_circumstances: contractor.do_you_have_procedures_circumstances,
       have_you_been_prosecuted_health_regulator: contractor.have_you_been_prosecuted_health_regulator,
       submission_status: contractor.submission_status,
-
       comments,
     };
-
+    Object.keys(allData).forEach((key) => {
+  if (allData[key] === undefined) {
+    allData[key] = null;
+  }
+});
     return res.status(200).json({ status: 200, data: allData });
   } catch (error) {
     console.error("Error fetching contractor details:", error);

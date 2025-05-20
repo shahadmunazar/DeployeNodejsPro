@@ -30,7 +30,8 @@ const {
   DeleteContractorRecords,
   GetContractorDetails,
   MakePdfToAllContractorForm,
-  SearchLocation
+  SearchLocation,
+  SendInductionEmail
   
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
@@ -78,6 +79,7 @@ router.put("/update-submission-status",...WithOrginazationAdminAndRole(UpdateSub
 router.post("/resend-email-to-invitation", ...WithOrginazationAdminAndRole(ResendInvitationEmail));
 // router.post("/make-pdf-to-contractor-form", ...WithOrginazationAdminAndRole(MakePdfToAllContractorForm));
 router.post("/make-pdf-to-contractor-form",MakePdfToAllContractorForm);
+router.post("/send-induction-email", ...WithOrginazationAdminAndRole(SendInductionEmail));
 
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
 
