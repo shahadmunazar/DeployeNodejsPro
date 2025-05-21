@@ -23,6 +23,7 @@ const Organization = require("../../../models/organization")(sequelize, DataType
 const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
 const { response } = require("express");
 const organization = require("../../../models/organization");
+const { stat } = require("fs");
 const ContractorOrganizationSafetyManagement = require("../../../models/contractororganizationsafetymanagement")(sequelize, DataTypes);
 const ContractorPublicLiability = require("../../../models/contractorpublicliability")(sequelize, DataTypes);
 const ContractorRegisterInsurance = require("../../../models/contractorregisterinsurance")(sequelize, DataTypes);
@@ -212,6 +213,7 @@ const GetInviationLinksList = async (req, res) => {
         const registration = await ContractorRegistration.findOne({
           where: {
             contractor_invitation_id: invitation.id,
+            submission_status:'confirm_submit'
           },
           attributes: [
             'submission_status',
@@ -850,6 +852,52 @@ const UpdateSubmissionStatus = async (req, res) => {
   }
 };
 
+const GetSubmissionPrequalification = async (req, res) => {
+  try {
+    const { filter } = req.query;  
+
+    let whereClause = {};
+
+    if (filter !== undefined && filter !== '') {
+      if (filter === 'true' || filter === 'false') {
+        whereClause.status = filter === 'true';  
+      } else {
+        whereClause.submission_status = filter;
+      }
+    }
+    // If filter is null, empty or undefined => whereClause = {} => fetch all records
+
+    const data = await ContractorRegistration.findAll({
+      where: whereClause,
+      attributes: {
+        include: [
+          [
+            sequelize.literal(`(
+              SELECT contractor_email 
+              FROM contractor_invitations 
+              WHERE contractor_invitations.id = ContractorRegistration.contractor_invitation_id
+            )`),
+            'contractor_email'
+          ]
+        ]
+      }
+    });
+
+    res.status(200).json({
+      status: 200,
+      data,
+      message: "Submission Prequalification data retrieved successfully"
+    });
+
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({
+      status: 500,
+      message: "Something went wrong",
+      error: error.message
+    });
+  }
+};
 
 
 
@@ -864,5 +912,6 @@ module.exports = {
   VerifyMultifactorAuth,
   GetDetailsInvitationDetails,
   UpdateContractorComments,
-  UpdateSubmissionStatus
+  UpdateSubmissionStatus,
+  GetSubmissionPrequalification
 };

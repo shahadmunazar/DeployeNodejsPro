@@ -13,7 +13,8 @@ const {
   VerifyMultifactorAuth,
   GetDetailsInvitationDetails,
   UpdateContractorComments,
-  UpdateSubmissionStatus
+  UpdateSubmissionStatus,
+  GetSubmissionPrequalification
 } = require("../controllers/API/OrginazationAdminController/OrginazationControllerAdmin");
 const {
   CreateContractorRegistration,
@@ -81,7 +82,7 @@ router.post("/resend-email-to-invitation", ...WithOrginazationAdminAndRole(Resen
 // router.post("/make-pdf-to-contractor-form", ...WithOrginazationAdminAndRole(MakePdfToAllContractorForm));
 router.post("/make-pdf-to-contractor-form",MakePdfToAllContractorForm);
 router.post("/send-induction-email", ...WithOrginazationAdminAndRole(SendInductionEmail));
-
+router.get("/get-all-submission-prequalification", ...WithOrginazationAdminAndRole(GetSubmissionPrequalification));
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
 
 router.post("/register-with-induction-contractor", RegitserContractiorInducation)

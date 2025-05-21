@@ -136,6 +136,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM('confirm_submit', 'let_me_check', 'i_do_it_later', 'save_and_come_back_later','approved','rejected','save','pause'),
         allowNull: true,
       },
+      status: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+      },
       employee_insure_doc_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
