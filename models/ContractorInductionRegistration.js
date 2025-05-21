@@ -75,6 +75,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      password: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      invited_by_organization: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: true,

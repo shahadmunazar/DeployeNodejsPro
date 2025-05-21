@@ -1300,7 +1300,7 @@ const SendInductionEmail = async (req, res) => {
       });
     }
 
-    const link = `${process.env.FRONTEND_URL}/contractor-invitation/${contractorInvitation.id}`;
+    const link = `${process.env.FRONTEND_URL}/induction-info/${contractorInvitation.invite_token}`;
 
     // Step 3: Add email to queue
     await emailQueue.add('sendInductionEmail', {

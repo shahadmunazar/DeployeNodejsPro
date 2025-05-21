@@ -36,7 +36,7 @@ const {
   
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
-const {RegitserContractiorInducation,VerifyMobileAndEmail} = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
+const {RegitserContractiorInducation,VerifyMobileAndEmail,ContractorRegistrationForm} = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
 // const {TestingRoute} = require('../controllers/testingController')
 
@@ -90,7 +90,11 @@ router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
 // routes for induction testing
 router.post("/register-with-induction-contractor", RegitserContractiorInducation);
 router.post("/verify-mobile-and-email", VerifyMobileAndEmail)
+router.post("/contractor-registration-save", ContractorRegistrationForm);
+
+
 router.get("/search-location", SearchLocation);
+
 // router.get("/testing-routes",TestingRoute );
 
 module.exports = router;
