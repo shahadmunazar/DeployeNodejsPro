@@ -3,6 +3,7 @@ const cors = require("cors");
 const userRoutes = require("./routes/userRoutes");
 const { initSocket } = require("./controllers/socket");
 const http = require("http");
+require('./workers/smsWorker'); 
 const bodyParser = require('body-parser');
 const cron = require('node-cron');
 const sendPendingOnboardingEmails = require('./cron/sendOnboardingEmails');

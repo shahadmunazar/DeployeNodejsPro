@@ -33,9 +33,10 @@ const {
   MakePdfToAllContractorForm,
   SearchLocation,
   SendInductionEmail,
-  RegitserContractiorInducation
   
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
+
+const {RegitserContractiorInducation,VerifyMobileAndEmail} = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
 // const {TestingRoute} = require('../controllers/testingController')
 
@@ -85,8 +86,10 @@ router.post("/send-induction-email", ...WithOrginazationAdminAndRole(SendInducti
 router.get("/get-all-submission-prequalification", ...WithOrginazationAdminAndRole(GetSubmissionPrequalification));
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
 
-router.post("/register-with-induction-contractor", RegitserContractiorInducation)
 
+// routes for induction testing
+router.post("/register-with-induction-contractor", RegitserContractiorInducation);
+router.post("/verify-mobile-and-email", VerifyMobileAndEmail)
 router.get("/search-location", SearchLocation);
 // router.get("/testing-routes",TestingRoute );
 
