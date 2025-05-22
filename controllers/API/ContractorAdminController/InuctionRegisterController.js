@@ -20,54 +20,95 @@ function generateSecureOTP(length = 6) {
 
 const RegitserContractiorInducation = async (req, res) => {
   try {
-    const { userEmail, first_name, last_name, mobile_no, organization_name, address, trade_type } = req.body;
+    const { userEmail, first_name, last_name, mobile_no } = req.body;
+
     if (!userEmail) {
       return res.status(400).json({
         status: 400,
         message: "Email is required.",
       });
     }
+
     const otp = generateSecureOTP();
     let existingRecord = await ContractorInductionRegistration.findOne({
       where: { email: userEmail },
     });
+
+    // If record exists
     if (existingRecord) {
-      await existingRecord.update({
-        mobile_no,
-        first_name,
-        last_name,
-        mobile_verified_expired_at: new Date(Date.now() + 10 * 60 * 1000),
-        mobile_otp: otp,
-      });
-      const mobile = existingRecord.mobile_no;
-      await sendRegistrationOtpSms(mobile, otp);
-      return res.status(200).json({
-        status: 200,
-        message: "Mobile OTP has been sent successfully.",
-      });
-    } else {
       if (mobile_no) {
-        const mobileExists = await ContractorInductionRegistration.findOne({
-          where: { mobile_no },
+        // Update record with mobile info and send mobile OTP
+        await existingRecord.update({
+          mobile_no,
+          first_name,
+          last_name,
+          mobile_verified_expired_at: new Date(Date.now() + 10 * 60 * 1000),
+          mobile_otp: otp,
         });
-        if (mobileExists) {
-          return res.status(400).json({
-            status: 400,
-            message: "Mobile number already registered.",
-          });
-        }
+
+        await sendRegistrationOtpSms(mobile_no, otp);
+
+        return res.status(200).json({
+          status: 200,
+          message: "Mobile OTP has been sent successfully.",
+        });
       }
-      const newRecord = await ContractorInductionRegistration.create({
-        email: userEmail,
+
+      // If mobile number is not sent, just send email OTP again (optional)
+      await existingRecord.update({
         email_otp: otp,
         email_otp_expired_at: new Date(Date.now() + 10 * 60 * 1000),
       });
+
       await sendOtpEmail(userEmail, otp);
+
       return res.status(200).json({
         status: 200,
-        message: "Contractor registered successfully. OTP sent to email.",
+        message: "Email OTP has been sent successfully.",
       });
     }
+
+    // If record doesn't exist
+    // Check for duplicate mobile (if provided)
+    if (mobile_no) {
+      const mobileExists = await ContractorInductionRegistration.findOne({
+        where: { mobile_no },
+      });
+      if (mobileExists) {
+        return res.status(400).json({
+          status: 400,
+          message: "Mobile number already registered.",
+        });
+      }
+    }
+
+    // Create new record
+    const newRecordData = {
+      email: userEmail,
+      email_otp: otp,
+      email_otp_expired_at: new Date(Date.now() + 10 * 60 * 1000),
+    };
+
+    if (mobile_no) {
+      newRecordData.mobile_no = mobile_no;
+      newRecordData.mobile_otp = otp;
+      newRecordData.mobile_verified_expired_at = new Date(Date.now() + 10 * 60 * 1000);
+    }
+
+    await ContractorInductionRegistration.create(newRecordData);
+
+    // Send appropriate OTPs
+    await sendOtpEmail(userEmail, otp);
+
+    if (mobile_no) {
+      await sendRegistrationOtpSms(mobile_no, otp);
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: `Contractor registered successfully. OTP sent to ${mobile_no ? 'mobile and email' : 'email only'}.`,
+    });
+
   } catch (error) {
     console.error("Error in RegitserContractiorInducation:", error);
     return res.status(500).json({
