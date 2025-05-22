@@ -156,7 +156,7 @@ const VerifyMobileAndEmail = async (req, res) => {
       if (record.email_otp_expired_at && now > record.email_otp_expired_at) {
         return res.status(400).json({ status: 400, message: "Email OTP has expired." });
       }
-
+//new
       record.email_verified_at = now;
       record.email_otp = null;
       record.email_otp_expired_at = null;
