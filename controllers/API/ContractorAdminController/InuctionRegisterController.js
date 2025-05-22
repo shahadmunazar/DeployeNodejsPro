@@ -121,8 +121,6 @@ const RegitserContractiorInducation = async (req, res) => {
 
 const VerifyMobileAndEmail = async (req, res) => {
   try {
-
-    // Vli
     const { mobile_no, userEmail, otpcode } = req.body;
 
     if (!userEmail && !mobile_no) {
