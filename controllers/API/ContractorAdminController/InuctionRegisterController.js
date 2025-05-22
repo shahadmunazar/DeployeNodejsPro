@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
 const crypto = require("crypto");
 const ContractorInductionRegistration = require("../../../models/ContractorInductionRegistration")(sequelize, DataTypes);
+const ContractorDocument = require("../../../models/contractor_document")(sequelize, DataTypes);
 const { sendOtpEmail } = require("../../../helpers/sendOtpEmail");
 const { sendRegistrationOtpSms } = require("../../../helpers/smsHelper");
 
@@ -79,90 +80,82 @@ const RegitserContractiorInducation = async (req, res) => {
 
 const VerifyMobileAndEmail = async (req, res) => {
   try {
-    const { mobile_no, userEmail, email_otp, mobile_no_otp } = req.body;
+    const { mobile_no, userEmail, otpcode } = req.body;
+
     if (!userEmail && !mobile_no) {
-      return res.status(400).json({ status: 400, message: "Please provide email or mobile number." });
+      return res.status(400).json({ status: 400, message: "Please provide either email or mobile number." });
     }
-    if (!email_otp && !mobile_no_otp) {
-      return res.status(400).json({ status: 400, message: "Please provide an OTP to verify." });
+
+    if (!otpcode) {
+      return res.status(400).json({ status: 400, message: "OTP is required." });
     }
-    if (email_otp && mobile_no_otp) {
-      return res.status(400).json({ status: 400, message: "Please verify only one OTP at a time (email or mobile)." });
-    }
+
     const record = await ContractorInductionRegistration.findOne({
       where: {
-        [Op.or]: [userEmail ? { email: userEmail } : null, mobile_no ? { mobile_no } : null].filter(Boolean),
+        [Op.or]: [
+          userEmail ? { email: userEmail } : null,
+          mobile_no ? { mobile_no } : null,
+        ].filter(Boolean),
       },
     });
+
     if (!record) {
       return res.status(404).json({ status: 404, message: "User not found." });
     }
-    const currentTime = new Date();
-    if (email_otp) {
+
+    const now = new Date();
+
+    if (userEmail) {
       if (record.email_verified_at) {
-        return res.status(400).json({ status: 400, message: "Email already verified." });
+        return res.status(400).json({ status: 400, message: "Email is already verified." });
       }
-      if (!record.email_otp || record.email_otp !== email_otp) {
+      if (record.email_otp !== otpcode) {
         return res.status(400).json({ status: 400, message: "Invalid email OTP." });
       }
-      if (record.email_otp_expired_at && currentTime > record.email_otp_expired_at) {
+      if (record.email_otp_expired_at && now > record.email_otp_expired_at) {
         return res.status(400).json({ status: 400, message: "Email OTP has expired." });
       }
-      record.email_verified_at = currentTime;
-      record.email_otp_expired_at = null;
+
+      record.email_verified_at = now;
       record.email_otp = null;
-      await record.save();
-      return res.status(200).json({
-        status: 200,
-        message: "Email verified successfully.",
-        data: {
-          userEmail: record.email,
-        },
-      });
-    }
-    if (mobile_no_otp) {
+      record.email_otp_expired_at = null;
+    } else if (mobile_no) {
       if (record.mobile_otp_verified_at) {
-        return res.status(400).json({ status: 400, message: "Mobile already verified." });
+        return res.status(400).json({ status: 400, message: "Mobile is already verified." });
       }
-      if (!record.mobile_otp || record.mobile_otp !== mobile_no_otp) {
+      if (record.mobile_otp !== otpcode) {
         return res.status(400).json({ status: 400, message: "Invalid mobile OTP." });
       }
-      if (record.mobile_verified_expired_at && currentTime > record.mobile_verified_expired_at) {
+      if (record.mobile_verified_expired_at && now > record.mobile_verified_expired_at) {
         return res.status(400).json({ status: 400, message: "Mobile OTP has expired." });
       }
-      record.mobile_otp_verified_at = currentTime;
-      record.mobile_verified_expired_at = null;
+
+      record.mobile_otp_verified_at = now;
       record.mobile_otp = null;
-      await record.save();
-      return res.status(200).json({
-        status: 200,
-        message: "Mobile number verified successfully.",
-        data: {
-          VerificationId: record.id,
-          first_name: record.first_name,
-          last_name: record.last_name,
-          email: record.email,
-        },
-      });
+      record.mobile_verified_expired_at = null;
     }
+
+    await record.save();
+
+    return res.status(200).json({
+      status: 200,
+      message: `${userEmail ? "Email" : "Mobile"} verified successfully.`,
+      data: {
+        id: record.id,
+        email: record.email,
+        mobile_no: record.mobile_no,
+      },
+    });
   } catch (error) {
-    console.error("Verification Error:", error);
-    return res.status(500).json({ status: false, message: "Internal server error." });
+    console.error("OTP Verification Error:", error);
+    return res.status(500).json({ status: 500, message: "Internal server error." });
   }
 };
 
+
 const ContractorRegistrationForm = async (req, res) => {
   try {
-    const {
-      VerificationId,
-      first_name,
-      last_name,
-      organization_name,
-      address,
-      trade_Types,
-      password,
-      invited_by_organization
-    } = req.body;
+    const { VerificationId, document_type,first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization } = req.body;
 
     if (!VerificationId || !password) {
       return res.status(400).json({
@@ -195,7 +188,13 @@ const ContractorRegistrationForm = async (req, res) => {
       });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const contractorImageFile = req.files?.contractor_image?.[0]?.filename;
+    const contractorImageFile = req.files?.contractor_image?.[0]?.originalname;
+    const covid_check_documentsFile = req.files?.covid_check_documents?.[0]?.originalname;
+    const flu_vaccination_documentsFile = req.files?.flu_vaccination_documents?.[0]?.originalname;
+    const health_practitioner_registrationFile = req.files?.health_practitioner_registration?.[0]?.originalname;
+    const police_check_documnetsFile = req.files?.police_check_documnets?.[0]?.originalname;
+    const trade_qualification_documentsFile = req.files?.trade_qualification_documents?.[0]?.originalname;
+
     findDetails.first_name = first_name || findDetails.first_name;
     findDetails.last_name = last_name || findDetails.last_name;
     findDetails.organization_name = organization_name || findDetails.organization_name;
@@ -204,6 +203,15 @@ const ContractorRegistrationForm = async (req, res) => {
     findDetails.user_image = contractorImageFile || findDetails.userImage;
     findDetails.password = hashedPassword;
     findDetails.invited_by_organization = invited_by_organization;
+  document_type = 
+   await ContractorDocument.create({
+      contractor_reg_id: findDetails.id,
+      document_type:  document_type,
+      reference_number: refrennce_number,
+      issue_date: issue_date,
+      expiry_date: expiry_date,
+      filename: document_type
+    })
     await findDetails.save();
     return res.status(200).json({
       status: 200,
@@ -228,6 +236,5 @@ const ContractorRegistrationForm = async (req, res) => {
     });
   }
 };
-
 
 module.exports = { RegitserContractiorInducation, VerifyMobileAndEmail, ContractorRegistrationForm };
