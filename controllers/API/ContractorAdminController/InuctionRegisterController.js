@@ -153,13 +153,24 @@ const VerifyMobileAndEmail = async (req, res) => {
 
 const ContractorRegistrationForm = async (req, res) => {
   try {
-    const { VerificationId, first_name, last_name, organization_name, address, trade_Types, userImage, password } = req.body;
+    const {
+      VerificationId,
+      first_name,
+      last_name,
+      organization_name,
+      address,
+      trade_Types,
+      password,
+      invited_by_organization
+    } = req.body;
+
     if (!VerificationId || !password) {
       return res.status(400).json({
         status: 400,
-        message: "Verification ID, password, and invited_by_organization are required.",
+        message: "Verification ID and password are required.",
       });
     }
+
     const findDetails = await ContractorInductionRegistration.findOne({
       where: { id: VerificationId },
     });
@@ -184,12 +195,13 @@ const ContractorRegistrationForm = async (req, res) => {
       });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
+    const contractorImageFile = req.files?.contractor_image?.[0]?.filename;
     findDetails.first_name = first_name || findDetails.first_name;
     findDetails.last_name = last_name || findDetails.last_name;
     findDetails.organization_name = organization_name || findDetails.organization_name;
     findDetails.address = address || findDetails.address;
-    findDetails.trade_Types = trade_Types || findDetails.trade_Types;
-    findDetails.userImage = userImage || findDetails.userImage;
+    findDetails.trade_type = trade_Types || findDetails.trade_Types;
+    findDetails.user_image = contractorImageFile || findDetails.userImage;
     findDetails.password = hashedPassword;
     findDetails.invited_by_organization = invited_by_organization;
     await findDetails.save();
@@ -203,7 +215,9 @@ const ContractorRegistrationForm = async (req, res) => {
         email: findDetails.email,
         mobile_no: findDetails.mobile_no,
         organization_name: findDetails.organization_name,
+        trade_type: findDetails.trade_type,
         invited_by_organization: findDetails.invited_by_organization,
+        userImage: findDetails.user_image,
       },
     });
   } catch (error) {
@@ -214,5 +228,6 @@ const ContractorRegistrationForm = async (req, res) => {
     });
   }
 };
+
 
 module.exports = { RegitserContractiorInducation, VerifyMobileAndEmail, ContractorRegistrationForm };

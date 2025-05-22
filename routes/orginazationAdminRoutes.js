@@ -90,7 +90,7 @@ router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
 // routes for induction testing
 router.post("/register-with-induction-contractor", RegitserContractiorInducation);
 router.post("/verify-mobile-and-email", VerifyMobileAndEmail)
-router.post("/contractor-registration-save", ContractorRegistrationForm);
+router.post("/contractor-registration-uploading",uploadFiles, ContractorRegistrationForm);
 
 
 router.get("/search-location", SearchLocation);
