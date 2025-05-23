@@ -205,7 +205,7 @@ const ContractorRegistrationForm = async (req, res) => {
       password,
       invited_by_organization,
     } = req.body;
-
+console.log("req - body", req.body);
     if (!VerificationId || !password) {
       return res.status(400).json({
         status: 400,
@@ -242,16 +242,15 @@ const ContractorRegistrationForm = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const contractorImageFile = req.files?.contractor_image?.[0]?.originalname;
-
+    console.log("contactor Regitser address", address);
     findDetails.first_name = first_name ?? findDetails.first_name;
     findDetails.last_name = last_name ?? findDetails.last_name;
     findDetails.organization_name = organization_name ?? findDetails.organization_name;
-    findDetails.address = address ?? findDetails.address;
+    findDetails.address = address ?? null;
     findDetails.trade_type = trade_Types ?? findDetails.trade_type;
     findDetails.user_image = contractorImageFile ?? findDetails.user_image;
     findDetails.password = hashedPassword;
     findDetails.invited_by_organization = invited_by_organization ?? findDetails.invited_by_organization;
-
     await findDetails.save();
 
     return res.status(200).json({
