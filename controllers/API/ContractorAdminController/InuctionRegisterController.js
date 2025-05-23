@@ -22,7 +22,7 @@ const RegitserContractiorInducation = async (req, res) => {
   try {
     const { userEmail, first_name, last_name, mobile_no } = req.body;
 
-    if (!userEmail) {
+    if (userEmail) {
       return res.status(400).json({
         status: 400,
         message: "Email is required.",
@@ -234,11 +234,11 @@ const ContractorRegistrationForm = async (req, res) => {
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const contractorImageFile = req.files?.contractor_image?.[0]?.originalname;
-    const covid_check_documentsFile = req.files?.covid_check_documents?.[0]?.originalname;
-    const flu_vaccination_documentsFile = req.files?.flu_vaccination_documents?.[0]?.originalname;
-    const health_practitioner_registrationFile = req.files?.health_practitioner_registration?.[0]?.originalname;
-    const police_check_documnetsFile = req.files?.police_check_documnets?.[0]?.originalname;
-    const trade_qualification_documentsFile = req.files?.trade_qualification_documents?.[0]?.originalname;
+    // const covid_check_documentsFile = req.files?.covid_check_documents?.[0]?.originalname;
+    // const flu_vaccination_documentsFile = req.files?.flu_vaccination_documents?.[0]?.originalname;
+    // const health_practitioner_registrationFile = req.files?.health_practitioner_registration?.[0]?.originalname;
+    // const police_check_documnetsFile = req.files?.police_check_documnets?.[0]?.originalname;
+    // const trade_qualification_documentsFile = req.files?.trade_qualification_documents?.[0]?.originalname;
 
     findDetails.first_name = first_name || findDetails.first_name;
     findDetails.last_name = last_name || findDetails.last_name;
@@ -247,16 +247,16 @@ const ContractorRegistrationForm = async (req, res) => {
     findDetails.trade_type = trade_Types || findDetails.trade_Types;
     findDetails.user_image = contractorImageFile || findDetails.userImage;
     findDetails.password = hashedPassword;
-    findDetails.invited_by_organization = invited_by_organization;
-  document_type = 
-   await ContractorDocument.create({
-      contractor_reg_id: findDetails.id,
-      document_type:  document_type,
-      reference_number: refrennce_number,
-      issue_date: issue_date,
-      expiry_date: expiry_date,
-      filename: document_type
-    })
+    // findDetails.invited_by_organization = invited_by_organization;
+  // document_type = 
+  //  await ContractorDocument.create({
+  //     contractor_reg_id: findDetails.id,
+  //     document_type:  document_type,
+  //     reference_number: refrennce_number,
+  //     issue_date: issue_date,
+  //     expiry_date: expiry_date,
+  //     filename: document_type
+  //   })
     await findDetails.save();
     return res.status(200).json({
       status: 200,
