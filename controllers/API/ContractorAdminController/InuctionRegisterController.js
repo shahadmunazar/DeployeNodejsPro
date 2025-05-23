@@ -195,7 +195,16 @@ const VerifyMobileAndEmail = async (req, res) => {
 
 const ContractorRegistrationForm = async (req, res) => {
   try {
-    const { VerificationId, document_type, first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization } = req.body;
+    const {
+      VerificationId,
+      first_name,
+      last_name,
+      organization_name,
+      address,
+      trade_Types,
+      password,
+      invited_by_organization,
+    } = req.body;
 
     if (!VerificationId || !password) {
       return res.status(400).json({
@@ -207,12 +216,14 @@ const ContractorRegistrationForm = async (req, res) => {
     const findDetails = await ContractorInductionRegistration.findOne({
       where: { id: VerificationId },
     });
+
     if (!findDetails) {
       return res.status(400).json({
         status: 400,
         message: "Contractor registration not found.",
       });
     }
+
     const message =
       !findDetails.email_verified_at && !findDetails.mobile_otp_verified_at
         ? "Please verify both Email and Mobile number before completing registration."
@@ -221,38 +232,28 @@ const ContractorRegistrationForm = async (req, res) => {
         : !findDetails.mobile_otp_verified_at
         ? "Please verify your Mobile number before completing registration."
         : null;
+
     if (message) {
       return res.status(400).json({
         status: 400,
         message,
       });
     }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const contractorImageFile = req.files?.contractor_image?.[0]?.originalname;
-    // const covid_check_documentsFile = req.files?.covid_check_documents?.[0]?.originalname;
-    // const flu_vaccination_documentsFile = req.files?.flu_vaccination_documents?.[0]?.originalname;
-    // const health_practitioner_registrationFile = req.files?.health_practitioner_registration?.[0]?.originalname;
-    // const police_check_documnetsFile = req.files?.police_check_documnets?.[0]?.originalname;
-    // const trade_qualification_documentsFile = req.files?.trade_qualification_documents?.[0]?.originalname;
 
-    findDetails.first_name = first_name || findDetails.first_name;
-    findDetails.last_name = last_name || findDetails.last_name;
-    findDetails.organization_name = organization_name || findDetails.organization_name;
-    findDetails.address = address || findDetails.address;
-    findDetails.trade_type = trade_Types || findDetails.trade_Types;
-    findDetails.user_image = contractorImageFile || findDetails.userImage;
+    findDetails.first_name = first_name ?? findDetails.first_name;
+    findDetails.last_name = last_name ?? findDetails.last_name;
+    findDetails.organization_name = organization_name ?? findDetails.organization_name;
+    findDetails.address = address ?? findDetails.address;
+    findDetails.trade_type = trade_Types ?? findDetails.trade_type;
+    findDetails.user_image = contractorImageFile ?? findDetails.user_image;
     findDetails.password = hashedPassword;
-    findDetails.invited_by_organization = invited_by_organization;
-    // document_type =
-    //  await ContractorDocument.create({
-    //     contractor_reg_id: findDetails.id,
-    //     document_type:  document_type,
-    //     reference_number: refrennce_number,
-    //     issue_date: issue_date,
-    //     expiry_date: expiry_date,
-    //     filename: document_type
-    //   })
+    findDetails.invited_by_organization = invited_by_organization ?? findDetails.invited_by_organization;
+
     await findDetails.save();
+
     return res.status(200).json({
       status: 200,
       message: "Contractor registration completed successfully.",
@@ -263,9 +264,10 @@ const ContractorRegistrationForm = async (req, res) => {
         email: findDetails.email,
         mobile_no: findDetails.mobile_no,
         organization_name: findDetails.organization_name,
+        address: findDetails.address,
         trade_type: findDetails.trade_type,
         invited_by_organization: findDetails.invited_by_organization,
-        userImage: findDetails.user_image,
+        user_image: findDetails.user_image,
       },
     });
   } catch (error) {
@@ -276,5 +278,6 @@ const ContractorRegistrationForm = async (req, res) => {
     });
   }
 };
+
 
 module.exports = { RegitserContractiorInducation, VerifyMobileAndEmail, ContractorRegistrationForm };
