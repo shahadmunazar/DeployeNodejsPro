@@ -30,6 +30,7 @@ cron.schedule('* * * * *', async () => {
   });
 const server = http.createServer(app);
 const io = initSocket(server); 
+console.log("Socket.IO server initialized:", !!io);
 app.use(cors());
 app.use(express.json());
 app.use("/api/superadmin",SuperAdminRoutes);

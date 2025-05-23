@@ -36,6 +36,8 @@ const {
   
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
+const {GetSubmissionPrequalificationNotification} = require("../controllers/API/ContractorAdminController/NotificationController");
+
 const {RegitserContractiorInducation,VerifyMobileAndEmail,ContractorRegistrationForm} = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
 // const {TestingRoute} = require('../controllers/testingController')
@@ -83,9 +85,11 @@ router.post("/resend-email-to-invitation", ...WithOrginazationAdminAndRole(Resen
 // router.post("/make-pdf-to-contractor-form", ...WithOrginazationAdminAndRole(MakePdfToAllContractorForm));
 router.post("/make-pdf-to-contractor-form",MakePdfToAllContractorForm);
 router.post("/send-induction-email", ...WithOrginazationAdminAndRole(SendInductionEmail));
-router.get("/get-all-submission-prequalification", ...WithOrginazationAdminAndRole(GetSubmissionPrequalification));
+router.get("/get-all-submission-prequalification", GetSubmissionPrequalification);
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
 
+
+router.get("/get-submission-pendings-notificaton", ...WithOrginazationAdminAndRole(GetSubmissionPrequalificationNotification));
 
 // routes for induction testing
 router.post("/register-with-induction-contractor", RegitserContractiorInducation);

@@ -1,34 +1,26 @@
 const { Server } = require("socket.io");
-
-const onlineUsers = {}; // Store online users
-
-const initSocket = server => {
-  const io = new Server(server, {
-    cors: { origin: "*" },
+let io;
+function initSocket(server) {
+  io = new Server(server, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+    },
   });
-
-  io.on("connection", socket => {
-    console.log(`User Connected: ${socket.id}`);
-
-    // Step 1. User Joins (Online)
-    socket.on("userOnline", userId => {
-      onlineUsers[userId] = { socketId: socket.id, lastSeen: new Date().toISOString() };
-      console.log(`User ${userId} is online`);
-      io.emit("updateUserStatus", onlineUsers); // Notify all clients
-    });
-
-    // Step 2. User Disconnects (Offline)
+  io.on("connection", (socket) => {
+    console.log("Client connected:", socket.id);
     socket.on("disconnect", () => {
-      const userId = Object.keys(onlineUsers).find(key => onlineUsers[key].socketId === socket.id);
-      if (userId) {
-        delete onlineUsers[userId];
-        console.log(` User ${userId} is offline`);
-        io.emit("updateUserStatus", onlineUsers); // Notify all clients
-      }
+      console.log("Client disconnected:", socket.id);
     });
   });
-
   return io;
-};
+}
 
-module.exports = { initSocket, onlineUsers };
+function getIO() {
+  if (!io) {
+    throw new Error("Socket.io not initialized!");
+  }
+  return io;
+}
+
+module.exports = { initSocket, getIO };
