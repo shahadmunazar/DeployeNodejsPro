@@ -165,7 +165,7 @@ const VerifyMobileAndEmail = async (req, res) => {
       // if (record.mobile_otp_verified_at) {
       //   return res.status(400).json({ status: 400, message: "Mobile is already verified." });
       // }
-      
+
       if (record.mobile_otp !== otpcode) {
         return res.status(400).json({ status: 400, message: "Invalid mobile OTP." });
       }
@@ -187,6 +187,8 @@ const VerifyMobileAndEmail = async (req, res) => {
         id: record.id,
         email: record.email,
         mobile_no: record.mobile_no,
+        first_name: record.first_name,
+        last_name: record.last_name,
       },
     });
   } catch (error) {
