@@ -106,9 +106,8 @@ const RegitserContractiorInducation = async (req, res) => {
 
     return res.status(200).json({
       status: 200,
-      message: `Contractor registered successfully. OTP sent to ${mobile_no ? 'mobile and email' : 'email only'}.`,
+      message: `Contractor registered successfully. OTP sent to ${mobile_no ? "mobile and email" : "email only"}.`,
     });
-
   } catch (error) {
     console.error("Error in RegitserContractiorInducation:", error);
     return res.status(500).json({
@@ -133,10 +132,7 @@ const VerifyMobileAndEmail = async (req, res) => {
 
     const record = await ContractorInductionRegistration.findOne({
       where: {
-        [Op.or]: [
-          userEmail ? { email: userEmail } : null,
-          mobile_no ? { mobile_no } : null,
-        ].filter(Boolean),
+        [Op.or]: [userEmail ? { email: userEmail } : null, mobile_no ? { mobile_no } : null].filter(Boolean),
       },
     });
 
@@ -149,7 +145,7 @@ const VerifyMobileAndEmail = async (req, res) => {
     if (userEmail) {
       // if (record.email_verified_at) {
       //   return res.status(400).json({ status: 400, message: "Email is already verified." });
-      // } 
+      // }
 
       if (record.email_otp !== otpcode) {
         return res.status(400).json({ status: 400, message: "Invalid email OTP." });
@@ -157,7 +153,7 @@ const VerifyMobileAndEmail = async (req, res) => {
       if (record.email_otp_expired_at && now > record.email_otp_expired_at) {
         return res.status(400).json({ status: 400, message: "Email OTP has expired." });
       }
-//new
+      //new
       record.email_verified_at = now;
       record.email_otp = null;
       record.email_otp_expired_at = null;
@@ -197,10 +193,9 @@ const VerifyMobileAndEmail = async (req, res) => {
   }
 };
 
-
 const ContractorRegistrationForm = async (req, res) => {
   try {
-    const { VerificationId, document_type,first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization } = req.body;
+    const { VerificationId, document_type, first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization } = req.body;
 
     if (!VerificationId || !password) {
       return res.status(400).json({
@@ -247,16 +242,16 @@ const ContractorRegistrationForm = async (req, res) => {
     findDetails.trade_type = trade_Types || findDetails.trade_Types;
     findDetails.user_image = contractorImageFile || findDetails.userImage;
     findDetails.password = hashedPassword;
-    // findDetails.invited_by_organization = invited_by_organization;
-  // document_type = 
-  //  await ContractorDocument.create({
-  //     contractor_reg_id: findDetails.id,
-  //     document_type:  document_type,
-  //     reference_number: refrennce_number,
-  //     issue_date: issue_date,
-  //     expiry_date: expiry_date,
-  //     filename: document_type
-  //   })
+    findDetails.invited_by_organization = invited_by_organization;
+    // document_type =
+    //  await ContractorDocument.create({
+    //     contractor_reg_id: findDetails.id,
+    //     document_type:  document_type,
+    //     reference_number: refrennce_number,
+    //     issue_date: issue_date,
+    //     expiry_date: expiry_date,
+    //     filename: document_type
+    //   })
     await findDetails.save();
     return res.status(200).json({
       status: 200,

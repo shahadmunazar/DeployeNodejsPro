@@ -234,7 +234,7 @@ const SuperAdminLogout = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized: Token missing" });
     }
     let decoded;
-    console.log("Decoded",decoded);
+    console.log("Decoded", decoded);
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
       console.log("Decoded JWT:", decoded);
@@ -259,7 +259,7 @@ const SuperAdminLogout = async (req, res) => {
     });
 
     return res.status(200).json({
-      status:200,
+      status: 200,
       message: deleted ? "Admin successfully logged out, refresh token deleted" : "Admin logged out, but no matching refresh token found",
     });
   } catch (error) {
@@ -270,34 +270,28 @@ const SuperAdminLogout = async (req, res) => {
 
 const SendEmailForgetPassword = async (req, res) => {
   try {
-    const {newEmail } = req.body;
+    const { newEmail } = req.body;
 
-    
-    if ( !newEmail) {
+    if (!newEmail) {
       return res.status(400).json({ message: "Both current email and new email are required" });
     }
 
-    
-    const user = await User.findOne({ where: { email:newEmail } });
+    const user = await User.findOne({ where: { email: newEmail } });
     if (!user) {
       return res.status(404).json({ message: "User not found with this email" });
     }
 
-
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const verificationTokenExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
-  
     await user.update({
-      new_email: newEmail,  // Store the new email temporarily
+      new_email: newEmail, // Store the new email temporarily
       invite_token: verificationToken,
       invite_expires_at: verificationTokenExpiry,
     });
 
- 
     const verificationLink = `${process.env.FRONTEND_URL}/verify-email-change?token=${verificationToken}`;
 
-   
     await emailQueue.add("send-email-change-verification", {
       to: newEmail,
       subject: "Confirm Your Email Change",
@@ -333,7 +327,6 @@ const SendEmailForgetPassword = async (req, res) => {
       `,
     });
 
- 
     return res.status(200).json({
       message: "Email change confirmation email has been sent.",
     });
@@ -370,10 +363,10 @@ const ConfirmEmailChange = async (req, res) => {
 
     // Update the user's email
     await user.update({
-      email: user.new_email,  // Update to the new email
-      new_email: null,  // Clear the temporary field
-      invite_token: null,  // Remove the token
-      invite_expires_at: null,  // Remove the expiry
+      email: user.new_email, // Update to the new email
+      new_email: null, // Clear the temporary field
+      invite_token: null, // Remove the token
+      invite_expires_at: null, // Remove the expiry
     });
 
     // Send a success message and maybe notify the user
@@ -399,16 +392,10 @@ const ConfirmEmailChange = async (req, res) => {
   }
 };
 
-
-
-
-
-
 const UpdatePasswordBySuperAdmin = async (req, res) => {
   try {
     const { email, current_password, password, confirm_password } = req.body;
 
-    
     if (!email || !current_password || !password || !confirm_password) {
       return res.status(400).json({ message: "All fields are required." });
     }
@@ -417,18 +404,15 @@ const UpdatePasswordBySuperAdmin = async (req, res) => {
       return res.status(400).json({ message: "Password and confirm password must match." });
     }
 
-    
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    
     const isMatch = await bcrypt.compare(current_password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Current password is incorrect." });
     }
-
 
     const { valid, errors } = validatePassword(password);
     if (!valid) {
@@ -438,11 +422,9 @@ const UpdatePasswordBySuperAdmin = async (req, res) => {
       });
     }
 
-   
     const hashedPassword = await bcrypt.hash(password, 10);
     await user.update({ password: hashedPassword });
 
-    
     await emailQueue.add("send-password-update-notification", {
       to: user.email,
       subject: "Your Password Has Been Updated",
@@ -465,7 +447,6 @@ const UpdatePasswordBySuperAdmin = async (req, res) => {
       `,
     });
 
-   
     return res.status(200).json({
       message: "Password updated successfully.",
       user: {
@@ -614,10 +595,8 @@ const DashBoard = async (req, res) => {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-
     const totalOrganizations = await Organization.count();
     const totalSubscribers = await OrganizationSubscribeUser.count();
-
 
     const todayOrganizations = await Organization.count({
       where: {
@@ -656,8 +635,8 @@ const DashBoard = async (req, res) => {
 
 const Activetwofa = async (req, res) => {
   try {
-    const userId = req.user?.id; 
-    console.log('user',req.user);
+    const userId = req.user?.id;
+    console.log("user", req.user);
     const { is_two_factor_enabled } = req.body;
 
     if (typeof is_two_factor_enabled !== "boolean") {
@@ -696,7 +675,6 @@ const Activetwofa = async (req, res) => {
         is_two_factor_enabled: user.is_two_factor_enabled,
       },
     });
-
   } catch (error) {
     console.error("Activate 2FA Error:", error);
     return res.status(500).json({
@@ -706,8 +684,6 @@ const Activetwofa = async (req, res) => {
     });
   }
 };
-
- 
 
 const GetStatusOfMultiFactor = async (req, res) => {
   try {
@@ -721,7 +697,7 @@ const GetStatusOfMultiFactor = async (req, res) => {
     }
 
     const user = await User.findByPk(userId, {
-      attributes: ['is_two_factor_enabled'],
+      attributes: ["is_two_factor_enabled"],
     });
 
     if (!user) {
@@ -738,7 +714,6 @@ const GetStatusOfMultiFactor = async (req, res) => {
         is_two_factor_enabled: user.is_two_factor_enabled,
       },
     });
-
   } catch (error) {
     console.error("Get 2FA Status Error:", error);
     return res.status(500).json({
@@ -749,36 +724,33 @@ const GetStatusOfMultiFactor = async (req, res) => {
   }
 };
 
-
 const SendONBoardingEmail = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await User.findOne({
       where: {
-        email: email
-      }
+        email: email,
+      },
     });
     if (!user) {
-      return res.status(404).json({ message: 'User not found.' });
+      return res.status(404).json({ message: "User not found." });
     }
     await user.update({
       onboarding_email_sent: false,
-      passwordChanged: true
+      passwordChanged: true,
     });
-    return res.status(200).json({ status:200,message: 'User status updated successfully.' });
-
+    return res.status(200).json({ status: 200, message: "User status updated successfully." });
   } catch (error) {
-    console.error('Error in SendONBoardingEmail:', error);
-    return res.status(500).json({ message: 'Internal server error.' });
+    console.error("Error in SendONBoardingEmail:", error);
+    return res.status(500).json({ message: "Internal server error." });
   }
 };
 
-const SendEmailAgain =async(req,res) =>{try {
-  const {email} = req.body;
-
-} catch (error) {
-  
-}}
+const SendEmailAgain = async (req, res) => {
+  try {
+    const { email } = req.body;
+  } catch (error) {}
+};
 
 module.exports = {
   SuperAdminProfile,
@@ -794,5 +766,7 @@ module.exports = {
   ConfirmEmailChange,
   UpdatePasswordBySuperAdmin,
   Activetwofa,
-  GetStatusOfMultiFactor,SendONBoardingEmail,SendEmailAgain
+  GetStatusOfMultiFactor,
+  SendONBoardingEmail,
+  SendEmailAgain,
 };

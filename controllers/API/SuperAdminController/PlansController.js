@@ -8,7 +8,7 @@ const { Op } = require("sequelize");
 // Create a new plan
 const CreatePlans = async (req, res) => {
   try {
-    const { name, description, tier, features, asset_limit, user_limit, price_monthly, price_yearly, price_custom, billing_cycle,  status  = true, additional_info } = req.body;
+    const { name, description, tier, features, asset_limit, user_limit, price_monthly, price_yearly, price_custom, billing_cycle, status = true, additional_info } = req.body;
     if (!name || !tier || !user_limit || !billing_cycle) {
       return res.status(400).json({
         success: false,

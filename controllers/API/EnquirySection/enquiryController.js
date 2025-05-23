@@ -285,7 +285,7 @@ const UpdateInquiry = async (req, res) => {
         `,
       });
     }
-    
+
     await ActivityLog.create({
       enquiryId,
       action: "Status Updated",

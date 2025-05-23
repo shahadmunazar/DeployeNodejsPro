@@ -8,7 +8,7 @@ const OrganizationSubscribeUser = require("../../../models/organization_subscrib
 const UserRoles = require("../../../models/userrole");
 const Roles = require("../../../models/role");
 const { Op } = require("sequelize");
-const SubscriberActivityLog = require("../../../models/subscriberactivitylog")(sequelize, DataTypes)
+const SubscriberActivityLog = require("../../../models/subscriberactivitylog")(sequelize, DataTypes);
 const Industry = require("../../../models/industry")(sequelize, DataTypes);
 const Plan = require("../../../models/AllPlans")(sequelize, DataTypes);
 
@@ -167,7 +167,7 @@ const CreateOrganization = async (req, res) => {
 
       // Step 7: Log the activity for the new subscription
       await SubscriberActivityLog.create({
-        action: 'plan_assigned',
+        action: "plan_assigned",
         organizationId: newOrganization.id,
         organizationName: newOrganization.organization_name,
         newPlan: plan.name, // Using plan name instead of ID
@@ -202,7 +202,6 @@ const CreateOrganization = async (req, res) => {
   }
 };
 
-
 function generateTempPassword(length = 10) {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lower = "abcdefghijklmnopqrstuvwxyz";
@@ -226,13 +225,13 @@ function generateTempPassword(length = 10) {
 const GetAllOrganization = async (req, res) => {
   try {
     const organizations = await Organization.findAll({
-      order: [['id', 'DESC']]
+      order: [["id", "DESC"]],
     });
-    
+
     if (!organizations || organizations.length === 0) {
       return res.status(400).json({
         success: false,
-        status:400,
+        status: 400,
         message: "No organizations found",
       });
     }
@@ -352,7 +351,7 @@ const GetOrgnizationById = async (req, res) => {
     if (!organization) {
       return res.status(400).json({
         success: false,
-        status:400,
+        status: 400,
         message: "Organization not found",
       });
     }
@@ -463,8 +462,7 @@ const validateOrganizationUpdate = [
   body("state").optional(),
   body("postal_code").optional().isLength({ max: 4 }),
   body("registration_id").optional(),
-  body("contact_phone_number")
-    .optional(),
+  body("contact_phone_number").optional(),
   body("number_of_employees").optional().isIn(["1-10", "11-50", "51-200", "201-500", "500+"]),
   body("name").optional(),
   body("email").optional().isEmail(),
@@ -478,13 +476,13 @@ const UpdateOrginzation = async (req, res) => {
 
     const organization = await Organization.findByPk(id);
     if (!organization) {
-      return res.status(400).json({ status:400,success: false, message: "Organization not found" });
+      return res.status(400).json({ status: 400, success: false, message: "Organization not found" });
     }
 
     await Promise.all(validateOrganizationUpdate.map(validation => validation.run(req)));
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ status:400,success: false, errors: errors });
+      return res.status(400).json({ status: 400, success: false, errors: errors });
     }
 
     const {
@@ -948,10 +946,10 @@ const GetUserSubscriptionList = async (req, res) => {
         return {
           organization_name: organization ? organization.organization_name : null,
           admin_name: user ? user.name : null,
-          admin_contact: user ? user.email : null, 
+          admin_contact: user ? user.email : null,
           plan_name: plan ? plan.name : null,
           plan_tier: plan ? plan.tier : null,
-          left_days:left_days,
+          left_days: left_days,
           subscription_status: subscription.subscription_status,
           subscription_start_date: formatDate(subscription.validity_start_date),
           renewal_end_date: formatDate(subscription.validity_end_date),
@@ -990,7 +988,7 @@ const UpdateSubscriber = async (req, res) => {
     if (!org_id || !plan_id || !subscription_id || !validity_start_date || !validity_end_date || !renewal_date) {
       return res.status(400).json({
         success: false,
-        status:400,
+        status: 400,
         message: "Organization ID, Plan ID, Subscription ID, Validity Start Date, Validity End Date, and Renewal Date are required.",
       });
     }
@@ -1000,7 +998,7 @@ const UpdateSubscriber = async (req, res) => {
     if (!organization) {
       return res.status(400).json({
         success: false,
-        status:400,
+        status: 400,
         message: "Organization not found.",
       });
     }
@@ -1010,7 +1008,7 @@ const UpdateSubscriber = async (req, res) => {
     if (!plan) {
       return res.status(400).json({
         success: false,
-        status:400,
+        status: 400,
         message: "Plan not found.",
       });
     }
@@ -1026,7 +1024,7 @@ const UpdateSubscriber = async (req, res) => {
     if (!subscription) {
       return res.status(400).json({
         success: false,
-        status:400,
+        status: 400,
         message: "Subscription not found.",
       });
     }
@@ -1042,7 +1040,7 @@ const UpdateSubscriber = async (req, res) => {
     // Step 5: Log the activity
     const performedBy = req.user; // Get the current admin who performed the action
     await SubscriberActivityLog.create({
-      action: 'plan_updated',
+      action: "plan_updated",
       organizationId: org_id,
       organizationName: organization.organization_name,
       newPlan: plan.name,
@@ -1060,7 +1058,6 @@ const UpdateSubscriber = async (req, res) => {
       message: "Subscriber plan updated successfully.",
       subscription: updatedSubscription,
     });
-
   } catch (error) {
     console.error("Error in UpdateSubscriber:", error);
     return res.status(500).json({
@@ -1070,7 +1067,6 @@ const UpdateSubscriber = async (req, res) => {
     });
   }
 };
-
 
 const GetActivityLogDetails = async (req, res) => {
   try {
@@ -1112,7 +1108,7 @@ const GetActivityLogDetails = async (req, res) => {
 
     const activityLogs = await SubscriberActivityLog.findAll({
       where: { subscriptionId: subscription_id },
-      order: [['createdAt', 'DESC']],
+      order: [["createdAt", "DESC"]],
     });
 
     // if (!activityLogs.length) {
@@ -1137,7 +1133,6 @@ const GetActivityLogDetails = async (req, res) => {
         },
       },
     });
-
   } catch (error) {
     console.error("Error fetching activity logs:", error);
     return res.status(500).json({
@@ -1148,7 +1143,6 @@ const GetActivityLogDetails = async (req, res) => {
   }
 };
 
-
 const UpdatePlanStatus = async (req, res) => {
   try {
     const { subscription_id, payment_status } = req.body;
@@ -1156,32 +1150,32 @@ const UpdatePlanStatus = async (req, res) => {
     if (!subscription_id || !payment_status) {
       return res.status(400).json({
         success: false,
-        status:400,
+        status: 400,
         message: "subscription_id and payment_status are required.",
       });
     }
 
     const checksubscriber = await OrganizationSubscribeUser.findOne({
       where: {
-        id: subscription_id
-      }
+        id: subscription_id,
+      },
     });
 
     if (!checksubscriber) {
       return res.status(400).json({
-        status:400,
+        status: 400,
         success: false,
-        message: "Subscriber not found."
+        message: "Subscriber not found.",
       });
     }
 
     // Validate allowed statuses
-    const allowedStatuses = ['Paid', 'Due', 'Overdue'];
+    const allowedStatuses = ["Paid", "Due", "Overdue"];
     if (!allowedStatuses.includes(payment_status)) {
       return res.status(400).json({
-        status:400,
+        status: 400,
         success: false,
-        message: "Invalid payment_status. Allowed values are: 'Paid', 'Due', 'Overdue'."
+        message: "Invalid payment_status. Allowed values are: 'Paid', 'Due', 'Overdue'.",
       });
     }
     checksubscriber.payment_status = payment_status;
@@ -1190,21 +1184,17 @@ const UpdatePlanStatus = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Payment status updated successfully.",
-      data: checksubscriber
+      data: checksubscriber,
     });
-
   } catch (error) {
     console.error("Error updating payment status:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error.message
+      error: error.message,
     });
   }
 };
-
-
-
 
 module.exports = {
   CreateOrganization,
@@ -1217,5 +1207,5 @@ module.exports = {
   UpdateSubscriber,
   GetUserSubscriptionList,
   GetActivityLogDetails,
-  UpdatePlanStatus
+  UpdatePlanStatus,
 };

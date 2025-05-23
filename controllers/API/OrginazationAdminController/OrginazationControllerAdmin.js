@@ -209,19 +209,13 @@ const GetInviationLinksList = async (req, res) => {
 
     // 2. Attach registration info to each invitation (if exists)
     const enrichedInvitations = await Promise.all(
-      invitation_list.map(async (invitation) => {
+      invitation_list.map(async invitation => {
         const registration = await ContractorRegistration.findOne({
           where: {
             contractor_invitation_id: invitation.id,
-            submission_status:'confirm_submit'
+            submission_status: "confirm_submit",
           },
-          attributes: [
-            'submission_status',
-            'contractor_company_name',
-            'company_representative_first_name',
-            'company_representative_last_name',
-            'state',
-          ],
+          attributes: ["submission_status", "contractor_company_name", "company_representative_first_name", "company_representative_last_name", "state"],
         });
 
         return {
@@ -245,7 +239,6 @@ const GetInviationLinksList = async (req, res) => {
     });
   }
 };
-
 
 const ResendInvitationEmail = async (req, res) => {
   try {
@@ -578,12 +571,12 @@ const GetDetailsInvitationDetails = async (req, res) => {
     }
 
     const createdAt = new Date(contractor.createdAt);
-const expiresDate = new Date(createdAt);
-expiresDate.setFullYear(createdAt.getFullYear() + 1);
-const formattedExpires = expiresDate.toLocaleDateString('en-GB'); // Format: dd/mm/yyyy
-const renewalStatus = new Date() <= expiresDate ? "On" : "Off";
+    const expiresDate = new Date(createdAt);
+    expiresDate.setFullYear(createdAt.getFullYear() + 1);
+    const formattedExpires = expiresDate.toLocaleDateString("en-GB"); // Format: dd/mm/yyyy
+    const renewalStatus = new Date() <= expiresDate ? "On" : "Off";
     const allData = {
-      id:contractor.id,
+      id: contractor.id,
       company_name: contractor.contractor_company_name,
       invitedBy: organization?.organization_name || null,
       Name: user?.name || null,
@@ -591,14 +584,12 @@ const renewalStatus = new Date() <= expiresDate ? "On" : "Off";
       Phone_No: contractor.contractor_phone_number,
       Status: contractor.submission_status,
       Expires: formattedExpires,
-Renewal: renewalStatus,
+      Renewal: renewalStatus,
       InsuranceDoc_full_url: insurance?.document_url ? `${backendUrl}/${insurance.document_url}` : null,
       insurance_expire_date: insurance?.end_date || null,
       insurance_original_file_name: insurance?.original_file_name || null,
 
-      PublicLiability_doc_url: publicLiability?.public_liabilty_file_url
-        ? `${backendUrl}/${publicLiability.public_liabilty_file_url}`
-        : null,
+      PublicLiability_doc_url: publicLiability?.public_liabilty_file_url ? `${backendUrl}/${publicLiability.public_liabilty_file_url}` : null,
       PublicLiability_expiry: publicLiability?.end_date || null,
       PublicLiability_original_name: publicLiability?.original_file_name || null,
 
@@ -640,18 +631,17 @@ Renewal: renewalStatus,
       submission_status: contractor.submission_status,
       comments,
     };
-    Object.keys(allData).forEach((key) => {
-  if (allData[key] === undefined) {
-    allData[key] = null;
-  }
-});
+    Object.keys(allData).forEach(key => {
+      if (allData[key] === undefined) {
+        allData[key] = null;
+      }
+    });
     return res.status(200).json({ status: 200, data: allData });
   } catch (error) {
     console.error("Error fetching contractor details:", error);
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
 
 const UpdateContractorComments = async (req, res) => {
   try {
@@ -699,19 +689,9 @@ const UpdateContractorComments = async (req, res) => {
   }
 };
 
-
-
 const UpdateSubmissionStatus = async (req, res) => {
   try {
-    const {
-      req_id,
-      submission_status,
-      comments,
-      approval_type,
-      inclusion_list,
-      minimum_hours,
-      bcc_email
-    } = req.body;
+    const { req_id, submission_status, comments, approval_type, inclusion_list, minimum_hours, bcc_email } = req.body;
 
     const userId = req.user?.id || null;
     const userName = req.user?.name || "Admin";
@@ -765,23 +745,26 @@ const UpdateSubmissionStatus = async (req, res) => {
         "approval_type",
         "inclusion_list",
         "minimum_hours",
-        "bcc_email"
-      ]
+        "bcc_email",
+      ],
     });
 
     if (invitation) {
       const startDate = moment().tz("Australia/Sydney");
-      const endDate = startDate.clone().add(Number(minimum_hours), 'hours');
+      const endDate = startDate.clone().add(Number(minimum_hours), "hours");
 
       // Use Model.update to avoid issues with missing primary key
-      await ContractorInvitation.update({
-        approval_type,
-        inclusion_list,
-        minimum_hours: endDate,
-        bcc_email
-      }, {
-        where: { id: invitation.id }
-      });
+      await ContractorInvitation.update(
+        {
+          approval_type,
+          inclusion_list,
+          minimum_hours: endDate,
+          bcc_email,
+        },
+        {
+          where: { id: invitation.id },
+        }
+      );
     } else {
       console.warn("No matching invitation found for contractor.");
     }
@@ -794,7 +777,7 @@ const UpdateSubmissionStatus = async (req, res) => {
       if (inviter) {
         const org = await Organization.findOne({
           where: { user_id: inviter.id },
-          attributes: ["organization_name"]
+          attributes: ["organization_name"],
         });
         if (org) {
           organizationName = org.organization_name;
@@ -805,7 +788,7 @@ const UpdateSubmissionStatus = async (req, res) => {
     if (["approved", "rejected"].includes(submission_status.toLowerCase()) && invitation?.contractor_email) {
       await emailQueue.add("sendSubmissionStatusEmail", {
         to: invitation.contractor_email,
-        bcc: bcc_email || undefined, 
+        bcc: bcc_email || undefined,
         subject: `Contractor Submission ${submission_status.toUpperCase()} - ${organizationName}`,
         html: `
           <div style="font-family: Arial, sans-serif; background-color: #f5f5f5; padding: 30px;">
@@ -816,13 +799,17 @@ const UpdateSubmissionStatus = async (req, res) => {
               <h2 style="color: #007bff;">Contractor Submission Status: ${submission_status.charAt(0).toUpperCase() + submission_status.slice(1)}</h2>
               <p>Dear Contractor,</p>
               <p>Your contractor registration submission has been <strong style="color: ${
-                submission_status === 'approved' ? '#28a745' : '#dc3545'
+                submission_status === "approved" ? "#28a745" : "#dc3545"
               }">${submission_status.toUpperCase()}</strong>.</p>
-              ${comments ? `
+              ${
+                comments
+                  ? `
                 <p><strong>Reviewer Comments:</strong></p>
                 <blockquote style="border-left: 4px solid #ccc; margin: 10px 0; padding-left: 15px; color: #555;">
                   ${comments}
-                </blockquote>` : ''}
+                </blockquote>`
+                  : ""
+              }
               <p><strong>Reviewed by:</strong> ${userName}</p>
               <p><strong>Date:</strong> ${dateAdded}</p>
               <hr style="margin: 30px 0;">
@@ -832,7 +819,7 @@ const UpdateSubmissionStatus = async (req, res) => {
               <p style="color: #888;">Kind regards,<br>The ${organizationName} Team</p>
             </div>
           </div>
-        `
+        `,
       });
     }
 
@@ -842,7 +829,6 @@ const UpdateSubmissionStatus = async (req, res) => {
       updated_status: submission_status,
       comments_history: updatedComments,
     });
-
   } catch (error) {
     console.error("Error updating submission status:", error);
     return res.status(500).json({
@@ -854,13 +840,13 @@ const UpdateSubmissionStatus = async (req, res) => {
 
 const GetSubmissionPrequalification = async (req, res) => {
   try {
-    const { filter } = req.query;  
+    const { filter } = req.query;
 
     let whereClause = {};
 
-    if (filter !== undefined && filter !== '') {
-      if (filter === 'true' || filter === 'false') {
-        whereClause.status = filter === 'true';  
+    if (filter !== undefined && filter !== "") {
+      if (filter === "true" || filter === "false") {
+        whereClause.status = filter === "true";
       } else {
         whereClause.submission_status = filter;
       }
@@ -877,29 +863,26 @@ const GetSubmissionPrequalification = async (req, res) => {
               FROM contractor_invitations 
               WHERE contractor_invitations.id = ContractorRegistration.contractor_invitation_id
             )`),
-            'contractor_email'
-          ]
-        ]
-      }
+            "contractor_email",
+          ],
+        ],
+      },
     });
 
     res.status(200).json({
       status: 200,
       data,
-      message: "Submission Prequalification data retrieved successfully"
+      message: "Submission Prequalification data retrieved successfully",
     });
-
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({
       status: 500,
       message: "Something went wrong",
-      error: error.message
+      error: error.message,
     });
   }
 };
-
-
 
 module.exports = {
   GetOrginazationDetails,
@@ -913,5 +896,5 @@ module.exports = {
   GetDetailsInvitationDetails,
   UpdateContractorComments,
   UpdateSubmissionStatus,
-  GetSubmissionPrequalification
+  GetSubmissionPrequalification,
 };
