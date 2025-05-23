@@ -149,7 +149,8 @@ const VerifyMobileAndEmail = async (req, res) => {
     if (userEmail) {
       // if (record.email_verified_at) {
       //   return res.status(400).json({ status: 400, message: "Email is already verified." });
-      // }
+      // } 
+
       if (record.email_otp !== otpcode) {
         return res.status(400).json({ status: 400, message: "Invalid email OTP." });
       }
@@ -164,6 +165,7 @@ const VerifyMobileAndEmail = async (req, res) => {
       // if (record.mobile_otp_verified_at) {
       //   return res.status(400).json({ status: 400, message: "Mobile is already verified." });
       // }
+      
       if (record.mobile_otp !== otpcode) {
         return res.status(400).json({ status: 400, message: "Invalid mobile OTP." });
       }
