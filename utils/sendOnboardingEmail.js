@@ -1,10 +1,10 @@
 const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
-  service: 'Gmail', // or use custom SMTP
+  service: 'Gmail',
   auth: {
-    user: process.env.EMAIL_USER, // your email
-    pass: process.env.EMAIL_PASS, // your email password or app password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -14,11 +14,13 @@ const transporter = nodemailer.createTransport({
  * @param {string} params.email
  * @param {string} params.name
  * @param {string} params.tempPassword
- * @param {string} params.activationLink
  * @param {string} params.orgName
  * @returns {Promise<boolean>}
  */
-const sendOnboardingEmail = async ({ email, name, tempPassword, activationLink,orgName }) => {
+const sendOnboardingEmail = async ({ email, name, tempPassword, orgName }) => {
+  const FRONTEND_URL = process.env.FRONTEND_URL;
+  const activationLink = `${FRONTEND_URL}/${orgName}/login`;
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
@@ -28,7 +30,7 @@ const sendOnboardingEmail = async ({ email, name, tempPassword, activationLink,o
       <p>Thank you for joining our platform! Please use the details below to activate your account:</p>
       <ul>
         <li><strong>Temporary Password:</strong> ${tempPassword}</li>
-        <li><strong>Activation Link:</strong> <a href="http://3.107.26.110:3000/${orgName}/login">${activationLink}</a></li>
+        <li><strong>Activation Link:</strong> <a href="${activationLink}">${activationLink}</a></li>
       </ul>
       <p>This link and temporary password will expire in 24 hours for security reasons.</p>
       <p>If you need help, please contact support.</p>
@@ -41,7 +43,7 @@ const sendOnboardingEmail = async ({ email, name, tempPassword, activationLink,o
     await transporter.sendMail(mailOptions);
     return true;
   } catch (error) {
-    console.error('Failed to send onboarding email:', error);
+    console.error('❌ Failed to send onboarding email:', error);
     return false;
   }
 };

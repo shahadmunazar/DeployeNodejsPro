@@ -104,7 +104,8 @@ const sendPendingOnboardingEmails = async () => {
         attributes: ["organization_name"],
       });
       const orgName = organization?.organization_name?.replace(/\s+/g, "-").toLowerCase() || "user-login";
-      const activationLink = `http://3.107.26.110:3000/${orgName}/login`;
+      const FRONTEND_URL = process.env.FRONTEND_URL;
+      const activationLink = `${FRONTEND_URL}/${orgName}/login`;
       console.log("Activation Link", activationLink);
       if (!user.onboarding_email_sent) {
         await user.update({
