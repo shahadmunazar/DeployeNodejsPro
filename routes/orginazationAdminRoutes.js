@@ -38,7 +38,7 @@ const {
 
 const {GetSubmissionPrequalificationNotification} = require("../controllers/API/ContractorAdminController/NotificationController");
 
-const {RegitserContractiorInducation,VerifyMobileAndEmail,ContractorRegistrationForm} = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
+const {RegitserContractiorInducation,VerifyMobileAndEmail,ContractorRegistrationForm,UploadContractorDocuments} = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
 // const {TestingRoute} = require('../controllers/testingController')
 
@@ -96,6 +96,7 @@ router.post("/register-with-induction-contractor", RegitserContractiorInducation
 router.post("/verify-mobile-and-email", VerifyMobileAndEmail)
 router.post("/contractor-registration-uploading",uploadFiles, ContractorRegistrationForm);
 
+router.post("/upload-contractor-documents", uploadFiles, UploadContractorDocuments);
 
 router.get("/search-location", SearchLocation);
 

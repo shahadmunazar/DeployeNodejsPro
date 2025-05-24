@@ -22,7 +22,7 @@ const RegitserContractiorInducation = async (req, res) => {
   try {
     const { userEmail, first_name, last_name, mobile_no } = req.body;
 
-    if (userEmail) {
+    if (!userEmail) {
       return res.status(400).json({
         status: 400,
         message: "Email is required.",
@@ -45,9 +45,7 @@ const RegitserContractiorInducation = async (req, res) => {
           mobile_verified_expired_at: new Date(Date.now() + 10 * 60 * 1000),
           mobile_otp: otp,
         });
-
         await sendRegistrationOtpSms(mobile_no, otp);
-
         return res.status(200).json({
           status: 200,
           message: "Mobile OTP has been sent successfully.",
@@ -278,5 +276,96 @@ console.log("req - body", req.body);
   }
 };
 
+const UploadContractorDocuments = async (req, res) => {
+  try {
+    const {
+      VerificationId,
+      reference_number,
+      issue_date,
+      expiry_date
+    } = req.body;
 
-module.exports = { RegitserContractiorInducation, VerifyMobileAndEmail, ContractorRegistrationForm };
+    if (!VerificationId || !reference_number) {
+      return res.status(400).json({
+        status: false,
+        message: 'VerificationId and reference_number are required.'
+      });
+    }
+
+    const docTypeMap = {
+      covid_check_documents: 'covid',
+      flu_vaccination_documents: 'flu_vaccination',
+      health_practitioner_registration: 'health_practitioner_registration',
+      police_check_documnets: 'police_check',
+      trade_qualification_documents: 'trade_qualification'
+    };
+
+    const uploadedDocs = [];
+
+   for (const field in docTypeMap) {
+  const document_type = docTypeMap[field];
+  const file = req.files?.[field]?.[0];
+
+  if (file) {
+    const filename = file.originalname;
+    const existingDoc = await ContractorDocument.findOne({
+      where: {
+        contractor_reg_id: VerificationId,
+        document_type
+      }
+    });
+
+    let savedDoc;
+
+    if (existingDoc) {
+      // Update existing record
+      await existingDoc.update({
+        reference_number,
+        issue_date,
+        expiry_date,
+        filename
+      });
+      savedDoc = existingDoc;
+    } else {
+      // Create new record
+      savedDoc = await ContractorDocument.create({
+        contractor_reg_id: VerificationId,
+        document_type,
+        reference_number,
+        issue_date,
+        expiry_date,
+        filename
+      });
+    }
+
+    uploadedDocs.push(savedDoc);
+  }
+}
+
+
+    if (uploadedDocs.length === 0) {
+      return res.status(400).json({
+        status: false,
+        message: 'No valid documents uploaded.'
+      });
+    }
+
+    return res.status(201).json({
+      status: true,
+      message: 'Documents uploaded/updated successfully.',
+      data: uploadedDocs
+    });
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    return res.status(500).json({
+      status: false,
+      message: 'An error occurred while uploading the documents.',
+      error: error.message
+    });
+  }
+};
+
+
+
+module.exports = { RegitserContractiorInducation, VerifyMobileAndEmail, ContractorRegistrationForm,UploadContractorDocuments };
