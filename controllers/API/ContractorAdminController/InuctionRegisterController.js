@@ -193,17 +193,8 @@ const VerifyMobileAndEmail = async (req, res) => {
 
 const ContractorRegistrationForm = async (req, res) => {
   try {
-    const {
-      VerificationId,
-      first_name,
-      last_name,
-      organization_name,
-      address,
-      trade_Types,
-      password,
-      invited_by_organization,
-    } = req.body;
-console.log("req - body", req.body);
+    const { VerificationId, first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization } = req.body;
+    console.log("req - body", req.body);
     if (!VerificationId || !password) {
       return res.status(400).json({
         status: 400,
@@ -245,7 +236,7 @@ console.log("req - body", req.body);
     findDetails.last_name = last_name ?? findDetails.last_name;
     findDetails.organization_name = organization_name ?? findDetails.organization_name;
     findDetails.address = address ?? null;
-    findDetails.trade_type = trade_Types ?? findDetails.trade_type;
+    findDetails.trade_type = Array.isArray(trade_Types) ? trade_Types : trade_Types ? [trade_Types] : findDetails.trade_type;
     findDetails.user_image = contractorImageFile ?? findDetails.user_image;
     findDetails.password = hashedPassword;
     findDetails.invited_by_organization = invited_by_organization ?? findDetails.invited_by_organization;
@@ -278,94 +269,106 @@ console.log("req - body", req.body);
 
 const UploadContractorDocuments = async (req, res) => {
   try {
-    const {
-      VerificationId,
-      reference_number,
-      issue_date,
-      expiry_date
-    } = req.body;
+    const { VerificationId, reference_number, issue_date, expiry_date } = req.body;
 
     if (!VerificationId || !reference_number) {
       return res.status(400).json({
         status: false,
-        message: 'VerificationId and reference_number are required.'
+        message: "VerificationId and reference_number are required.",
       });
     }
 
     const docTypeMap = {
-      covid_check_documents: 'covid',
-      flu_vaccination_documents: 'flu_vaccination',
-      health_practitioner_registration: 'health_practitioner_registration',
-      police_check_documnets: 'police_check',
-      trade_qualification_documents: 'trade_qualification'
+      covid_check_documents: "covid",
+      flu_vaccination_documents: "flu_vaccination",
+      health_practitioner_registration: "health_practitioner_registration",
+      police_check_documnets: "police_check",
+      trade_qualification_documents: "trade_qualification",
     };
 
-    const uploadedDocs = [];
+    const idFieldMap = {
+      covid: "covid_id",
+      flu_vaccination: "flu_vaccination_id",
+      health_practitioner_registration: "health_practitioner_registration_id",
+      police_check: "police_check_id",
+      trade_qualification: "trade_qualification_id",
+    };
 
-   for (const field in docTypeMap) {
-  const document_type = docTypeMap[field];
-  const file = req.files?.[field]?.[0];
+    const uploadedDocs = {};
 
-  if (file) {
-    const filename = file.originalname;
-    const existingDoc = await ContractorDocument.findOne({
-      where: {
-        contractor_reg_id: VerificationId,
-        document_type
+    for (const field in docTypeMap) {
+      const document_type = docTypeMap[field];
+      const file = req.files?.[field]?.[0];
+
+      if (file) {
+        const filename = file.originalname;
+
+        let document = await ContractorDocument.findOne({
+          where: {
+            contractor_reg_id: VerificationId,
+            document_type,
+          },
+        });
+
+        if (document) {
+          await document.update({
+            reference_number,
+            issue_date,
+            expiry_date,
+            filename,
+          });
+        } else {
+          document = await ContractorDocument.create({
+            contractor_reg_id: VerificationId,
+            document_type,
+            reference_number,
+            issue_date,
+            expiry_date,
+            filename,
+          });
+        }
+
+        uploadedDocs[document_type] = document;
       }
-    });
+    }
 
-    let savedDoc;
-
-    if (existingDoc) {
-      // Update existing record
-      await existingDoc.update({
-        reference_number,
-        issue_date,
-        expiry_date,
-        filename
-      });
-      savedDoc = existingDoc;
-    } else {
-      // Create new record
-      savedDoc = await ContractorDocument.create({
-        contractor_reg_id: VerificationId,
-        document_type,
-        reference_number,
-        issue_date,
-        expiry_date,
-        filename
+    if (Object.keys(uploadedDocs).length === 0) {
+      return res.status(400).json({
+        status: false,
+        message: "No valid documents uploaded.",
       });
     }
 
-    uploadedDocs.push(savedDoc);
-  }
-}
+    // Update ContractorInductionRegistration with document IDs
+    const updateFields = {};
+    for (const [docType, doc] of Object.entries(uploadedDocs)) {
+      const column = idFieldMap[docType];
+      if (column) {
+        updateFields[column] = doc.id;
+      }
+    }
 
-
-    if (uploadedDocs.length === 0) {
-      return res.status(400).json({
-        status: false,
-        message: 'No valid documents uploaded.'
+    if (Object.keys(updateFields).length > 0) {
+      await ContractorInductionRegistration.update(updateFields, {
+        where: { id: VerificationId },
       });
     }
 
     return res.status(201).json({
       status: true,
-      message: 'Documents uploaded/updated successfully.',
-      data: uploadedDocs
+      message: "Documents uploaded/updated successfully.",
+      data: uploadedDocs,
     });
 
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error("Upload error:", error);
     return res.status(500).json({
       status: false,
-      message: 'An error occurred while uploading the documents.',
-      error: error.message
+      message: "An error occurred while uploading the documents.",
+      error: error.message,
     });
   }
 };
 
 
-
-module.exports = { RegitserContractiorInducation, VerifyMobileAndEmail, ContractorRegistrationForm,UploadContractorDocuments };
+module.exports = { RegitserContractiorInducation, VerifyMobileAndEmail, ContractorRegistrationForm, UploadContractorDocuments };

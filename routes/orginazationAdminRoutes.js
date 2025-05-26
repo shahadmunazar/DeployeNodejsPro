@@ -36,6 +36,8 @@ const {
   
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 
+const {CreateTradeTypes,GetAllTradeTypes,TradeTypeDoucmentCreate,GetTradeTypeselectDocuments} = require("../controllers/API/OrginazationAdminController/tradetypeController");
+
 const {GetSubmissionPrequalificationNotification} = require("../controllers/API/ContractorAdminController/NotificationController");
 
 const {RegitserContractiorInducation,VerifyMobileAndEmail,ContractorRegistrationForm,UploadContractorDocuments} = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
@@ -87,16 +89,21 @@ router.post("/make-pdf-to-contractor-form",MakePdfToAllContractorForm);
 router.post("/send-induction-email", ...WithOrginazationAdminAndRole(SendInductionEmail));
 router.get("/get-all-submission-prequalification", GetSubmissionPrequalification);
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
-
-
 router.get("/get-submission-pendings-notificaton", ...WithOrginazationAdminAndRole(GetSubmissionPrequalificationNotification));
-
 // routes for induction testing
 router.post("/register-with-induction-contractor", RegitserContractiorInducation);
 router.post("/verify-mobile-and-email", VerifyMobileAndEmail)
 router.post("/contractor-registration-uploading",uploadFiles, ContractorRegistrationForm);
 
 router.post("/upload-contractor-documents", uploadFiles, UploadContractorDocuments);
+
+router.post("/create-trade-type", CreateTradeTypes);
+router.get("/get-all-trade-types",GetAllTradeTypes);
+
+router.post("/create-trade-type-select-documents", TradeTypeDoucmentCreate)
+
+router.get("/get-all-trade-type-select-documents" , GetTradeTypeselectDocuments);
+// router.get("/")
 
 router.get("/search-location", SearchLocation);
 

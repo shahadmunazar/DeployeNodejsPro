@@ -50,9 +50,9 @@ module.exports = {
         allowNull: true,
       },
       trade_type: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
+  type: Sequelize.JSON, // or Sequelize.TEXT and stringify manually
+  allowNull: true,
+},
       email_otp_expired_at:{
         type: Sequelize.DATE,
         allowNull:true,

@@ -2,7 +2,6 @@ const { Worker } = require('bullmq');
 const Redis = require('ioredis');
 require('dotenv').config();
 const nodemailer = require('nodemailer');
-
 // Redis connection
 // const connection = new Redis({
 //   host: '127.0.0.1',
@@ -15,22 +14,18 @@ const connection = new Redis({
   username: 'default',
   password: '9Xjsid3RytGNGBedomu21iZ9v4iU0TgY',
   maxRetriesPerRequest: null,
-  // tls: {}, // Required for Redis Cloud (SSL)
 });
 
-// Create a worker to process email jobs from the 'email-queue' queue
 const worker = new Worker('email-queue', async (job) => {
   const { to, subject, text, html } = job.data;
-
-  // Log credentials to ensure they are loaded
   console.log('Email User:', process.env.EMAIL_USER);
   console.log('Email Pass:', process.env.EMAIL_PASS ? 'Loaded' : 'Missing');
 
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: process.env.EMAIL_USER,  // from .env
-      pass: process.env.EMAIL_PASS,  // App password, not Gmail login password
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,  
     },
   });
 
@@ -45,12 +40,12 @@ const worker = new Worker('email-queue', async (job) => {
     console.log(`Step Email sent to ${to}`);
   } catch (err) {
     console.error(` Failed to send email to ${to}: ${err.message}`);
-    console.error('Full error:', err);  // Log the full error for debugging
-    throw err; // Rethrow so the job is marked as failed
+    console.error('Full error:', err);
+    throw err;
   }
 }, { connection });
 
-// Event listeners for job status
+
 worker.on('completed', (job) => {
   console.log(`🎉 Job ${job.id} completed`);
 });

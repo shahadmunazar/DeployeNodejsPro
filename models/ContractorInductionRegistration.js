@@ -51,7 +51,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       trade_type: {
-        type: DataTypes.STRING,
+        type: DataTypes.JSON,
         allowNull: true,
       },
       status: {
@@ -83,6 +83,26 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: true,
       },
+      // police_check_id: {
+      //   type: DataTypes.STRING,
+      //   allowNull: true,
+      // },
+      // covid_id: {
+      //   type: DataTypes.STRING,
+      //   allowNull: true,
+      // },
+      // health_practitioner_registration_id: {
+      //   type: DataTypes.STRING,
+      //   allowNull: true,
+      // },
+      // trade_qualification_id: {
+      //   type: DataTypes.STRING,
+      //   allowNull: true,
+      // },
+      // flu_vaccination_id: {
+      //   type: DataTypes.STRING,
+      //   allowNull: true,
+      // },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: true,
