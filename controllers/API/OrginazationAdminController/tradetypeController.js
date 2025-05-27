@@ -6,7 +6,8 @@ const moment = require("moment");
 const Role = require("../../../models/role");
 const momentTimeZone = require("moment-timezone"); // Import moment-timezone
 const { v4: uuidv4 } = require("uuid");
-
+const fs = require('fs');
+const path = require('path');
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
@@ -17,10 +18,12 @@ const { DataTypes } = require("sequelize");
 const RefreshToken = require("../../../models/refreshToken")(sequelize, DataTypes);
 const TradeTypeSelectDocument = require("../../../models/TradeTypeSelectDocument")(sequelize, DataTypes);
 const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
+const Country =  require("../../../models/country")(sequelize, DataTypes);
 const ContractorInductionRegistration = require("../../../models/ContractorInductionRegistration")(sequelize, DataTypes);
 
 const { response } = require("express");
 const { stat } = require("fs");
+const { all } = require("../../../routes/userRoutes");
 
 
 const CreateTradeTypes = async (req, res) => {
@@ -186,9 +189,99 @@ const GetTradeTypeselectDocuments = async (req, res) => {
   }
 };
 
+const AddedAllCountry = async (req, res)=>{
+try {
+    const filePath = path.join(__dirname, '../../../jsonfiles/allcountries.json'); // Adjust path as needed
+  console.log("File path:", filePath);
+    const rawData = fs.readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(rawData);
+    const countries = parsed.countries;
+    if (!Array.isArray(countries) || countries.length === 0) {
+      return res.status(400).json({
+        success: false,
+        status: 400,
+        message: 'No countries found in the JSON file'
+      });
+    }
+
+    // Basic validation for country_name and country_code
+    const invalid = countries.find(c => !c.country_name || !c.country_code);
+    if (invalid) {
+      return res.status(400).json({
+        success: false,
+        status: 400,
+        message: 'Each country must include at least country_name and country_code'
+      });
+    }
+
+    // Insert all countries
+    const addedCountries = await Country.bulkCreate(countries);
+
+    return res.status(201).json({
+      success: true,
+      status: 201,
+      message: 'All countries added successfully',
+      data: addedCountries
+    });
+
+  } catch (error) {
+    console.error('Error adding countries:', error);
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+}
+
+const getAllCountry = async (req, res) => {
+  try {
+    const { search } = req.query;
+
+    const whereClause = search
+      ? {
+          [Op.or]: [
+            { country_name: { [Op.like]: `%${search}%` } },
+            { country_code: { [Op.like]: `%${search}%` } },
+            { continent: { [Op.like]: `%${search}%` } },
+            { timezone: { [Op.like]: `%${search}%` } }
+          ]
+        }
+      : {};
+
+    const allcountries = await Country.findAll({ where: whereClause });
+
+    if (!allcountries.length) {
+      return res.status(404).json({
+        success: false,
+        status: 404,
+        message: 'No countries found matching the search criteria'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: 'Countries retrieved successfully',
+      data: allcountries
+    });
+  } catch (error) {
+    console.error('Error retrieving countries:', error);
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   CreateTradeTypes,
   GetAllTradeTypes,
   TradeTypeDoucmentCreate,
-  GetTradeTypeselectDocuments
+  GetTradeTypeselectDocuments,
+  AddedAllCountry,
+  getAllCountry
 };

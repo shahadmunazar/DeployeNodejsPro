@@ -102,6 +102,8 @@ router.get("/get-all-trade-types",GetAllTradeTypes);
 
 router.post("/create-trade-type-select-documents", TradeTypeDoucmentCreate)
 
+
+
 router.get("/get-all-trade-type-select-documents" , GetTradeTypeselectDocuments);
 // router.get("/")
 
