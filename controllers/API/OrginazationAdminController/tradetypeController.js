@@ -19,6 +19,8 @@ const RefreshToken = require("../../../models/refreshToken")(sequelize, DataType
 const TradeTypeSelectDocument = require("../../../models/TradeTypeSelectDocument")(sequelize, DataTypes);
 const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
 const Country =  require("../../../models/country")(sequelize, DataTypes);
+const States = require("../../../models/state")(sequelize, DataTypes);
+const Cities = require("../../../models/city")(sequelize, DataTypes);
 const ContractorInductionRegistration = require("../../../models/ContractorInductionRegistration")(sequelize, DataTypes);
 
 const { response } = require("express");
@@ -28,16 +30,26 @@ const { all } = require("../../../routes/userRoutes");
 
 const CreateTradeTypes = async (req, res) => {
   try {
-    const tradeTypes = req.body.tradeTypes; // Expecting an array of { name, description, status }
-
+    const filePath = path.join(__dirname, '../../../jsonfiles/tradetypes.json');
+    const rawData = fs.readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(rawData);
+    const tradeTypes = parsed.tradeTypes;
     if (!Array.isArray(tradeTypes) || tradeTypes.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Trade types must be a non-empty array',
       });
     }
-
-    const createdTradeTypes = await TradeType.bulkCreate(tradeTypes);
+    const invalidEntry = tradeTypes.find(t => !t.name || typeof t.name !== 'string');
+    if (invalidEntry) {
+      return res.status(400).json({
+        success: false,
+        message: 'Each trade type must include a valid "name" field',
+      });
+    }
+    const createdTradeTypes = await TradeType.bulkCreate(tradeTypes, {
+      ignoreDuplicates: true,
+    });
 
     return res.status(200).json({
       success: true,
@@ -82,26 +94,70 @@ const GetAllTradeTypes = async (req, res) => {
 
 const TradeTypeDoucmentCreate = async (req, res) => {
   try {
-    const { trade_type_id, documents_types, document_types_opt_man } = req.body;
-    console.log("Incoming request body:", req.body);
-    if (!trade_type_id || !documents_types || !document_types_opt_man) {
+    const filePath = path.join(__dirname, '../../../jsonfiles/tradetypeselectdocuments.json');
+    const rawData = fs.readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(rawData);
+    const tradetypeselectdocuments = parsed.selectdocuments;
+    if (!Array.isArray(tradetypeselectdocuments) || tradetypeselectdocuments.length === 0) {
       return res.status(400).json({
         success: false,
         status: 400,
-        message: 'Trade type ID, document types, and document type (optional/mandatory) are required'
+        message: 'No documents found in the JSON file',
       });
     }
-    const createdDocumentTradeTypes = await TradeTypeSelectDocument.create({
-      trade_type_id,
-      document_type:documents_types,
-      document_types_opt_man
+
+    // Filter valid documents
+    const validDocs = tradetypeselectdocuments.filter(doc =>
+      doc.trade_type_id && doc.document_type && doc.document_types_opt_man
+    );
+
+    if (validDocs.length === 0) {
+      return res.status(400).json({
+        success: false,
+        status: 400,
+        message: 'Each document entry must include trade_type_id, document_type, and document_types_opt_man'
+      });
+    }
+
+    // Get all trade_type_ids
+    const tradeTypeIds = [...new Set(validDocs.map(d => d.trade_type_id))];
+
+    // Check which trade types exist
+    const existingTradeTypes = await TradeType.findAll({
+      where: { id: tradeTypeIds },
+      attributes: ['id']
     });
+    const validTradeTypeIds = new Set(existingTradeTypes.map(t => t.id));
+
+    // Filter out documents with invalid trade_type_id
+    const filteredDocs = validDocs.filter(doc => validTradeTypeIds.has(parseInt(doc.trade_type_id)));
+
+    // Format for insertion
+    const docsToInsert = filteredDocs.map(doc => ({
+      trade_type_id: parseInt(doc.trade_type_id),
+      document_type: doc.document_type,
+      document_types_opt_man: doc.document_types_opt_man
+    }));
+
+    if (docsToInsert.length === 0) {
+      return res.status(400).json({
+        success: false,
+        status: 400,
+        message: 'No valid documents to insert. Check if trade_type_ids exist in DB.'
+      });
+    }
+
+    // Bulk insert
+    const createdDocs = await TradeTypeSelectDocument.bulkCreate(docsToInsert);
+
     return res.status(200).json({
       success: true,
       status: 200,
-      message: 'Trade type document created successfully',
-      data: createdDocumentTradeTypes
+      message: 'Trade type documents inserted successfully',
+      inserted_count: createdDocs.length,
+      data: createdDocs
     });
+
   } catch (error) {
     console.error('Error creating trade type document:', error);
     return res.status(500).json({
@@ -192,7 +248,6 @@ const GetTradeTypeselectDocuments = async (req, res) => {
 const AddedAllCountry = async (req, res)=>{
 try {
     const filePath = path.join(__dirname, '../../../jsonfiles/allcountries.json'); // Adjust path as needed
-  console.log("File path:", filePath);
     const rawData = fs.readFileSync(filePath, 'utf-8');
     const parsed = JSON.parse(rawData);
     const countries = parsed.countries;
@@ -203,8 +258,6 @@ try {
         message: 'No countries found in the JSON file'
       });
     }
-
-    // Basic validation for country_name and country_code
     const invalid = countries.find(c => !c.name);
     if (invalid) {
       return res.status(400).json({
@@ -256,7 +309,7 @@ const getAllCountry = async (req, res) => {
         message: 'No countries found matching the search criteria'
       });
     }
-
+    
     return res.status(200).json({
       success: true,
       status: 200,
@@ -274,11 +327,125 @@ const getAllCountry = async (req, res) => {
   }
 };
 
+const AddedAllStatesByCountry = async (req, res) => {
+  try {
+    const { country_id } = req.query;
+    const filePath = path.join(__dirname, '../../../jsonfiles/states.json');
+    const rawData = fs.readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(rawData);
+    const states = parsed.states;
+
+    if (!Array.isArray(states) || states.length === 0) {
+      return res.status(400).json({
+        success: false,
+        status: 400,
+        message: 'No states found in the JSON file'
+      });
+    }
+
+    const invalid = states.find(s => !s.country_id || !s.name);
+    if (invalid) {
+      return res.status(400).json({
+        success: false,
+        status: 400,
+        message: 'Each state must include at least name and country_id'
+      });
+    }
+    const filteredStates = country_id
+      ? states.filter(s => s.country_id == country_id)
+      : states;
+    const formattedStates = filteredStates.map(s => ({
+      state_name: s.name,
+      state_code: s.state_code || null,
+      slug: s.name.toLowerCase().replace(/\s+/g, '-'),
+      country_id: s.country_id,
+      status: true
+    }));
+    const addedStates = await States.bulkCreate(formattedStates, { ignoreDuplicates: true });
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      data: addedStates
+    });
+  } catch (error) {
+    console.error("Error adding states:", error);
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message
+    });
+  }
+};
+
+const AddedCitiesByStatesCountry = async (req, res) => {
+  try {
+    const { state_id } = req.query;
+    const filePath = path.join(__dirname, '../../../jsonfiles/cities.json');
+    const rawData = fs.readFileSync(filePath, 'utf-8');
+    const parsed = JSON.parse(rawData);
+    const cities = parsed.cities;
+    if (!Array.isArray(cities) || cities.length === 0) {
+      return res.status(400).json({
+        success: false,
+        status: 400,
+        message: 'No cities found in the JSON file'
+      });
+    }
+    const invalid = cities.find(c => !c.country_id || !c.name || !c.state_id);
+    if (invalid) {
+      return res.status(400).json({
+        success: false,
+        status: 400,
+        message: 'Each city must include name, country_id, and state_id'
+      });
+    }
+    const filteredCities = state_id
+      ? cities.filter(c => c.state_id == state_id)
+      : cities;
+    const formattedCities = filteredCities.map(c => ({
+      city_name: c.name,
+      city_code: c.city_code || null,
+      slug: c.name.toLowerCase().replace(/\s+/g, '-'),
+      state_id: c.state_id,
+      country_id: c.country_id,
+      status: true
+    }));
+    const batchSize = 1000;
+    const addedCities = [];
+    for (let i = 0; i < formattedCities.length; i += batchSize) {
+      const batch = formattedCities.slice(i, i + batchSize);
+      const result = await Cities.bulkCreate(batch, {
+        ignoreDuplicates: true
+      });
+      addedCities.push(...result);
+    }
+
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: `${addedCities.length} cities added successfully`,
+      data: addedCities
+    });
+
+  } catch (error) {
+    console.error("Error adding cities:", error);
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: 'Internal Server Error',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   CreateTradeTypes,
   GetAllTradeTypes,
   TradeTypeDoucmentCreate,
   GetTradeTypeselectDocuments,
   AddedAllCountry,
-  getAllCountry
+  getAllCountry,
+  AddedAllStatesByCountry,
+  AddedCitiesByStatesCountry
 };
