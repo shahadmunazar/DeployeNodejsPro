@@ -3,73 +3,127 @@ module.exports = (sequelize, DataTypes) => {
   const Country = sequelize.define(
     'Country',
     {
-      country_name: {
+      name: {
         type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
+        allowNull: false
       },
-      country_code: {
-        type: DataTypes.STRING(5),
+      iso2: {
+        type: DataTypes.STRING(2),
         allowNull: false,
-        unique: true,
+        unique: true
       },
-      dialing_code: {
+      iso3: {
+        type: DataTypes.STRING(3),
+        allowNull: false,
+        unique: true
+      },
+      numeric_code: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: true
+      },
+      phonecode: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      capital: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      currency: {
+        type: DataTypes.STRING,
+        allowNull: true
       },
       currency_name: {
         type: DataTypes.STRING,
-        allowNull: true,
-      },
-      currency_code: {
-        type: DataTypes.STRING(3),
-        allowNull: true,
+        allowNull: true
       },
       currency_symbol: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: true
       },
-      timezone: {
+      tld: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: true
       },
-      continent: {
+      native: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: true
       },
-      flag_url: {
+      region: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: true
+      },
+      region_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      subregion: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      subregion_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+      },
+      nationality: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      latitude: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      longitude: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      emoji: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      emojiU: {
+        type: DataTypes.STRING,
+        allowNull: true
+      },
+      translations: {
+        type: DataTypes.JSON,
+        allowNull: true
+      },
+      timezones: {
+        type: DataTypes.JSON,
+        allowNull: true
       },
       status: {
         type: DataTypes.BOOLEAN,
-        defaultValue: true,
+        defaultValue: true
       },
       createdAt: {
         type: DataTypes.DATE,
-        allowNull: true,
-        defaultValue: DataTypes.NOW,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       updatedAt: {
         type: DataTypes.DATE,
-        allowNull: true,
-        defaultValue: DataTypes.NOW,
+        allowNull: false,
+        defaultValue: DataTypes.NOW
       },
       deletedAt: {
         type: DataTypes.DATE,
-        allowNull: true,
-      },
+        allowNull: true
+      }
     },
     {
       tableName: 'countries',
       timestamps: true,
-      paranoid: true,
+      paranoid: true
     }
   );
 
   Country.associate = (models) => {
-    // define associations here if needed later
-    // e.g. Country.hasMany(models.City);
+    Country.hasMany(models.State, {
+      foreignKey: 'country_id',
+      as: 'states'
+    });
   };
 
   return Country;

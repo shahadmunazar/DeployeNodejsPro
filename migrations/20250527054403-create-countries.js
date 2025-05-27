@@ -9,17 +9,33 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      country_name: {
+      name: {
         type: Sequelize.STRING,
+        allowNull: false
+      },
+      iso2: {
+        type: Sequelize.STRING(2),
         allowNull: false,
         unique: true
       },
-      country_code: {
-        type: Sequelize.STRING(5),
+      iso3: {
+        type: Sequelize.STRING(3),
         allowNull: false,
         unique: true
       },
-      dialing_code: {
+      numeric_code: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      phonecode: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      capital: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      currency: {
         type: Sequelize.STRING,
         allowNull: true
       },
@@ -27,24 +43,60 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true
       },
-      currency_code: {
-        type: Sequelize.STRING(3),
-        allowNull: true
-      },
       currency_symbol: {
         type: Sequelize.STRING,
         allowNull: true
       },
-      timezone: {
+      tld: {
         type: Sequelize.STRING,
         allowNull: true
       },
-      continent: {
+      native: {
         type: Sequelize.STRING,
         allowNull: true
       },
-      flag_url: {
+      region: {
         type: Sequelize.STRING,
+        allowNull: true
+      },
+      region_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true
+      },
+      subregion: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      subregion_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true
+      },
+      nationality: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      latitude: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      longitude: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      emoji: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      emojiU: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      translations: {
+        type: Sequelize.JSON,
+        allowNull: true
+      },
+      timezones: {
+        type: Sequelize.JSON,
         allowNull: true
       },
       status: {
@@ -68,7 +120,7 @@ module.exports = {
     });
   },
 
-  down: async (queryInterface, Sequelize) => {
+  down: async (queryInterface) => {
     await queryInterface.dropTable('Countries');
   }
 };

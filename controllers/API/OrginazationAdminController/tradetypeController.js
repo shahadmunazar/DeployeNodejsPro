@@ -205,7 +205,7 @@ try {
     }
 
     // Basic validation for country_name and country_code
-    const invalid = countries.find(c => !c.country_name || !c.country_code);
+    const invalid = countries.find(c => !c.name);
     if (invalid) {
       return res.status(400).json({
         success: false,
@@ -217,9 +217,9 @@ try {
     // Insert all countries
     const addedCountries = await Country.bulkCreate(countries);
 
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
-      status: 201,
+      status: 200,
       message: 'All countries added successfully',
       data: addedCountries
     });
@@ -242,10 +242,7 @@ const getAllCountry = async (req, res) => {
     const whereClause = search
       ? {
           [Op.or]: [
-            { country_name: { [Op.like]: `%${search}%` } },
-            { country_code: { [Op.like]: `%${search}%` } },
-            { continent: { [Op.like]: `%${search}%` } },
-            { timezone: { [Op.like]: `%${search}%` } }
+            { name: { [Op.like]: `%${search}%` } },
           ]
         }
       : {};
