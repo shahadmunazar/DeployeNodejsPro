@@ -181,8 +181,6 @@ const CreateContractorRegistration = async (req, res) => {
           });
         }
       }
-
-      // Fallback to values from old record if it existed
       if (existing) {
         fieldsToUse.contractor_invitation_id = existing.contractor_invitation_id;
         fieldsToUse.invited_organization_by = existing.invited_organization_by;
@@ -245,8 +243,8 @@ const UploadInsuranceContrator = async (req, res) => {
       return res.status(400).json({ message: "Insurance document file is required." });
     }
 
-    const document_url = file.path.replace(/\\/g, "/"); // File path on server
-    const original_file_name = file.originalname; // Actual uploaded file name
+    const document_url = file.path.replace(/\\/g, "/"); 
+    const original_file_name = file.originalname;
 
     const contractor = await ContractorRegistration.findOne({
       where: { id: contractor_id },
@@ -317,21 +315,17 @@ const UploadPublicLiability = async (req, res) => {
     if (!contractor) {
       return res.status(404).json({ message: "Contractor not found." });
     }
-
-    // Check if liability record exists
     let liabilityRecord = await ContractorPublicLiability.findOne({
       where: { contractor_id },
     });
 
     if (liabilityRecord) {
-      // Update existing record
       await liabilityRecord.update({
         end_date,
         public_liabilty_file_url,
         original_file_name,
       });
     } else {
-      // Create new record
       liabilityRecord = await ContractorPublicLiability.create({
         contractor_id,
         end_date,
@@ -339,13 +333,10 @@ const UploadPublicLiability = async (req, res) => {
         original_file_name,
       });
     }
-
-    // Update contractor with reference ID
     await contractor.update({
       public_liability_doc_id: liabilityRecord.id,
       covered_amount: covered_amount,
     });
-
     return res.status(200).json({
       status: 200,
       message: "Contractor public liability insurance uploaded and updated successfully.",
@@ -360,14 +351,12 @@ const UploadPublicLiability = async (req, res) => {
 const UploadSafetyMNContractor = async (req, res) => {
   try {
     const { contractor_id } = req.body;
-
     if (!contractor_id) {
       return res.status(400).json({
         success: false,
         message: "Contractor ID is required.",
       });
     }
-
     const file = req.files?.safety_contractor_managment?.[0];
     if (!file) {
       return res.status(400).json({
@@ -375,25 +364,20 @@ const UploadSafetyMNContractor = async (req, res) => {
         message: "Safety management document file is required.",
       });
     }
-
     const does_organization_safety_management_system_filename = file.path.replace(/\\/g, "/");
     const original_file_name = file.originalname;
-
     const contractor = await ContractorRegistration.findOne({
       where: { id: contractor_id },
     });
-
     if (!contractor) {
       return res.status(404).json({
         success: false,
         message: "Contractor not found.",
       });
     }
-
     let safetyRecord = await ContractorOrganizationSafetyManagement.findOne({
       where: { contractor_id },
     });
-
     if (safetyRecord) {
       await safetyRecord.update({
         does_organization_safety_management_system_filename,
@@ -406,11 +390,9 @@ const UploadSafetyMNContractor = async (req, res) => {
         original_file_name,
       });
     }
-
     await contractor.update({
       organization_safety_management_id: safetyRecord.id,
     });
-
     return res.status(200).json({
       success: true,
       status: 200,

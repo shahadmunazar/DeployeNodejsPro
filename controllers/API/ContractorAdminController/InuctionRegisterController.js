@@ -119,7 +119,7 @@ const RegitserContractiorInducation = async (req, res) => {
 const VerifyMobileAndEmail = async (req, res) => {
   try {
     const { mobile_no, userEmail, otpcode } = req.body;
-
+    console.log("VerifyMobileAndEmail- Request Body:", req.body);
     if (!userEmail && !mobile_no) {
       return res.status(400).json({ status: 400, message: "Please provide either email or mobile number." });
     }

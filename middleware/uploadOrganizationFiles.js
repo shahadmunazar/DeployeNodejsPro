@@ -24,7 +24,6 @@ ensureDir("./uploads/contractorRegistratioDocuments/health_practitioner_registra
 ensureDir("./uploads/contractorRegistratioDocuments/police_check_documnets");
 ensureDir("./uploads/contractorRegistratioDocuments/trade_qualification_documents");
 
-// inductionDocuments Direcory End
 // Storage config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -135,7 +134,7 @@ const uploadFiles = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10 MB in bytes
+    fileSize: 10 * 1024 * 1024,
   },
 }).fields([
   { name: "logo", maxCount: 1 },
