@@ -7,7 +7,8 @@ const ContractorInductionRegistration = require("../../../models/ContractorInduc
 const ContractorDocument = require("../../../models/contractor_document")(sequelize, DataTypes);
 const { sendOtpEmail } = require("../../../helpers/sendOtpEmail");
 const { sendRegistrationOtpSms } = require("../../../helpers/smsHelper");
-
+const TradeTypeSelectDocument = require("../../../models/TradeTypeSelectDocument")(sequelize, DataTypes);
+const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
 function generateSecureOTP(length = 6) {
   const digits = "0123456789";
   let otp = "";
@@ -270,22 +271,64 @@ const ContractorRegistrationForm = async (req, res) => {
 const UploadContractorDocuments = async (req, res) => {
   try {
     const { VerificationId, reference_number, issue_date, expiry_date } = req.body;
-
     if (!VerificationId || !reference_number) {
       return res.status(400).json({
         status: false,
         message: "VerificationId and reference_number are required.",
       });
     }
+    const registration = await ContractorInductionRegistration.findOne({
+          where: { id: trade_type_id },
+          attributes: ['trade_type']
+        });
+    
+        if (!registration || !registration.trade_type) {
+          return res.status(404).json({
+            success: false,
+            status: 404,
+            message: 'No trade_type found for the given contractor registration ID'
+          });
+        }
+    
+        // Convert "72,73,74,75,76" => [72, 73, 74, 75, 76]
+        const tradeTypeIds = registration.trade_type
+          .split(',')
+          .map(id => parseInt(id.trim()))
+          .filter(id => !isNaN(id));
+    
+        if (tradeTypeIds.length === 0) {
+          return res.status(400).json({
+            success: false,
+            status: 400,
+            message: 'No valid trade type IDs found'
+          });
+        }
+        const allDocuments = await TradeTypeSelectDocument.findAll({
+          where: {
+            trade_type_id: {
+              [Op.in]: tradeTypeIds
+            }
+          },
+          attributes: ['id', 'trade_type_id', 'document_type', 'document_types_opt_man']
+        });
+    
+        // Deduplicate by document_type, prefer 'mandatory'
+        const documentMap = {};
+        for (const doc of allDocuments) {
+          const key = doc.document_type;
+          const existing = documentMap[key];
+          if (!existing || (existing.document_types_opt_man === 'optional' && doc.document_types_opt_man === 'mandatory')) {
+            documentMap[key] = doc;
+          }
+        }
+    
+        // Group into mandatory and optional
+        const result = { mandatory: [], optional: [] };
+        Object.values(documentMap).forEach(doc => {
+          result[doc.document_types_opt_man === 'mandatory' ? 'mandatory' : 'optional'].push(doc);
+        });
 
-    const docTypeMap = {
-      covid_check_documents: "covid",
-      flu_vaccination_documents: "flu_vaccination",
-      health_practitioner_registration: "health_practitioner_registration",
-      police_check_documnets: "police_check",
-      trade_qualification_documents: "trade_qualification",
-    };
-
+    // Map for updating reference IDs in ContractorInductionRegistration
     const idFieldMap = {
       covid: "covid_id",
       flu_vaccination: "flu_vaccination_id",
@@ -296,12 +339,15 @@ const UploadContractorDocuments = async (req, res) => {
 
     const uploadedDocs = {};
 
-    for (const field in docTypeMap) {
-      const document_type = docTypeMap[field];
-      const file = req.files?.[field]?.[0];
+    for (const docEntry of tradeTypeDocs) {
+      const fieldKey = Object.keys(req.files || {}).find(key =>
+        key.toLowerCase().includes(docEntry.document_type.toLowerCase().replace(/\s+/g, "_"))
+      );
 
-      if (file) {
+      if (fieldKey && req.files[fieldKey]?.[0]) {
+        const file = req.files[fieldKey][0];
         const filename = file.originalname;
+        const document_type = docEntry.document_type.toLowerCase().replace(/\s+/g, "_");
 
         let document = await ContractorDocument.findOne({
           where: {
@@ -339,7 +385,7 @@ const UploadContractorDocuments = async (req, res) => {
       });
     }
 
-    // Update ContractorInductionRegistration with document IDs
+    // Prepare update object
     const updateFields = {};
     for (const [docType, doc] of Object.entries(uploadedDocs)) {
       const column = idFieldMap[docType];

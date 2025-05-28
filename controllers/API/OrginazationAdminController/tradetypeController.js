@@ -200,8 +200,6 @@ const GetTradeTypeselectDocuments = async (req, res) => {
         message: 'No valid trade type IDs found'
       });
     }
-
-    // Fetch documents
     const allDocuments = await TradeTypeSelectDocument.findAll({
       where: {
         trade_type_id: {

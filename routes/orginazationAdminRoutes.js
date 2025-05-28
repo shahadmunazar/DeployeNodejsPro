@@ -6,6 +6,7 @@ const {
   GetOrginazationDetails,
   OrginazationAdminLogout,
   SendIvitationLinkContractor,
+  UpdateInvitationStatus,
   GetInviationLinksList,
   ResendInvitationEmail,
   handleContractorTokenInvitation,
@@ -79,6 +80,7 @@ router.delete("/delete-contractor-records",DeleteContractorRecords);
 router.get("/admin-details", ...WithOrginazationAdminAndRole(GetOrginazationDetails));
 router.post("/logout", ...WithOrginazationAdminAndRole(OrginazationAdminLogout));
 router.post("/send-contract-invitation-link", ...WithOrginazationAdminAndRole(SendIvitationLinkContractor));
+router.put("/update-invitation-status",UpdateInvitationStatus);
 router.get("/get-all-invitation-link", ...WithOrginazationAdminAndRole(GetInviationLinksList));
 router.get("/get-details-of-invitation", ...WithOrginazationAdminAndRole(GetDetailsInvitationDetails));
 router.post("/update-comments-of-contructor", ...WithOrginazationAdminAndRole(UpdateContractorComments));

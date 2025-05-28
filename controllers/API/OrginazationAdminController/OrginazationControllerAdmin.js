@@ -880,6 +880,25 @@ const GetSubmissionPrequalification = async (req, res) => {
   }
 };
 
+const UpdateInvitationStatus = async (req, res) => {
+  try {
+    const { invitation_token } = req.body;
+
+    const updateResult = await ContractorInvitation.update(
+      { status: 'Accepted' },
+      { where: { invitation_token } }
+    );
+    if (updateResult[0] === 0) {
+      return res.status(404).json({ message: 'Invitation not found or already accepted.' });
+    }
+    res.status(200).json({ message: 'Invitation status updated to Accepted.' });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
 module.exports = {
   GetOrginazationDetails,
   OrginazationAdminLogout,
@@ -893,4 +912,5 @@ module.exports = {
   UpdateContractorComments,
   UpdateSubmissionStatus,
   GetSubmissionPrequalification,
+  UpdateInvitationStatus
 };
