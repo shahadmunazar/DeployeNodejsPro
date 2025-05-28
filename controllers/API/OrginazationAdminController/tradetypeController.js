@@ -171,14 +171,11 @@ const TradeTypeDoucmentCreate = async (req, res) => {
 
 const GetTradeTypeselectDocuments = async (req, res) => {
   try {
-    const { trade_type_id } = req.body; // this is the ContractorInductionRegistration ID
-
-    // Fetch the related trade_type string from ContractorInductionRegistration
+    const { trade_type_id } = req.query; 
     const registration = await ContractorInductionRegistration.findOne({
       where: { id: trade_type_id },
       attributes: ['trade_type']
     });
-
     if (!registration || !registration.trade_type) {
       return res.status(404).json({
         success: false,
@@ -186,13 +183,18 @@ const GetTradeTypeselectDocuments = async (req, res) => {
         message: 'No trade_type found for the given contractor registration ID'
       });
     }
-
-    // Convert "72,73,74,75,76" => [72, 73, 74, 75, 76]
-    const tradeTypeIds = registration.trade_type
-      .split(',')
-      .map(id => parseInt(id.trim()))
-      .filter(id => !isNaN(id));
-
+    let tradeTypeIds = [];
+    try {
+      const parsed = JSON.parse(registration.trade_type);
+      if (Array.isArray(parsed)) {
+        tradeTypeIds = parsed
+          .map(id => parseInt(id))
+          .filter(id => !isNaN(id));
+      }
+    } catch (err) {
+      console.error("Failed to parse trade_type:", err.message);
+    }
+    console.log("Parsed Trade Type IDs:", tradeTypeIds);
     if (tradeTypeIds.length === 0) {
       return res.status(400).json({
         success: false,
@@ -209,7 +211,6 @@ const GetTradeTypeselectDocuments = async (req, res) => {
       attributes: ['id', 'trade_type_id', 'document_type', 'document_types_opt_man']
     });
 
-    // Deduplicate by document_type, prefer 'mandatory'
     const documentMap = {};
     for (const doc of allDocuments) {
       const key = doc.document_type;
@@ -218,13 +219,10 @@ const GetTradeTypeselectDocuments = async (req, res) => {
         documentMap[key] = doc;
       }
     }
-
-    // Group into mandatory and optional
     const result = { mandatory: [], optional: [] };
     Object.values(documentMap).forEach(doc => {
       result[doc.document_types_opt_man === 'mandatory' ? 'mandatory' : 'optional'].push(doc);
     });
-
     return res.status(200).json({
       success: true,
       status: 200,

@@ -52,6 +52,8 @@ const WithOrginazationAdminAndRole = (handler, role = "organization") => {
 };
 
 const uploadFiles = require("../middleware/uploadOrganizationFiles");
+
+const UploadInductionDocuments = require("../middleware/uploadOrganizationFiles");
 const { route } = require("./userRoutes");
 
 router.post("/send-multifactor-verification", SendverificationCode);
@@ -97,7 +99,7 @@ router.post("/register-with-induction-contractor", RegitserContractiorInducation
 router.post("/verify-mobile-and-email", VerifyMobileAndEmail)
 router.post("/contractor-registration-uploading",uploadFiles, ContractorRegistrationForm);
 
-router.post("/upload-contractor-documents", uploadFiles, UploadContractorDocuments);
+router.post("/upload-contractor-documents", UploadInductionDocuments, UploadContractorDocuments);
 
 router.post("/create-trade-type", CreateTradeTypes);
 router.get("/get-all-trade-types",GetAllTradeTypes);
