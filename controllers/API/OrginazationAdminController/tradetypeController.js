@@ -146,8 +146,6 @@ const TradeTypeDoucmentCreate = async (req, res) => {
         message: 'No valid documents to insert. Check if trade_type_ids exist in DB.'
       });
     }
-
-    // Bulk insert
     const createdDocs = await TradeTypeSelectDocument.bulkCreate(docsToInsert);
 
     return res.status(200).json({

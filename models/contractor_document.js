@@ -7,20 +7,28 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-          model: 'contractor_induction_registration', // Name of the table being referenced
+          model: 'contractor_induction_registration',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      },
+      document_type_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'trade_type_select_documents',
           key: 'id',
         },
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
       },
       document_type: {
-        type: DataTypes.ENUM(
-          'police_check',
-          'covid',
-          'health_practitioner_registration',
-          'trade_qualification',
-          'flu_vaccination'
-        ),
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      document_name: {
+        type: DataTypes.STRING,
         allowNull: true,
       },
       reference_number: {
@@ -39,14 +47,23 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      file_path: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      uploaded: {
+        type: DataTypes.ENUM('not_select', 'upload', 'uploaded'),
+        allowNull: false,
+        defaultValue: 'not_select',
+      },
       createdAt: {
         type: DataTypes.DATE,
-        allowNull: true,
+        allowNull: false,
         defaultValue: DataTypes.NOW,
       },
       updatedAt: {
         type: DataTypes.DATE,
-        allowNull: true,
+        allowNull: false,
         defaultValue: DataTypes.NOW,
       },
       deletedAt: {
@@ -60,11 +77,17 @@ module.exports = (sequelize, DataTypes) => {
       paranoid: true,
     }
   );
+
   ContractorDocument.associate = (models) => {
     ContractorDocument.belongsTo(models.ContractorInductionRegistration, {
       foreignKey: 'contractor_reg_id',
       as: 'contractor',
     });
+    ContractorDocument.belongsTo(models.TradeTypeSelectDocuments, {
+      foreignKey: 'document_type_id',
+      as: 'documentType',
+    });
   };
+
   return ContractorDocument;
 };

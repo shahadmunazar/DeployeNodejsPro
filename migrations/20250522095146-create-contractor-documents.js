@@ -13,20 +13,28 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
-          model: 'contractor_induction_registration', // Change if your contractor table is named differently
+          model: 'contractor_induction_registration',
+          key: 'id',
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL',
+      },
+      document_type_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'trade_type_select_documents',
           key: 'id',
         },
         onUpdate: 'CASCADE',
         onDelete: 'SET NULL',
       },
       document_type: {
-        type: Sequelize.ENUM(
-          'police_check',
-          'covid',
-          'health_practitioner_registration',
-          'trade_qualification',
-          'flu_vaccination'
-        ),
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      document_name: {
+        type: Sequelize.STRING,
         allowNull: true,
       },
       reference_number: {
@@ -45,6 +53,15 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: true,
       },
+      file_path: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      uploaded: {
+        type: Sequelize.ENUM('not_select', 'upload', 'uploaded'),
+        allowNull: false,
+        defaultValue: 'not_select',
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
@@ -60,10 +77,13 @@ module.exports = {
         allowNull: true,
       },
     });
+
+    await queryInterface.addIndex('contractor_documents', ['contractor_reg_id']);
+    await queryInterface.addIndex('contractor_documents', ['document_type_id']);
   },
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.dropTable('contractor_documents');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_contractor_documents_document_type";');
+    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_contractor_documents_uploaded";');
   }
 };

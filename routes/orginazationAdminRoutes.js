@@ -53,7 +53,7 @@ const WithOrginazationAdminAndRole = (handler, role = "organization") => {
 
 const uploadFiles = require("../middleware/uploadOrganizationFiles");
 
-const UploadInductionDocuments = require("../middleware/uploadOrganizationFiles");
+const UploadInductionDocuments = require("../middleware/inductioncontractor");
 const { route } = require("./userRoutes");
 
 router.post("/send-multifactor-verification", SendverificationCode);

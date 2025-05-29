@@ -268,91 +268,30 @@ const ContractorRegistrationForm = async (req, res) => {
   }
 };
 
+
+
 const UploadContractorDocuments = async (req, res) => {
   try {
-    const { VerificationId, reference_number, issue_date, expiry_date } = req.body;
-    if (!VerificationId || !reference_number) {
+    console.log("Files received by multer:", req.files);
+    console.log("Body received:", req.body);
+    const { VerificationId, reference_number, issue_date, expiry_date, trade_type_id } = req.body;
+    if (!VerificationId || !reference_number || !trade_type_id) {
       return res.status(400).json({
         status: false,
-        message: "VerificationId and reference_number are required.",
+        message: "VerificationId, trade_type_id, and reference_number are required.",
       });
     }
-    const registration = await ContractorInductionRegistration.findOne({
-          where: { id: trade_type_id },
-          attributes: ['trade_type']
-        });
-    
-        if (!registration || !registration.trade_type) {
-          return res.status(404).json({
-            success: false,
-            status: 404,
-            message: 'No trade_type found for the given contractor registration ID'
-          });
-        }
-    
-        // Convert "72,73,74,75,76" => [72, 73, 74, 75, 76]
-        const tradeTypeIds = registration.trade_type
-          .split(',')
-          .map(id => parseInt(id.trim()))
-          .filter(id => !isNaN(id));
-    
-        if (tradeTypeIds.length === 0) {
-          return res.status(400).json({
-            success: false,
-            status: 400,
-            message: 'No valid trade type IDs found'
-          });
-        }
-        const allDocuments = await TradeTypeSelectDocument.findAll({
-          where: {
-            trade_type_id: {
-              [Op.in]: tradeTypeIds
-            }
-          },
-          attributes: ['id', 'trade_type_id', 'document_type', 'document_types_opt_man']
-        });
-    
-        // Deduplicate by document_type, prefer 'mandatory'
-        const documentMap = {};
-        for (const doc of allDocuments) {
-          const key = doc.document_type;
-          const existing = documentMap[key];
-          if (!existing || (existing.document_types_opt_man === 'optional' && doc.document_types_opt_man === 'mandatory')) {
-            documentMap[key] = doc;
-          }
-        }
-    
-        // Group into mandatory and optional
-        const result = { mandatory: [], optional: [] };
-        Object.values(documentMap).forEach(doc => {
-          result[doc.document_types_opt_man === 'mandatory' ? 'mandatory' : 'optional'].push(doc);
-        });
-
-    // Map for updating reference IDs in ContractorInductionRegistration
-    const idFieldMap = {
-      covid: "covid_id",
-      flu_vaccination: "flu_vaccination_id",
-      health_practitioner_registration: "health_practitioner_registration_id",
-      police_check: "police_check_id",
-      trade_qualification: "trade_qualification_id",
-    };
-
-    const uploadedDocs = {};
-
-    for (const docEntry of tradeTypeDocs) {
-      const fieldKey = Object.keys(req.files || {}).find(key =>
-        key.toLowerCase().includes(docEntry.document_type.toLowerCase().replace(/\s+/g, "_"))
-      );
-
-      if (fieldKey && req.files[fieldKey]?.[0]) {
-        const file = req.files[fieldKey][0];
-        const filename = file.originalname;
-        const document_type = docEntry.document_type.toLowerCase().replace(/\s+/g, "_");
+    let savedDocument = null;
+    for (const fieldName in req.files) {
+      const fileArray = req.files[fieldName];
+      if (fileArray && fileArray[0]) {
+        const file = fileArray[0];
+        console.log(`Processing uploaded file for field ${fieldName}: ${file.filename}`);
 
         let document = await ContractorDocument.findOne({
           where: {
             contractor_reg_id: VerificationId,
-            document_type,
+            document_type_id: trade_type_id,
           },
         });
 
@@ -361,49 +300,45 @@ const UploadContractorDocuments = async (req, res) => {
             reference_number,
             issue_date,
             expiry_date,
-            filename,
+            filename: file.filename,
+            file_path: file.path,
+            uploaded: "uploaded",
           });
+          console.log(`Updated document record for trade_type_id ${trade_type_id}`);
         } else {
           document = await ContractorDocument.create({
             contractor_reg_id: VerificationId,
-            document_type,
+            document_type_id: trade_type_id,
+            document_type: fieldName,
+            document_name: file.originalname,
             reference_number,
             issue_date,
             expiry_date,
-            filename,
+            filename: file.filename,
+            file_path: file.path,
+            uploaded: "uploaded",
           });
+          console.log(`Created new document record for trade_type_id ${trade_type_id}`);
         }
 
-        uploadedDocs[document_type] = document;
+        // Store the last document processed
+        savedDocument = document;
+      } else {
+        console.log(`No file uploaded for field ${fieldName}`);
       }
     }
 
-    if (Object.keys(uploadedDocs).length === 0) {
+    if (!savedDocument) {
       return res.status(400).json({
         status: false,
         message: "No valid documents uploaded.",
       });
     }
 
-    // Prepare update object
-    const updateFields = {};
-    for (const [docType, doc] of Object.entries(uploadedDocs)) {
-      const column = idFieldMap[docType];
-      if (column) {
-        updateFields[column] = doc.id;
-      }
-    }
-
-    if (Object.keys(updateFields).length > 0) {
-      await ContractorInductionRegistration.update(updateFields, {
-        where: { id: VerificationId },
-      });
-    }
-
     return res.status(201).json({
       status: true,
       message: "Documents uploaded/updated successfully.",
-      data: uploadedDocs,
+      data: savedDocument, // directly the document object without field names
     });
 
   } catch (error) {
@@ -415,6 +350,9 @@ const UploadContractorDocuments = async (req, res) => {
     });
   }
 };
+
+
+
 
 
 module.exports = { RegitserContractiorInducation, VerifyMobileAndEmail, ContractorRegistrationForm, UploadContractorDocuments };
