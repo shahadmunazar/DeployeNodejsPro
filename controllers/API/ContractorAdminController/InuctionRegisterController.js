@@ -335,8 +335,9 @@ const UploadContractorDocuments = async (req, res) => {
       });
     }
 
-    return res.status(201).json({
+    return res.status(200).json({
       status: true,
+      status:200,
       message: "Documents uploaded/updated successfully.",
       data: savedDocument, // directly the document object without field names
     });
