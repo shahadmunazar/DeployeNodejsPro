@@ -14,6 +14,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      documents_filed_name:{
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       document_types_opt_man:{
         type: DataTypes.ENUM('optional', 'mandatory'),
         allowNull: true,

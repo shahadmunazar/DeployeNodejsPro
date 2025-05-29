@@ -136,7 +136,8 @@ const TradeTypeDoucmentCreate = async (req, res) => {
     const docsToInsert = filteredDocs.map(doc => ({
       trade_type_id: parseInt(doc.trade_type_id),
       document_type: doc.document_type,
-      document_types_opt_man: doc.document_types_opt_man
+      document_types_opt_man: doc.document_types_opt_man,
+      documents_filed_name: doc.documents_filed_name 
     }));
 
     if (docsToInsert.length === 0) {
