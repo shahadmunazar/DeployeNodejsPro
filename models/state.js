@@ -46,12 +46,13 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  State.associate = (models) => {
-    State.belongsTo(models.Country, {
-      foreignKey: 'country_id',
-      as: 'country'
-    });
-  };
+ State.associate = (models) => {
+  State.belongsTo(models.Country, {
+    foreignKey: 'country_id',
+    as: 'country'
+  });
+};
+
 
   return State;
 };

@@ -83,6 +83,23 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: true,
       },
+      confirm_mandatoryDocumentUpload: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+      confirm_optionalDocumentUpload: {
+        type: DataTypes.JSON,
+        allowNull: true,
+      },
+      mandatoryDocumentUpload: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      optionalDocumentUpload: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
       // police_check_id: {
       //   type: DataTypes.STRING,
       //   allowNull: true,

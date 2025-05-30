@@ -119,12 +119,15 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  Country.associate = (models) => {
-    Country.hasMany(models.State, {
-      foreignKey: 'country_id',
-      as: 'states'
-    });
-  };
+Country.associate = (models) => {
+  Country.hasMany(models.State, {
+    foreignKey: 'country_id',
+    as: 'states'
+  });
+};
+
+
+
 
   return Country;
 };

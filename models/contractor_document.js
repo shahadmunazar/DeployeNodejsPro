@@ -1,27 +1,27 @@
-'use strict';
+"use strict";
 module.exports = (sequelize, DataTypes) => {
   const ContractorDocument = sequelize.define(
-    'ContractorDocument',
+    "ContractorDocument",
     {
       contractor_reg_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-          model: 'contractor_induction_registration',
-          key: 'id',
+          model: "contractor_induction_registration",
+          key: "id",
         },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL",
       },
       document_type_id: {
         type: DataTypes.INTEGER,
         allowNull: true,
         references: {
-          model: 'trade_type_select_documents',
-          key: 'id',
+          model: "trade_type_select_documents",
+          key: "id",
         },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
+        onUpdate: "CASCADE",
+        onDelete: "SET NULL",
       },
       document_type: {
         type: DataTypes.STRING,
@@ -29,6 +29,10 @@ module.exports = (sequelize, DataTypes) => {
       },
       document_name: {
         type: DataTypes.STRING,
+        allowNull: true,
+      },
+      uploadedDocumentsType: {
+        type: DataTypes.ENUM("mandatory", "optional"),
         allowNull: true,
       },
       reference_number: {
@@ -52,9 +56,9 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       uploaded: {
-        type: DataTypes.ENUM('not_select', 'upload', 'uploaded'),
+        type: DataTypes.ENUM("not_select", "upload", "uploaded"),
         allowNull: false,
-        defaultValue: 'not_select',
+        defaultValue: "not_select",
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -72,20 +76,20 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: 'contractor_documents',
+      tableName: "contractor_documents",
       timestamps: true,
       paranoid: true,
     }
   );
 
-  ContractorDocument.associate = (models) => {
+  ContractorDocument.associate = models => {
     ContractorDocument.belongsTo(models.ContractorInductionRegistration, {
-      foreignKey: 'contractor_reg_id',
-      as: 'contractor',
+      foreignKey: "contractor_reg_id",
+      as: "contractor",
     });
     ContractorDocument.belongsTo(models.TradeTypeSelectDocuments, {
-      foreignKey: 'document_type_id',
-      as: 'documentType',
+      foreignKey: "document_type_id",
+      as: "documentType",
     });
   };
 

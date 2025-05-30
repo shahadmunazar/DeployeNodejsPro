@@ -19,7 +19,7 @@ const RefreshToken = require("../../../models/refreshToken")(sequelize, DataType
 const TradeTypeSelectDocument = require("../../../models/TradeTypeSelectDocument")(sequelize, DataTypes);
 const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
 const Country =  require("../../../models/country")(sequelize, DataTypes);
-const States = require("../../../models/state")(sequelize, DataTypes);
+const State = require("../../../models/state")(sequelize, DataTypes);
 const Cities = require("../../../models/city")(sequelize, DataTypes);
 const ContractorInductionRegistration = require("../../../models/ContractorInductionRegistration")(sequelize, DataTypes);
 
@@ -289,13 +289,17 @@ const getAllCountry = async (req, res) => {
 
     const whereClause = search
       ? {
-          [Op.or]: [
-            { name: { [Op.like]: `%${search}%` } },
-          ]
+          name: {
+            [Op.like]: `%${search}%`
+          }
         }
       : {};
 
-    const allcountries = await Country.findAll({ where: whereClause });
+    const allcountries = await Country.findAll({
+      where: whereClause,
+        include: [{ model: State, as: 'states' }]
+
+    });
 
     if (!allcountries.length) {
       return res.status(404).json({
@@ -308,7 +312,7 @@ const getAllCountry = async (req, res) => {
     return res.status(200).json({
       success: true,
       status: 200,
-      message: 'Countries retrieved successfully',
+      message: 'Countries and their states retrieved successfully',
       data: allcountries
     });
   } catch (error) {
@@ -321,6 +325,7 @@ const getAllCountry = async (req, res) => {
     });
   }
 };
+
 
 const AddedAllStatesByCountry = async (req, res) => {
   try {
