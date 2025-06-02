@@ -1,39 +1,31 @@
-const { Queue } = require('bullmq');
-const Redis = require('ioredis');
+require('dotenv').config();
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database'); // Adjust path as needed
+const JobModel = require('../models/job');       // Adjust path as needed
 
-// Redis connection
-// const connection = new Redis({
-//   host: '127.0.0.1',
-//   port: 6379,
-//   maxRetriesPerRequest: null,
-// });
-const connection = new Redis({
-  host: 'redis-19668.crce179.ap-south-1-1.ec2.redns.redis-cloud.com',
-  port: 19668,
-  username: 'default',
-  password: '9Xjsid3RytGNGBedomu21iZ9v4iU0TgY',
-  maxRetriesPerRequest: null,
-  // tls: {}, // Required for Redis Cloud (SSL)
-});
+// Initialize Job model
+const Job = JobModel(sequelize, DataTypes);
 
+class EmailQueue {
+  constructor() {
+    this.name = 'email';
+  }
 
-// redis-cli -u redis://default:9Xjsid3RytGNGBedomu21iZ9v4iU0TgY@redis-19668.crce179.ap-south-1-1.ec2.redns.redis-cloud.com:19668
-// Create and export the queue
-const emailQueue = new Queue('email-queue', { connection });
+  async add(jobName, data) {
+    try {
+      const job = await Job.create({
+        type: jobName,   // Save jobName here
+        payload: data,   // Save the data object as payload
+        status: 'pending',
+        attempts: 0,
+      });
+      console.log(`📥 Job added: ${job.id} (${jobName})`);
+      return job;
+    } catch (err) {
+      console.error('❌ Failed to add job:', err.message);
+      throw err;
+    }
+  }
+}
 
-module.exports = emailQueue;
-
-
-// Withe new Redis with live server
-// 
-// require('dotenv').config(); // Load .env first
-// const { Queue } = require('bullmq');
-// const Redis = require('ioredis');
-
-// // Use Redis URL from environment variable
-// const connection = new Redis(process.env.REDIS_URL);
-
-// // Create BullMQ queue
-// const emailQueue = new Queue('email-queue', { connection });
-
-// module.exports = emailQueue;
+module.exports = new EmailQueue();

@@ -11,8 +11,10 @@ const ContractorDocument = require("../../../models/contractor_document")(sequel
 const InductionContent = require("../../../models/contractor_induction_content")(sequelize,DataTypes);
 const ContractorInductionPdf = require("../../../models/contractorinductionpdf")(sequelize,DataTypes);
 const { sendOtpEmail } = require("../../../helpers/sendOtpEmail");
+const {sendConfirmationEmail} = require("../../../helpers/sendConfirmationEmail")
 const { sendRegistrationOtpSms } = require("../../../helpers/smsHelper");
 const { asyncSend } = require("bullmq");
+const organization = require("../../../models/organization");
 const TradeTypeSelectDocument = require("../../../models/TradeTypeSelectDocument")(sequelize, DataTypes);
 const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
 function generateSecureOTP(length = 6) {
@@ -171,7 +173,7 @@ const VerifyMobileAndEmail = async (req, res) => {
 
 const ContractorRegistrationForm = async (req, res) => {
   try {
-    const { VerificationId, first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization } = req.body;
+    const { VerificationId, first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization,agree_terms } = req.body;
     console.log("req - body", req.body);
     if (!VerificationId || !password) {
       return res.status(400).json({
@@ -234,7 +236,24 @@ const ContractorRegistrationForm = async (req, res) => {
     //   userId: addedIntoUser.id,
     //   roleId: findroles.id,
     // });
+    
+    console.log("find details", findDetails.invited_by_organization)
+    
+   let nameOrganization = null;
+if (invited_by_organization) {
+  const findUser = await User.findOne({
+    where: { id: invited_by_organization },
+  });
+  const findOrginazation = await organization.findOne({
+    where: { user_id: findUser.id },
+  });
+  nameOrganization = findOrginazation?.organization_name;
+}
+    const useremail = findDetails.email;
     await findDetails.save();
+    if (agree_terms) {
+  await sendConfirmationEmail(useremail, findDetails, nameOrganization);
+}
     return res.status(200).json({
       status: 200,
       message: "Contractor registration completed successfully.",
@@ -259,6 +278,8 @@ const ContractorRegistrationForm = async (req, res) => {
     });
   }
 };
+
+
 
 const UploadContractorDocuments = async (req, res) => {
   try {

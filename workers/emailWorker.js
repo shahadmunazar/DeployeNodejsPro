@@ -1,55 +1,73 @@
-const { Worker } = require('bullmq');
-const Redis = require('ioredis');
 require('dotenv').config();
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database'); // Adjust path as needed
+const JobModel = require('../models/job');       // Adjust path as needed
 const nodemailer = require('nodemailer');
-// Redis connection
-// const connection = new Redis({
-//   host: '127.0.0.1',
-//   port: 6379,
-//   maxRetriesPerRequest: null,
-// });
-const connection = new Redis({
-  host: 'redis-19668.crce179.ap-south-1-1.ec2.redns.redis-cloud.com',
-  port: 19668,
-  username: 'default',
-  password: '9Xjsid3RytGNGBedomu21iZ9v4iU0TgY',
-  maxRetriesPerRequest: null,
-});
 
-const worker = new Worker('email-queue', async (job) => {
-  const { to, subject, text, html } = job.data;
-  console.log('Email User:', process.env.EMAIL_USER);
-  console.log('Email Pass:', process.env.EMAIL_PASS ? 'Loaded' : 'Missing');
+// Initialize Job model
+const Job = JobModel(sequelize, DataTypes);
+console.log("Job model initialized");
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,  
-    },
-  });
-
+async function processEmailJobs() {
+  let job; // Declare here to access in catch block
   try {
-    await transporter.sendMail({
-      from: `"Konnect Verification Code" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      text,
-      html,
+    job = await Job.findOne({
+      where: { status: 'pending' },
+      order: [['createdAt', 'ASC']],
     });
-    console.log(`Step Email sent to ${to}`);
+
+    if (!job) {
+      console.log('⏳ No pending email jobs');
+      return;
+    }
+
+    const { type: jobName, payload } = job;
+
+    let emailData;
+    // Parse payload if it's a string
+    try {
+      emailData = typeof payload === 'string' ? JSON.parse(payload) : payload;
+    } catch (parseError) {
+      console.error('Failed to parse job payload JSON:', parseError.message);
+      await job.update({ status: 'failed' });
+      return;
+    }
+
+    
+    // switch (jobName) {
+    //   case 'send-otp':
+    //     break;
+    //   default:
+    //     console.error('Unknown job type:', jobName);
+    //     await job.update({ status: 'failed' });
+    //     return;
+    // }
+    if (!emailData.to) {
+      throw new Error('No recipients defined in email data');
+    }
+    await job.update({ status: 'processing', attempts: job.attempts + 1 });
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+    await transporter.sendMail({
+      from: `"Konnect Verification" <${process.env.EMAIL_USER}>`,
+      to: emailData.to,
+      subject: emailData.subject,
+      text: emailData.text,
+      html: emailData.html,
+    });
+    await job.update({ status: 'done' });
+    console.log(`✅ Email sent to ${emailData.to}`);
   } catch (err) {
-    console.error(` Failed to send email to ${to}: ${err.message}`);
-    console.error('Full error:', err);
-    throw err;
+    console.error('💥 Error processing email job:', err.message);
+    if (job) {
+      await job.update({ status: 'failed' });
+    }
   }
-}, { connection });
-
-
-worker.on('completed', (job) => {
-  console.log(`🎉 Job ${job.id} completed`);
-});
-
-worker.on('failed', (job, err) => {
-  console.error(`💥 Job ${job.id} failed: ${err.message}`);
-});
+}
+setInterval(processEmailJobs, 5000);
+module.exports = { processEmailJobs };

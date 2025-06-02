@@ -96,7 +96,7 @@ const CreateOrganization = async (req, res) => {
         message: "Email is already in use.",
       });
     }
-      const newOrganization = await Organization.create({
+    const newOrganization = await Organization.create({
       organization_name,
       industryId,
       organization_address,
@@ -110,7 +110,7 @@ const CreateOrganization = async (req, res) => {
       agreement_paper: agreementPaperPath,
       plan_id: plan_id || null,
     });
-     console.log("Organization Created:", newOrganization);
+    console.log("Organization Created:", newOrganization);
     const tempPassword = generateTempPassword();
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
     const newUser = await User.create({
