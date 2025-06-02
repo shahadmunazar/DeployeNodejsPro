@@ -34,15 +34,12 @@ const validateOrganization = [
 
 const CreateOrganization = async (req, res) => {
   try {
-    // Check if the required files are provided
     if (!req.files?.logo || !req.files?.agreement_paper) {
       return res.status(400).json({
         success: false,
         message: "Both logo and agreement paper are required",
       });
     }
-
-    // Get the user performing the action (Super Admin)
     const performedBy = req.user; // contains id, name, etc.
     console.log("Performed By", performedBy);
 
@@ -55,8 +52,6 @@ const CreateOrganization = async (req, res) => {
         errors: errors.array(),
       });
     }
-
-    // Destructure and get values from the request body
     const {
       organization_name,
       industryId,
@@ -72,8 +67,6 @@ const CreateOrganization = async (req, res) => {
       user_name,
       plan_id,
     } = req.body;
-
-    // Validate either email or username must be present
     if (!email && !user_name) {
       return res.status(400).json({
         success: false,
@@ -83,8 +76,6 @@ const CreateOrganization = async (req, res) => {
 
     const logoPath = req.files.logo[0].filename;
     const agreementPaperPath = req.files.agreement_paper[0].filename;
-
-    // Generate a unique registration ID if not provided
     let finalRegistrationId = registration_id;
     if (!finalRegistrationId) {
       const prefix = organization_name.replace(/\s/g, "").toUpperCase().slice(0, 4);
@@ -98,9 +89,14 @@ const CreateOrganization = async (req, res) => {
       const nextNumber = String(existingCount + 1).padStart(6, "0");
       finalRegistrationId = `${prefix}${nextNumber}`;
     }
-
-    // Step 1: Create the organization record
-    const newOrganization = await Organization.create({
+    const createdUser = await User.findOne({ where: { email } });
+    if (createdUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is already in use.",
+      });
+    }
+      const newOrganization = await Organization.create({
       organization_name,
       industryId,
       organization_address,
@@ -114,49 +110,29 @@ const CreateOrganization = async (req, res) => {
       agreement_paper: agreementPaperPath,
       plan_id: plan_id || null,
     });
-
-    console.log("Organization Created:", newOrganization);
-
-    // Step 2: Check if the email already exists for the admin user
-    const createdUser = await User.findOne({ where: { email } });
-    if (createdUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is already in use.",
-      });
-    }
-
-    // Step 3: Create a new user for the admin and hash password
+     console.log("Organization Created:", newOrganization);
     const tempPassword = generateTempPassword();
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
-
     const newUser = await User.create({
       name,
       email,
       user_name,
       password: hashedPassword,
     });
-
-    // Step 4: Update the organization with the new admin user ID
     await newOrganization.update({ user_id: newUser.id });
-
-    // Step 5: Assign the admin user the "Super Admin" role (roleId = 2 for Super Admin)
     const newUserRole = await UserRoles.create({
       userId: newUser.id,
       roleId: 2,
     });
-
-    // Step 6: Create subscription if a plan is selected
     let newSubscription = null;
     if (plan_id) {
-      const plan = await Plan.findByPk(plan_id); // get plan name if available
+      const plan = await Plan.findByPk(plan_id);
       if (!plan) {
         return res.status(400).json({
           success: false,
           message: "Plan not found.",
         });
       }
-
       newSubscription = await OrganizationSubscribeUser.create({
         user_id: newUser.id,
         org_id: newOrganization.id,
@@ -164,13 +140,11 @@ const CreateOrganization = async (req, res) => {
         validity_start_date: new Date(),
         validity_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
       });
-
-      // Step 7: Log the activity for the new subscription
       await SubscriberActivityLog.create({
         action: "plan_assigned",
         organizationId: newOrganization.id,
         organizationName: newOrganization.organization_name,
-        newPlan: plan.name, // Using plan name instead of ID
+        newPlan: plan.name,
         effectiveDate: newSubscription.validity_start_date,
         subscriptionId: newSubscription.id,
         performedByAdminId: performedBy?.id,
@@ -179,8 +153,6 @@ const CreateOrganization = async (req, res) => {
         notificationSent: true,
       });
     }
-
-    // Step 8: Respond with the result
     return res.status(200).json({
       success: true,
       message: "Organization, admin user, and subscription created successfully",
