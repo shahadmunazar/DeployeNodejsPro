@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const User = require("../../../models/user");
 const UserRole = require("../../../models/userrole");
 const Role = require("../../../models/role");
+const moment = require('moment');
 const ContractorInductionRegistration = require("../../../models/ContractorInductionRegistration")(sequelize, DataTypes);
 const ContractorDocument = require("../../../models/contractor_document")(sequelize, DataTypes);
 const InductionContent = require("../../../models/contractor_induction_content")(sequelize,DataTypes);
@@ -38,9 +39,9 @@ const RegitserContractiorInducation = async (req, res) => {
         email: userEmail,
       },
     });
-    if (findUserIsRegisterAlreadyorNot) {
-      return res.status(200).json({ alreadyRegistered: true, message: "User already registered." });
-    }
+    // if (findUserIsRegisterAlreadyorNot) {
+    //   return res.status(200).json({ alreadyRegistered: true, message: "User already registered." });
+    // }
     const otp = generateSecureOTP();
     let existingRecord = await ContractorInductionRegistration.findOne({
       where: { email: userEmail },
@@ -592,6 +593,30 @@ const GetInductionContractorPdf = async (req, res) => {
   }
 };
 
+
+const GetAllInductionRegister = async (req, res) => {
+  try {
+    const user_org_id = req.user?.id;
+    const findAllInductionRegister = await ContractorInductionRegistration.findAll({where:{
+      invited_by_organization:user_org_id
+    }});
+    return res.status(200).json({
+      success: true,
+      data: findAllInductionRegister,
+      status: 200,
+      message: 'All data retrieved successfully',
+    });
+  } catch (error) {
+    console.error("Error fetching induction registrations:", error);
+    return res.status(500).json({
+      success: false,
+      status: 500,
+      message: 'Internal server error',
+    });
+  }
+};
+
+
 module.exports = {
   RegitserContractiorInducation,
   VerifyMobileAndEmail,
@@ -602,5 +627,6 @@ module.exports = {
   AddedInductionContent,
   GetInductionContent,
   UploadContentInduction,
-  GetInductionContractorPdf
+  GetInductionContractorPdf,
+  GetAllInductionRegister
 };

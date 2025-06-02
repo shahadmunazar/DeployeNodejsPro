@@ -45,7 +45,8 @@ const {
   AddedInductionContent,
   GetInductionContent,
   UploadContentInduction,
-  GetInductionContractorPdf
+  GetInductionContractorPdf,
+  GetAllInductionRegister
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
 // const {TestingRoute} = require('../controllers/testingController')
@@ -105,6 +106,9 @@ router.get("/get-all-induction-content", GetInductionContent);
 router.post("/create-trade-type-select-documents", TradeTypeDoucmentCreate);
 router.get("/uploaded-all-trade-type-documents", getAllTraderTpeUploadedDocuments);
 router.get("/get-all-trade-type-select-documents", GetTradeTypeselectDocuments);
+
+router.get("/get-all-contractor-induction-register" , ...WithOrginazationAdminAndRole(GetAllInductionRegister));
+
 router.get("/search-location", SearchLocation);
 
 // router.get("/testing-routes",TestingRoute );

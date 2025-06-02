@@ -175,6 +175,7 @@ const GetTradeTypeselectDocuments = async (req, res) => {
       where: { id: trade_type_id },
       attributes: ['trade_type']
     });
+    console.log("Registration",registration);
     if (!registration || !registration.trade_type) {
       return res.status(404).json({
         success: false,
@@ -183,16 +184,19 @@ const GetTradeTypeselectDocuments = async (req, res) => {
       });
     }
     let tradeTypeIds = [];
-    try {
-      const parsed = JSON.parse(registration.trade_type);
-      if (Array.isArray(parsed)) {
-        tradeTypeIds = parsed
-          .map(id => parseInt(id))
-          .filter(id => !isNaN(id));
-      }
-    } catch (err) {
-      console.error("Failed to parse trade_type:", err.message);
-    }
+try {
+  const parsed = JSON.parse(registration.trade_type); // results in ["1,2,3,4,5"]
+  if (Array.isArray(parsed)) {
+    parsed.forEach(item => {
+      item.split(',').forEach(id => {
+        const numId = parseInt(id.trim());
+        if (!isNaN(numId)) tradeTypeIds.push(numId);
+      });
+    });
+  }
+} catch (err) {
+  console.error("Failed to parse trade_type:", err.message);
+}
     console.log("Parsed Trade Type IDs:", tradeTypeIds);
     if (tradeTypeIds.length === 0) {
       return res.status(400).json({
