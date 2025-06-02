@@ -1204,8 +1204,9 @@ const SearchLocation = async (req, res) => {
 
 const SendInductionEmail = async (req, res) => {
   try {
-    const { contractor_id } = req.body;
-
+    const { contractor_id ,UserEmail} = req.body;
+    const invited_by = req.user?.id
+    console.log("invited by", invited_by);
     if (!contractor_id) {
       return res.status(400).json({
         status: 400,

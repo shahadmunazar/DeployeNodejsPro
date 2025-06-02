@@ -4,30 +4,24 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('contractor_documents', {
       id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
         type: Sequelize.INTEGER,
+  primaryKey: true,
+  autoIncrement: true,
+  allowNull: false
       },
-      contractor_reg_id: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'contractor_induction_registration',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
-      },
+     contractor_reg_id: {
+  type: Sequelize.INTEGER,
+  allowNull: true,
+  references: {
+    model: 'contractor_induction_registration', // must match table name
+    key: 'id',
+  },
+  onUpdate: 'CASCADE',
+  onDelete: 'SET NULL',
+},
       document_type_id: {
         type: Sequelize.INTEGER,
         allowNull: true,
-        references: {
-          model: 'trade_type_select_documents',
-          key: 'id',
-        },
-        onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
       },
       document_type: {
         type: Sequelize.STRING,
