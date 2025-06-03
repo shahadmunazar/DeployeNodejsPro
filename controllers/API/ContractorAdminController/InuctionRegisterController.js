@@ -43,9 +43,9 @@ const RegitserContractiorInducation = async (req, res) => {
         email: userEmail,
       },
     });
-    if (findUserIsRegisterAlreadyorNot) {
-      return res.status(200).json({ alreadyRegistered: true, message: "User already registered." });
-    }
+    // if (findUserIsRegisterAlreadyorNot) {
+    //   return res.status(400).json({success:true,status:400, alreadyRegistered: true, message: "User already registered." });
+    // }
     const otp = generateSecureOTP();
     let existingRecord = await ContractorInductionRegistration.findOne({
       where: { email: userEmail },
