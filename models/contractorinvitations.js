@@ -61,6 +61,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      invitation_type: {
+        type: DataTypes.ENUM("contractor_invitation", "contractor_induction", "contractor_admin_induction", "contractor_user_induction", "staff", "compliance_manager"),
+        allowNull: true,
+      },
       expires_at: {
         type: DataTypes.DATE,
         allowNull: true,

@@ -1210,11 +1210,9 @@ const SendInductionEmail = async (req, res) => {
     if (!contractor_id) {
       return res.status(400).json({
         status: 400,
-        message: "Contractor ID is required.",
+        message: "Contractor ID is required",
       });
     }
-
-    // Step 1: Get contractor registration details
     const contractorDetails = await ContractorRegistration.findOne({
       where: { id: contractor_id },
     });
@@ -1225,8 +1223,6 @@ const SendInductionEmail = async (req, res) => {
         message: "Contractor not found.",
       });
     }
-
-    // Step 2: Get invitation record using contractor_invitation_id
     const contractorInvitation = await ContractorInvitation.findOne({
       where: { id: contractorDetails.contractor_invitation_id },
     });
@@ -1237,10 +1233,8 @@ const SendInductionEmail = async (req, res) => {
         message: "Contractor invitation not found.",
       });
     }
-
     const email = contractorInvitation.contractor_email;
     const name = contractorInvitation.contractor_name;
-
     if (!email) {
       return res.status(400).json({
         status: 400,
@@ -1249,8 +1243,6 @@ const SendInductionEmail = async (req, res) => {
     }
 
     const link = `${process.env.FRONTEND_URL}/induction-info/${contractorInvitation.invite_token}`;
-
-    // Step 3: Add email to queue
     await emailQueue.add("sendInductionEmail", {
       to: email,
       subject: "Contractor Induction",
