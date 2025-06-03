@@ -361,9 +361,8 @@ const SnedInvitationLink = async (req, res) => {
     if (!inviteToken || !inviteExpiresAt || inviteExpiresAt < now) {
       inviteToken = crypto.randomBytes(64).toString("hex");
       inviteExpiresAt = new Date();
-      inviteExpiresAt.setHours(inviteExpiresAt.getHours() + 48); // 48 hours expiry
+      inviteExpiresAt.setHours(inviteExpiresAt.getHours() + 48); 
 
-      // *Update User with New Token & Expiry*
       await user.update({
         invite_token: inviteToken,
         invite_expires_at: inviteExpiresAt,
@@ -371,8 +370,8 @@ const SnedInvitationLink = async (req, res) => {
       });
     }
 
-    // *Generate a Temporary Password*
-    const tempPassword = Math.random().toString(36).slice(-8); // Example: "xk9Bz7qP"
+    
+    const tempPassword = Math.random().toString(36).slice(-8); 
 
     // *Hash the Password Before Storing*
     const hashedPassword = await bcrypt.hash(tempPassword, 10);

@@ -1,125 +1,154 @@
-// helpers/emailHelper.js
-const emailQueue = require("../queues/emailQueue"); // Path should match your project structure
-const moment = require('moment');
+const nodemailer = require('nodemailer');
+const fs = require('fs');
 
-const sendConfirmationEmail = async (useremail, findDetails, nameOrganization) => {
+async function sendConfirmationEmail(useremail, findDetails, nameOrganization, pdfPath) {
   try {
-    const emailTemplate = `
+    console.log("email", nameOrganization);
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // HTML email body with ID card section removed
+    const htmlBody = `
+      <!DOCTYPE html>
       <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              margin: 0;
-              padding: 0;
-              background-color: #f4f4f4;
-            }
-            .email-container {
-              width: 100%;
-              max-width: 600px;
-              margin: 20px auto;
-              background-color: #ffffff;
-            }
-            .header {
-              background-color: #1a2526;
-              color: #ffffff;
-              padding: 15px 20px;
-              text-align: left;
-            }
-            .header h2 {
-              margin: 0;
-              font-size: 20px;
-            }
-            .content {
-              padding: 20px;
-              color: #333333;
-              font-size: 14px;
-              line-height: 1.6;
-            }
-            .content p {
-              margin: 5px 0;
-            }
-            .content a {
-              color: #007bff;
-              text-decoration: none;
-            }
-            .content a:hover {
-              text-decoration: underline;
-            }
-            .details {
-              margin-top: 20px;
-            }
-            .details p {
-              margin: 5px 0;
-            }
-            .details strong {
-              display: inline-block;
-              width: 120px;
-              font-weight: bold;
-            }
-            .footer {
-              background-color: #1a2526;
-              color: #cccccc;
-              padding: 10px 20px;
-              text-align: right;
-              font-size: 12px;
-            }
-            .footer a {
-              color: #cccccc;
-              text-decoration: none;
-            }
-            .footer a:hover {
-              text-decoration: underline;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="email-container">
-            <div class="header">
-              <h2>${nameOrganization}</h2>
-            </div>
-            <div class="content">
-              <p>Hello ${findDetails.first_name} ${findDetails.last_name},</p>
-              <p>Thank you for completing your contractor registration. Please find your registration details below.</p>
-              <div class="details">
-                <p><strong>ID:</strong> ${findDetails.id}</p>
-                <p><strong>Date:</strong> ${moment().format("DD/MM/YYYY")}</p>
-                <p><strong>Name:</strong> ${findDetails.first_name} ${findDetails.last_name}</p>
-                <p><strong>Email:</strong> ${findDetails.email}</p>
-                <p><strong>Mobile:</strong> ${findDetails.mobile_no}</p>
-                <p><strong>Company:</strong> ${findDetails.organization_name}</p>
-                <p><strong>Trade Types:</strong> ${findDetails.trade_type.join(", ")}</p>
-                <p><strong>Invited by:</strong> ${nameOrganization}</p>
-              </div>
-              <p>
-                If you ever need to update your details or manage your account, you can use the portal by clicking here:
-                <a href="https://yourdomain.com/login">Login to Portal</a>
-              </p>
-              <p><strong>PLEASE DO NOT REPLY DIRECTLY TO THIS EMAIL</strong></p>
-            </div>
-            <div class="footer">
-              Powered by <a href="https://linksafe.com">LinkSafe</a>
-            </div>
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            margin: 0;
+            background-color: #f5f5f5;
+            color: #333;
+          }
+          .container {
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          }
+          .header {
+            margin-bottom: 20px;
+          }
+          .header h1 {
+            font-size: 24px;
+            color: #333;
+            margin: 0;
+            display: inline-block;
+          }
+          .header .village-text {
+            font-size: 14px;
+            color: #666;
+            margin-left: 10px;
+            vertical-align: top;
+          }
+          .message {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            text-align: left;
+          }
+          .details {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+            margin-top: 30px;
+            text-align: left;
+          }
+          .details p {
+            margin: 5px 0;
+          }
+          .details p strong {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+          }
+          .footer-link {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #007bff;
+            text-align: center;
+          }
+          .footer-link a {
+            color: #007bff;
+            text-decoration: none;
+          }
+          .footer-link a:hover {
+            text-decoration: underline;
+          }
+          .signature {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #333;
+            text-align: left;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>JAMES MILSON VILLAGE</h1>
+            <span class="village-text">VILLAGE</span>
           </div>
-        </body>
+          <div class="message">
+            <p>Hello ${findDetails.first_name} ${findDetails.last_name},</p>
+            <p>Thank you for completing the Contractor Induction.</p>
+            <p>Please find your induction ID card attached and your confirmed details below.</p>
+          </div>
+          <div class="details">
+            <p><strong>Date Taken:</strong> 03/06/2025</p>
+            <p><strong>Valid To:</strong> 03/06/2026</p>
+            <p><strong>Name:</strong> ${findDetails.first_name} ${findDetails.last_name}</p>
+            <p><strong>E-mail Address:</strong> ${useremail}</p>
+            <p><strong>Contact Phone Number:</strong> ${findDetails.phone_number || 'N/A'}</p>
+            <p><strong>Company:</strong> ${nameOrganization}</p>
+            <p><strong>Address:</strong> Noida Sector 16 Metro Station, Noida 201301</p>
+          </div>
+          <div class="footer-link">
+            <p>If you ever need to update your details and manage your completed inductions, you can use the Inductee Portal by <a href="#">clicking here</a>.</p>
+            <p><a href="https://www.linksafe.com.au">www.linksafe.com.au</a></p>
+          </div>
+          <div class="signature">
+            <p>Kind regards,</p>
+            <p>James Milson Village</p>
+          </div>
+        </div>
+      </body>
       </html>
     `;
 
-    // Add the email job to the queue
-    await emailQueue.add("send-confirmation", {
+    const mailOptions = {
+      from: `"${nameOrganization}" <${process.env.EMAIL_USER}>`,
       to: useremail,
-      subject: "Contractor Registration Confirmation",
-      text: `Hello ${findDetails.first_name} ${findDetails.last_name},\n\nThank you for completing your contractor registration with ${nameOrganization}. Here are your details:\n\nID: ${findDetails.id}\nDate: ${moment().format("DD/MM/YYYY")}\nName: ${findDetails.first_name} ${findDetails.last_name}\nEmail: ${findDetails.email}\nMobile: ${findDetails.mobile_no}\nCompany: ${findDetails.organization_name}\nTrade Types: ${findDetails.trade_type.join(", ")}\nInvited by: ${nameOrganization}\n\nLogin to the portal: https://yourdomain.com/login\n\nPlease do not reply directly to this email.\n\nPowered by LinkSafe`,
-      html: emailTemplate,
-    });
+      subject: 'Contractor Registration Confirmation',
+      text: `Hello ${findDetails.first_name} ${findDetails.last_name},\n\nPlease find your induction ID card attached and your confirmed details below.\n\nDate Taken: 03/06/2025\nValid To: 03/06/2026\n\nName: ${findDetails.first_name} ${findDetails.last_name}\nE-mail Address: ${useremail}\nContact Phone Number: ${findDetails.phone_number || 'N/A'}\nCompany: ${nameOrganization}\nAddress: Noida Sector 16 Metro Station, Noida 201301\n\nKind regards,\nJames Milson Village`,
+      html: htmlBody,
+      attachments: [],
+    };
 
-    console.log(`Confirmation email job added to queue for ${useremail}`);
+    if (pdfPath && fs.existsSync(pdfPath)) {
+      mailOptions.attachments.push({
+        filename: `identity_card_${findDetails.first_name}.pdf`,
+        path: pdfPath,
+        contentType: 'application/pdf',
+      });
+    }
+
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Email sent successfully to ${useremail}`);
   } catch (error) {
-    console.error("Failed to add email job to queue:", error.message);
-    throw error; // Propagate error to the caller
+    console.error('❌ Error sending email:', error);
+    throw error;
   }
-};
+}
 
-module.exports = {
-  sendConfirmationEmail,
-};
+module.exports = sendConfirmationEmail;

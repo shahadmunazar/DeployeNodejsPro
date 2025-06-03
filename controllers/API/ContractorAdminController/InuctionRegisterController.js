@@ -6,17 +6,19 @@ const User = require("../../../models/user");
 const UserRole = require("../../../models/userrole");
 const Role = require("../../../models/role");
 const moment = require('moment');
+const fs = require('fs');
 const ContractorInductionRegistration = require("../../../models/ContractorInductionRegistration")(sequelize, DataTypes);
 const ContractorDocument = require("../../../models/contractor_document")(sequelize, DataTypes);
 const InductionContent = require("../../../models/contractor_induction_content")(sequelize,DataTypes);
 const ContractorInductionPdf = require("../../../models/contractorinductionpdf")(sequelize,DataTypes);
 const { sendOtpEmail } = require("../../../helpers/sendOtpEmail");
-const {sendConfirmationEmail} = require("../../../helpers/sendConfirmationEmail")
+const sendConfirmationEmail = require("../../../helpers/sendConfirmationEmail")
 const { sendRegistrationOtpSms } = require("../../../helpers/smsHelper");
 const { asyncSend } = require("bullmq");
 const organization = require("../../../models/organization");
 const TradeTypeSelectDocument = require("../../../models/TradeTypeSelectDocument")(sequelize, DataTypes);
 const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
+const IdentityCardPdf = require("../../../PdfGenerator/identitycardpdf");
 function generateSecureOTP(length = 6) {
   const digits = "0123456789";
   let otp = "";
@@ -247,12 +249,34 @@ if (invited_by_organization) {
   const findOrginazation = await organization.findOne({
     where: { user_id: findUser.id },
   });
-  nameOrganization = findOrginazation?.organization_name;
+
+  const tradename = await TradeType.findAll({
+    where:{
+      id:findDetails.trade_type
+    },attributes:['name']
+  })
+  console.log('data',findOrginazation)
+  console.log("userDetauls",findUser);
+  nameOrganization = findDetails.organization_name;
+  console.log("nameorginazation", nameOrganization)
 }
     const useremail = findDetails.email;
     await findDetails.save();
     if (agree_terms) {
-  await sendConfirmationEmail(useremail, findDetails, nameOrganization);
+const data = {
+  useremail: useremail,
+  name: findDetails.first_name,
+  company_name: findDetails.organization_name,
+  userId: findDetails.invited_by_organization,
+  user_image: findDetails.user_image,
+  expiry_date: moment(findDetails.createdAt).add(1, 'year').format('DD-MM-YYYY'), // dd-mm-yyyy format
+};
+
+  const pdfPath = await IdentityCardPdf(data);
+  console.log("PDF path passed to email queue:", pdfPath);
+console.log("File exists:", fs.existsSync(pdfPath));
+
+  await sendConfirmationEmail(useremail, findDetails, nameOrganization, pdfPath);
 }
     return res.status(200).json({
       status: 200,
