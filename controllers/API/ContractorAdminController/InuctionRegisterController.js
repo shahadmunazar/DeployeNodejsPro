@@ -219,27 +219,27 @@ const ContractorRegistrationForm = async (req, res) => {
     findDetails.invited_by_organization = invited_by_organization ?? findDetails.invited_by_organization;
     const token = crypto.randomBytes(64).toString("hex");
     const expiresAt = moment().add(72, "hours").toDate();
-    const addedIntoUser = await User.create({
-      name: findDetails.first_name,
-      email: findDetails.email,
-      phone: findDetails.mobile_no,
-      password: hashedPassword,
-      invite_token: token,
-      invite_expires_at: expiresAt,
-    });
-    const findroles = await Role.findOne({
-      where: { name: "contractor" },
-      attributes: ["id", "name"],
-    });
-    if (!findroles) {
-      throw new Error('Role "contractor" not found');
-    }
-    await UserRole.create({
-      userId: addedIntoUser.id,
-      roleId: findroles.id,
-    });
+    // const addedIntoUser = await User.create({
+    //   name: findDetails.first_name,
+    //   email: findDetails.email,
+    //   phone: findDetails.mobile_no,
+    //   password: hashedPassword,
+    //   invite_token: token,
+    //   invite_expires_at: expiresAt,
+    // });
+    // const findroles = await Role.findOne({
+    //   where: { name: "contractor" },
+    //   attributes: ["id", "name"],
+    // });
+    // if (!findroles) {
+    //   throw new Error('Role "contractor" not found');
+    // }
+    // await UserRole.create({
+    //   userId: addedIntoUser.id,
+    //   roleId: findroles.id,
+    // });
     
-    console.log("find details", findDetails.invited_by_organization)
+    // console.log("find details", findDetails.invited_by_organization)
     
    let nameOrganization = null;
 if (invited_by_organization) {
