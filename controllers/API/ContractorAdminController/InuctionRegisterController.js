@@ -285,69 +285,91 @@ const UploadContractorDocuments = async (req, res) => {
   try {
     console.log("Files received by multer:", req.files);
     console.log("Body received:", req.body);
-    const { VerificationId, reference_number, issue_date, expiry_date, trade_type_id, confirmfinalSubmit, document_type } = req.body;
+    const {
+      VerificationId,
+      reference_number,
+      issue_date,
+      expiry_date,
+      trade_type_id,
+      confirmfinalSubmit,
+      document_type,
+    } = req.body;
+
     if (!VerificationId) {
       return res.status(400).json({
         status: false,
         message: "VerificationId is required",
       });
     }
-    const confirmIds = parseConfirmIds(confirmfinalSubmit);
+
+    // Always update or insert documents
     const savedDocuments = await handleFileUploads(req.files, {
       VerificationId,
       trade_type_id,
       reference_number,
       issue_date,
       expiry_date,
-      confirmIds,
     });
-    if (!savedDocuments.length) {
-      return res.status(400).json({
-        status: false,
-        message: "No valid documents uploaded.",
+
+    // If user confirms final submission, update registration table
+    if (confirmfinalSubmit === "true" && document_type) {
+      const allDocs = await ContractorDocument.findAll({
+        where: { contractor_reg_id: VerificationId },
       });
-    }
-    if (confirmIds.length > 0) {
-      await updateUploadedStatus(confirmIds);
-    }
-    if (document_type) {
-      const updateFields = getRegistrationUpdateFields(document_type, confirmIds);
+
+      const docIds = allDocs.map(doc => doc.id);
+
+      for (const doc of allDocs) {
+        if (doc.uploaded !== "uploaded") {
+          await doc.update({ uploaded: "uploaded" });
+        }
+      }
+
+      const updateFields = getRegistrationUpdateFields(document_type, docIds);
+
       await ContractorInductionRegistration.update(updateFields, {
         where: { id: VerificationId },
       });
-      console.log(`Updated ContractorInductionRegistration for document_type ${document_type}`);
+
+      console.log(`✅ Final submit updated for ${document_type}. Total documents confirmed: ${docIds.length}`);
     }
+
     return res.status(200).json({
       status: true,
-      message: "Documents uploaded/updated successfully.",
+      message: "Document uploaded successfully.",
       data: savedDocuments,
     });
+
   } catch (error) {
     console.error("Upload error:", error);
     return res.status(500).json({
       status: false,
-      message: "An error occurred while uploading the documents.",
+      message: "An error occurred while uploading the document.",
       error: error.message,
     });
   }
 };
 
-function parseConfirmIds(confirmfinalSubmit) {
-  if (Array.isArray(confirmfinalSubmit)) {
-    return confirmfinalSubmit.flatMap(item => item.split(",").map(id => id.trim()));
-  } else if (typeof confirmfinalSubmit === "string") {
-    return confirmfinalSubmit.split(",").map(id => id.trim());
-  }
-  return [];
-}
 
-async function handleFileUploads(files, { VerificationId, trade_type_id, reference_number, issue_date, expiry_date, confirmIds }) {
+
+// Handle file upload and update/create
+async function handleFileUploads(files, { VerificationId, trade_type_id, reference_number, issue_date, expiry_date }) {
   const savedDocuments = [];
+
   for (const fieldName in files) {
     const fileArray = files[fieldName];
     if (!fileArray || !fileArray[0]) continue;
+
     const file = fileArray[0];
-    const uploadStatus = confirmIds.includes(trade_type_id) ? "uploaded" : "upload";
+
+    // Check for existing document with same VerificationId and trade_type_id
+    const existingDoc = await ContractorDocument.findOne({
+      where: {
+        contractor_reg_id: VerificationId,
+        document_type_id: trade_type_id,
+      },
+    });
+
     const documentData = {
       contractor_reg_id: VerificationId,
       document_type_id: trade_type_id,
@@ -358,48 +380,51 @@ async function handleFileUploads(files, { VerificationId, trade_type_id, referen
       expiry_date,
       filename: file.filename,
       file_path: file.path,
-      uploaded: uploadStatus,
+      uploaded: "upload",
     };
-    const existingDoc = await ContractorDocument.findOne({
-      where: {
-        contractor_reg_id: VerificationId,
-        document_type_id: trade_type_id,
-      },
-    });
+
     if (existingDoc) {
       await existingDoc.update(documentData);
       savedDocuments.push(existingDoc);
+      console.log(`🔄 Updated existing document for trade_type_id ${trade_type_id}`);
     } else {
       const newDoc = await ContractorDocument.create(documentData);
       savedDocuments.push(newDoc);
+      console.log(`✅ Created new document for trade_type_id ${trade_type_id}`);
     }
-    console.log(`Handled file upload for trade_type_id ${trade_type_id}`);
   }
+
   return savedDocuments;
 }
 
-async function updateUploadedStatus(confirmIds) {
-  const documentsToUpdate = await ContractorDocument.findAll({
-    where: {
-      id: confirmIds,
-    },
-    attributes: ["id"],
-  });
-  await Promise.all(documentsToUpdate.map(doc => doc.update({ uploaded: "uploaded" })));
-  console.log(`Marked ${documentsToUpdate.length} documents as 'uploaded'`);
+
+// Parse confirmfinalSubmit if needed (unused in final version but kept for future flexibility)
+function parseConfirmIds(confirmfinalSubmit) {
+  if (Array.isArray(confirmfinalSubmit)) {
+    return confirmfinalSubmit.flatMap(item => item.split(",").map(id => id.trim()));
+  } else if (typeof confirmfinalSubmit === "string") {
+    return confirmfinalSubmit.split(",").map(id => id.trim());
+  }
+  return [];
 }
 
+// Prepare update fields for ContractorInductionRegistration
 function getRegistrationUpdateFields(document_type, confirmIds) {
+  const idArray = confirmIds.map(id => parseInt(id, 10));
   const updateFields = {};
   if (document_type === "mandatory") {
-    updateFields.confirm_mandatoryDocumentUpload = confirmIds;
-    updateFields.mandatoryDocumentUpload = document_type;
+    updateFields.confirm_mandatoryDocumentUpload = JSON.stringify(idArray);
+    updateFields.mandatoryDocumentUpload = "mandatory";
   } else if (document_type === "optional") {
-    updateFields.confirm_optionalDocumentUpload = confirmIds;
-    updateFields.optionalDocumentUpload = document_type;
+    updateFields.confirm_optionalDocumentUpload = JSON.stringify(idArray);
+    updateFields.optionalDocumentUpload = "optional";
   }
+
   return updateFields;
 }
+
+
+
 
 const GetUploadedDocuments = async (req, res) => {
   try {
