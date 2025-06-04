@@ -44,6 +44,7 @@ const sendinductionRegistrationEmails = async () => {
             nameOrganization = invitedOrg.organization_name;
           }
         }
+        
 
         const pdfData = {
           useremail: registration.email,
@@ -69,9 +70,9 @@ const sendinductionRegistrationEmails = async () => {
           // Mark status as 'sent'
           await registration.update({ agree_terms: "sent" });
 
-          console.log(`✅ Email sent to: ${registration.email}`);
+          console.log(`✅Email sent to: ${registration.email}`);
         } else {
-          console.warn("❌ PDF not found for:", registration.email);
+          console.warn("PDF not found for:", registration.email);
           await registration.update({ agree_terms: "failed" });
         }
 
@@ -83,7 +84,7 @@ const sendinductionRegistrationEmails = async () => {
 
     console.log("✅ All contractor registration emails processed.");
   } catch (error) {
-    console.error("❌ Contractor induction registration email cron failed:", error);
+    console.error("Contractor induction registration email cron failed:", error);
   }
 };
 
