@@ -670,5 +670,5 @@ module.exports = {
   GetInductionContent,
   UploadContentInduction,
   GetInductionContractorPdf,
-  GetAllInductionRegister,
+  GetAllInductionRegister
 };
