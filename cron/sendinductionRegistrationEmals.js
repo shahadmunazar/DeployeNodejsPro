@@ -54,6 +54,7 @@ const sendinductionRegistrationEmails = async () => {
           userId: registration.invited_by_organization,
           tradeType: registration.trade_type,
           user_image: registration.user_image,
+          created_at: moment(registration.createdAt).format('DD-MM-YYYY'),
           expiry_date: moment(registration.createdAt).add(1, 'year').format('DD-MM-YYYY'),
         };
 
