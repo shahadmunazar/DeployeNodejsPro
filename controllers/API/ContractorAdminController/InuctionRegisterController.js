@@ -206,7 +206,7 @@ const ContractorRegistrationForm = async (req, res) => {
         message,
       });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // const hashedPassword = await bcrypt.hash(password, 10);
     const contractorImageFile = req.files?.contractor_image?.[0]?.originalname;
     console.log("contactor Regitser address", address);
     findDetails.first_name = first_name ?? findDetails.first_name;
@@ -215,10 +215,14 @@ const ContractorRegistrationForm = async (req, res) => {
     findDetails.address = address ?? null;
     findDetails.trade_type = Array.isArray(trade_Types) ? trade_Types : trade_Types ? [trade_Types] : findDetails.trade_type;
     findDetails.user_image = contractorImageFile ?? findDetails.user_image;
-    findDetails.password = hashedPassword;
+    // findDetails.password = hashedPassword;
     findDetails.invited_by_organization = invited_by_organization ?? findDetails.invited_by_organization;
     const token = crypto.randomBytes(64).toString("hex");
     const expiresAt = moment().add(72, "hours").toDate();
+    if (password) {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  findDetails.password = hashedPassword;
+}
     // const addedIntoUser = await User.create({
     //   name: findDetails.first_name,
     //   email: findDetails.email,
