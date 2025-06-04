@@ -177,10 +177,10 @@ const ContractorRegistrationForm = async (req, res) => {
   try {
     const { VerificationId, first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization, agree_terms } = req.body;
     console.log("req - body", req.body);
-    if (!VerificationId || !password) {
+    if (!VerificationId) {
       return res.status(400).json({
         status: 400,
-        message: "Verification ID and password are required.",
+        message: "Verification ID is required.",
       });
     }
     const findDetails = await ContractorInductionRegistration.findOne({
