@@ -5,14 +5,14 @@ const crypto = require("crypto");
 const User = require("../../../models/user");
 const UserRole = require("../../../models/userrole");
 const Role = require("../../../models/role");
-const moment = require('moment');
-const fs = require('fs');
+const moment = require("moment");
+const fs = require("fs");
 const ContractorInductionRegistration = require("../../../models/ContractorInductionRegistration")(sequelize, DataTypes);
 const ContractorDocument = require("../../../models/contractor_document")(sequelize, DataTypes);
-const InductionContent = require("../../../models/contractor_induction_content")(sequelize,DataTypes);
-const ContractorInductionPdf = require("../../../models/contractorinductionpdf")(sequelize,DataTypes);
+const InductionContent = require("../../../models/contractor_induction_content")(sequelize, DataTypes);
+const ContractorInductionPdf = require("../../../models/contractorinductionpdf")(sequelize, DataTypes);
 const { sendOtpEmail } = require("../../../helpers/sendOtpEmail");
-const sendConfirmationEmail = require("../../../helpers/sendConfirmationEmail")
+const sendConfirmationEmail = require("../../../helpers/sendConfirmationEmail");
 const { sendRegistrationOtpSms } = require("../../../helpers/smsHelper");
 const { asyncSend } = require("bullmq");
 const organization = require("../../../models/organization");
@@ -38,7 +38,7 @@ const RegitserContractiorInducation = async (req, res) => {
         message: "Email is required.",
       });
     }
-  const findUserIsRegisterAlreadyorNot = await User.findOne({
+    const findUserIsRegisterAlreadyorNot = await User.findOne({
       where: {
         email: userEmail,
       },
@@ -175,7 +175,7 @@ const VerifyMobileAndEmail = async (req, res) => {
 
 const ContractorRegistrationForm = async (req, res) => {
   try {
-    const { VerificationId, first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization,agree_terms } = req.body;
+    const { VerificationId, first_name, last_name, organization_name, address, trade_Types, password, invited_by_organization, agree_terms } = req.body;
     console.log("req - body", req.body);
     if (!VerificationId || !password) {
       return res.status(400).json({
@@ -196,10 +196,10 @@ const ContractorRegistrationForm = async (req, res) => {
       !findDetails.email_verified_at && !findDetails.mobile_otp_verified_at
         ? "Please verify both Email and Mobile number before completing registration."
         : !findDetails.email_verified_at
-          ? "Please verify your Email before completing registration."
-          : !findDetails.mobile_otp_verified_at
-            ? "Please verify your Mobile number before completing registration."
-            : null;
+        ? "Please verify your Email before completing registration."
+        : !findDetails.mobile_otp_verified_at
+        ? "Please verify your Mobile number before completing registration."
+        : null;
     if (message) {
       return res.status(400).json({
         status: 400,
@@ -238,46 +238,33 @@ const ContractorRegistrationForm = async (req, res) => {
     //   userId: addedIntoUser.id,
     //   roleId: findroles.id,
     // });
-    
+
     // console.log("find details", findDetails.invited_by_organization)
-    
-   let nameOrganization = null;
-if (invited_by_organization) {
-  const findUser = await User.findOne({
-    where: { id: invited_by_organization },
-  });
-  const findOrginazation = await organization.findOne({
-    where: { user_id: findUser.id },
-  });
 
-  const tradename = await TradeType.findAll({
-    where:{
-      id:findDetails.trade_type
-    },attributes:['name']
-  })
-  console.log('data',findOrginazation)
-  console.log("userDetauls",findUser);
-  nameOrganization = findDetails.organization_name;
-  console.log("nameorginazation", nameOrganization)
-}
-    const useremail = findDetails.email;
-    await findDetails.save();
+    let nameOrganization = null;
+    if (invited_by_organization) {
+      const findUser = await User.findOne({
+        where: { id: invited_by_organization },
+      });
+      const findOrginazation = await organization.findOne({
+        where: { user_id: findUser.id },
+      });
+
+      const tradename = await TradeType.findAll({
+        where: {
+          id: findDetails.trade_type,
+        },
+        attributes: ["name"],
+      });
+      console.log("data", findOrginazation);
+      console.log("userDetauls", findUser);
+      nameOrganization = findDetails.organization_name;
+      console.log("nameorginazation", nameOrganization);
+    }
     if (agree_terms) {
-const data = {
-  useremail: useremail,
-  name: findDetails.first_name,
-  company_name: findDetails.organization_name,
-  userId: findDetails.invited_by_organization,
-  user_image: findDetails.user_image,
-  expiry_date: moment(findDetails.createdAt).add(1, 'year').format('DD-MM-YYYY'), // dd-mm-yyyy format
-};
-
-  const pdfPath = await IdentityCardPdf(data);
-  console.log("PDF path passed to email queue:", pdfPath);
-console.log("File exists:", fs.existsSync(pdfPath));
-
-  await sendConfirmationEmail(useremail, findDetails, nameOrganization, pdfPath);
-}
+      findDetails.agree_terms = "submit";
+    }
+    await findDetails.save();
     return res.status(200).json({
       status: 200,
       message: "Contractor registration completed successfully.",
@@ -303,21 +290,11 @@ console.log("File exists:", fs.existsSync(pdfPath));
   }
 };
 
-
-
 const UploadContractorDocuments = async (req, res) => {
   try {
     console.log("Files received by multer:", req.files);
     console.log("Body received:", req.body);
-    const {
-      VerificationId,
-      reference_number,
-      issue_date,
-      expiry_date,
-      trade_type_id,
-      confirmfinalSubmit,
-      document_type,
-    } = req.body;
+    const { VerificationId, reference_number, issue_date, expiry_date, trade_type_id, confirmfinalSubmit, document_type } = req.body;
 
     if (!VerificationId) {
       return res.status(400).json({
@@ -363,7 +340,6 @@ const UploadContractorDocuments = async (req, res) => {
       message: "Document uploaded successfully.",
       data: savedDocuments,
     });
-
   } catch (error) {
     console.error("Upload error:", error);
     return res.status(500).json({
@@ -373,8 +349,6 @@ const UploadContractorDocuments = async (req, res) => {
     });
   }
 };
-
-
 
 // Handle file upload and update/create
 async function handleFileUploads(files, { VerificationId, trade_type_id, reference_number, issue_date, expiry_date }) {
@@ -421,7 +395,6 @@ async function handleFileUploads(files, { VerificationId, trade_type_id, referen
   return savedDocuments;
 }
 
-
 // Parse confirmfinalSubmit if needed (unused in final version but kept for future flexibility)
 function parseConfirmIds(confirmfinalSubmit) {
   if (Array.isArray(confirmfinalSubmit)) {
@@ -446,9 +419,6 @@ function getRegistrationUpdateFields(document_type, confirmIds) {
 
   return updateFields;
 }
-
-
-
 
 const GetUploadedDocuments = async (req, res) => {
   try {
@@ -535,7 +505,6 @@ const getAllTraderTpeUploadedDocuments = async (req, res) => {
   }
 };
 
-
 const AddedInductionContent = async (req, res) => {
   try {
     const { contractor_register_id, html_content } = req.body;
@@ -567,7 +536,6 @@ const AddedInductionContent = async (req, res) => {
   }
 };
 
-
 const GetInductionContent = async (req, res) => {
   try {
     const { contractor_register_id } = req.query;
@@ -580,7 +548,7 @@ const GetInductionContent = async (req, res) => {
     }
     const getContent = await InductionContent.findAll({
       where: { contractor_register_id },
-      order: [['id', 'ASC']],
+      order: [["id", "ASC"]],
     });
 
     return res.status(200).json({
@@ -617,19 +585,19 @@ const UploadContentInduction = async (req, res) => {
       organizations_id,
       pdf_name,
       pdf_file,
-      pdf_url
+      pdf_url,
     });
 
     return res.status(200).json({
       success: true,
       message: "Induction PDF uploaded successfully",
-      data: addedPdf
+      data: addedPdf,
     });
   } catch (error) {
     console.error("Error uploading induction content:", error);
     return res.status(500).json({
       success: false,
-      message: "Server error while uploading induction PDF"
+      message: "Server error while uploading induction PDF",
     });
   }
 };
@@ -663,29 +631,29 @@ const GetInductionContractorPdf = async (req, res) => {
   }
 };
 
-
 const GetAllInductionRegister = async (req, res) => {
   try {
     const user_org_id = req.user?.id;
-    const findAllInductionRegister = await ContractorInductionRegistration.findAll({where:{
-      invited_by_organization:user_org_id
-    }});
+    const findAllInductionRegister = await ContractorInductionRegistration.findAll({
+      where: {
+        invited_by_organization: user_org_id,
+      },
+    });
     return res.status(200).json({
       success: true,
       data: findAllInductionRegister,
       status: 200,
-      message: 'All data retrieved successfully',
+      message: "All data retrieved successfully",
     });
   } catch (error) {
     console.error("Error fetching induction registrations:", error);
     return res.status(500).json({
       success: false,
       status: 500,
-      message: 'Internal server error',
+      message: "Internal server error",
     });
   }
 };
-
 
 module.exports = {
   RegitserContractiorInducation,
@@ -698,5 +666,5 @@ module.exports = {
   GetInductionContent,
   UploadContentInduction,
   GetInductionContractorPdf,
-  GetAllInductionRegister
+  GetAllInductionRegister,
 };
