@@ -33,7 +33,7 @@ function generateSecureOTP(length = 6) {
 
 const RegitserContractiorInducation = async (req, res) => {
   try {
-    const { userEmail, first_name, last_name, mobile_no } = req.body;
+    const { userEmail, first_name, last_name, mobile_no,invite_by } = req.body;
     if (!userEmail) {
       return res.status(400).json({
         status: 400,
@@ -91,11 +91,13 @@ const RegitserContractiorInducation = async (req, res) => {
     const newRecordData = {
       email: userEmail,
       email_otp: otp,
+      invited_by_organization:invite_by,
       email_otp_expired_at: new Date(Date.now() + 10 * 60 * 1000),
     };
     if (mobile_no) {
       newRecordData.mobile_no = mobile_no;
       newRecordData.mobile_otp = otp;
+      invited_by_organization:invite_by,
       newRecordData.mobile_verified_expired_at = new Date(Date.now() + 10 * 60 * 1000);
     }
     await ContractorInductionRegistration.create(newRecordData);
