@@ -243,7 +243,7 @@ const UploadInsuranceContrator = async (req, res) => {
       return res.status(400).json({ message: "Insurance document file is required." });
     }
 
-    const document_url = file.path.replace(/\\/g, "/"); 
+    const document_url = file.path.replace(/\\/g, "/");
     const original_file_name = file.originalname;
 
     const contractor = await ContractorRegistration.findOne({
@@ -876,33 +876,59 @@ const CheckContractorRegisterStatus = async (req, res) => {
         "have_you_been_prosecuted_health_regulator",
       ];
 
+      let formStatus = "";
       let incompletePage = null;
-      let formStatus = "incomplete";
 
-      if (plain.submission_status === "confirm_submit") {
-        formStatus = "complete";
-      } else {
-        const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
-        const isPage5Incomplete = requiredPage5Fields.some(field => plain[field]);
-        if (isPage1Incomplete) {
-          incompletePage = 1;
-        } else if (!plain.employee_insure_doc_id) {
-          if (plain.public_liability_doc_id && plain.organization_safety_management_id) {
-            incompletePage = isPage5Incomplete ? 5 : 5;
-          } else if (plain.public_liability_doc_id) {
-            incompletePage = 4;
-          } else {
-            incompletePage = 2;
-          }
-        } else if (!plain.public_liability_doc_id) {
-          incompletePage = 3;
-        } else if (!plain.organization_safety_management_id) {
-          incompletePage = 4;
-        } else if (isPage5Incomplete) {
-          incompletePage = 5;
-        } else {
+      switch (plain.submission_status) {
+        case "confirm_submit":
           formStatus = "complete";
-        }
+          break;
+        case "approved":
+          formStatus = "Approved";
+          break;
+        case "rejected":
+          formStatus = "Rejected";
+          break;
+        case "save":
+          formStatus = "Save";
+          break;
+        case "let_me_check":
+          formStatus = "Let Me Check";
+          break;
+        case "i_do_it_later":
+          formStatus = "I do it Later";
+          break;
+        case "save_and_come_back_later":
+          formStatus = "Save and come Back Later";
+          break;
+        case "pause":
+          formStatus = "Paused";
+          break;
+        default:
+          // Check for incomplete form logic
+          const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
+          const isPage5Incomplete = requiredPage5Fields.some(field => plain[field]);
+
+          if (isPage1Incomplete) {
+            incompletePage = 1;
+          } else if (!plain.employee_insure_doc_id) {
+            if (plain.public_liability_doc_id && plain.organization_safety_management_id) {
+              incompletePage = isPage5Incomplete ? 5 : 5;
+            } else if (plain.public_liability_doc_id) {
+              incompletePage = 4;
+            } else {
+              incompletePage = 2;
+            }
+          } else if (!plain.public_liability_doc_id) {
+            incompletePage = 3;
+          } else if (!plain.organization_safety_management_id) {
+            incompletePage = 4;
+          } else if (isPage5Incomplete) {
+            incompletePage = 5;
+          } else {
+            formStatus = "complete";
+          }
+          break;
       }
 
       return {
@@ -1204,8 +1230,8 @@ const SearchLocation = async (req, res) => {
 
 const SendInductionEmail = async (req, res) => {
   try {
-    const { contractor_id ,UserEmail} = req.body;
-    const invited_by = req.user?.id
+    const { contractor_id, UserEmail } = req.body;
+    const invited_by = req.user?.id;
     console.log("invited by", invited_by);
     if (!contractor_id) {
       return res.status(400).json({

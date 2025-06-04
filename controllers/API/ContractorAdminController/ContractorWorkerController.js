@@ -55,7 +55,7 @@ const SendIvitationLinkContractorWorker = async (req, res) => {
         contractor_email: email,
         invited_by: req.user?.id,
         invitation_type: "contractor_induction",
-        invite_token: crypto.randomBytes(16).toString("hex"),
+        invite_token: crypto.randomBytes(64).toString("hex"),
         send_status: "sent",
       });
 
