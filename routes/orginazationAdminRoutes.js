@@ -107,6 +107,8 @@ router.post("/create-trade-type-select-documents", TradeTypeDoucmentCreate);
 router.get("/uploaded-all-trade-type-documents", getAllTraderTpeUploadedDocuments);
 router.get("/get-all-trade-type-select-documents", GetTradeTypeselectDocuments);
 
+// router.put("/get-status-of-induction");
+
 router.get("/get-all-contractor-induction-register" , ...WithOrginazationAdminAndRole(GetAllInductionRegister));
 
 router.get("/search-location", SearchLocation);

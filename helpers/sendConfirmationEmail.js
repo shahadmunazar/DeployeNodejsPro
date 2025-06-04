@@ -109,7 +109,7 @@ async function sendConfirmationEmail(useremail, registration, nameOrganization, 
             <p><strong>Valid To:</strong> 03/06/2026</p>
             <p><strong>Name:</strong> ${registration.first_name} ${registration.last_name}</p>
             <p><strong>E-mail Address:</strong> ${useremail}</p>
-            <p><strong>Contact Phone Number:</strong> ${registration.phone_number || 'N/A'}</p>
+            <p><strong>Contact Phone Number:</strong> ${registration.mobile_no || 'N/A'}</p>
             <p><strong>Company:</strong> ${nameOrganization}</p>
             <p><strong>Address:</strong> Noida Sector 16 Metro Station, Noida 201301</p>
           </div>
