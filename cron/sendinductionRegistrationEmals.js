@@ -44,12 +44,13 @@ const sendinductionRegistrationEmails = async () => {
             nameOrganization = invitedOrg.organization_name;
           }
         }
-        
+
 
         const pdfData = {
           useremail: registration.email,
           name: registration.first_name,
           company_name: nameOrganization,
+          phone_number:registration.phone_number,
           userId: registration.invited_by_organization,
           tradeType: registration.trade_type,
           user_image: registration.user_image,
