@@ -71,6 +71,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("sent", "pending", "submit", "retrytoprocess", "failed"),
         defaultValue: "pending",
       },
+      induction_status: {
+      type: DataTypes.ENUM('approved', 'rejected', 'recheck', 'pending'),
+      allowNull: true,
+      defaultValue: 'pending'
+    },
       mobile_verified_expired_at: {
         type: DataTypes.DATE,
         allowNull: true,
