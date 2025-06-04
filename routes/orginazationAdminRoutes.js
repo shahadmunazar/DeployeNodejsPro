@@ -46,7 +46,8 @@ const {
   GetInductionContent,
   UploadContentInduction,
   GetInductionContractorPdf,
-  GetAllInductionRegister
+  GetAllInductionRegister,
+  GetInvitationorgId
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
 // const {TestingRoute} = require('../controllers/testingController')
@@ -108,7 +109,7 @@ router.get("/get-all-trade-type-select-documents", GetTradeTypeselectDocuments);
 // router.get("/get-induction-list", ...WithOrginazationAdminAndRole(GetInductionList));
 
 router.get("/get-all-contractor-induction-list", ...WithOrginazationAdminAndRole(GetAllInductionRegister));
-
+router.get("/get-invitation-org-id", GetInvitationorgId);
 router.get("/search-location", SearchLocation);
 
 // router.get("/testing-routes",TestingRoute );

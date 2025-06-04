@@ -11,6 +11,8 @@ const ContractorInductionRegistration = require("../../../models/ContractorInduc
 const ContractorDocument = require("../../../models/contractor_document")(sequelize, DataTypes);
 const InductionContent = require("../../../models/contractor_induction_content")(sequelize, DataTypes);
 const ContractorInductionPdf = require("../../../models/contractorinductionpdf")(sequelize, DataTypes);
+const contractorInvitation = require("../../../models/contractorinvitations")(sequelize, DataTypes);
+
 const { sendOtpEmail } = require("../../../helpers/sendOtpEmail");
 const sendConfirmationEmail = require("../../../helpers/sendConfirmationEmail");
 const { sendRegistrationOtpSms } = require("../../../helpers/smsHelper");
@@ -659,6 +661,55 @@ const GetAllInductionRegister = async (req, res) => {
   }
 };
 
+const GetInvitationorgId = async (req, res) => {
+  try {
+    const { invite_token } = req.query;
+
+    if (!invite_token) {
+      return res.status(400).json({
+        status: 400,
+        success: false,
+        message: "invite_token is required",
+      });
+    }
+
+    const getDetails = await contractorInvitation.findOne({
+      where: { invite_token },
+      attributes: ['id', 'invited_by', 'invite_token', 'status'], // include 'status' if needed
+    });
+
+    if (!getDetails) {
+      return res.status(404).json({
+        status: 404,
+        success: false,
+        message: "No invitation found for the provided token",
+      });
+    }
+
+    // Update status to 'accepted'
+    await contractorInvitation.update(
+      { status: 'accepted' },
+      { where: { id: getDetails.id } }
+    );
+
+    return res.status(200).json({
+      status: 200,
+      success: true,
+      data: { ...getDetails.toJSON(), status: 'accepted' },
+      message: "Invitation accepted and details retrieved successfully",
+    });
+  } catch (error) {
+    console.error("Error in GetInvitationorgId:", error);
+    return res.status(500).json({
+      status: 500,
+      success: false,
+      message: "Internal Server Error",
+    });
+  }
+};
+
+
+
 module.exports = {
   RegitserContractiorInducation,
   VerifyMobileAndEmail,
@@ -670,5 +721,6 @@ module.exports = {
   GetInductionContent,
   UploadContentInduction,
   GetInductionContractorPdf,
-  GetAllInductionRegister
+  GetAllInductionRegister,
+  GetInvitationorgId
 };
