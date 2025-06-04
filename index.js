@@ -9,6 +9,7 @@ const bodyParser = require('body-parser');
 const cron = require('node-cron');
 const sendPendingOnboardingEmails = require('./cron/sendOnboardingEmails');
 const sendContractorRegistrationEmail = require('./cron/sendContractorRegistrationEmails');
+const sendinductionRegistrationEmails = require('./cron/sendinductionRegistrationEmals');
 const LoginRoutes = require("./routes/authRoutes");
 const path = require('path');
 const SuperAdminRoutes = require("./routes/SuperAdminRoutes");
@@ -27,6 +28,7 @@ cron.schedule('* * * * *', async () => {
     console.log('🔁 Running onboarding email cron job And Send Invitation Link...');
     await sendPendingOnboardingEmails();
     await sendContractorRegistrationEmail();
+    await sendinductionRegistrationEmails();
   });
 const server = http.createServer(app);
 const io = initSocket(server); 

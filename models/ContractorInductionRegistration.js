@@ -67,6 +67,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: true,
       },
+      agree_terms: {
+        type: DataTypes.ENUM("sent", "pending", "submit", "retrytoprocess", "failed"),
+        defaultValue: "pending",
+      },
       mobile_verified_expired_at: {
         type: DataTypes.DATE,
         allowNull: true,
