@@ -38,7 +38,6 @@ const SendIvitationLinkContractorWorker = async (req, res) => {
 
     const results = [];
     for (const email of worker_email) {
-      // Check if already invited
       const existingInvite = await ContractorInvitation.findOne({
         where: {
           contractor_email: email,
