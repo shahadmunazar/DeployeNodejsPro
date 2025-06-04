@@ -365,7 +365,7 @@ const AddedAllStatesByCountry = async (req, res) => {
       country_id: s.country_id,
       status: true
     }));
-    const addedStates = await States.bulkCreate(formattedStates, { ignoreDuplicates: true });
+    const addedStates = await State.bulkCreate(formattedStates, { ignoreDuplicates: true });
     return res.status(200).json({
       success: true,
       status: 200,
