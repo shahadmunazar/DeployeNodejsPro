@@ -1,4 +1,4 @@
-const { DataTypes, Op, Sequelize } = require("sequelize");
+const { DataTypes, Op, Sequelize, where } = require("sequelize");
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
 const crypto = require("crypto");
@@ -33,7 +33,7 @@ function generateSecureOTP(length = 6) {
 
 const RegitserContractiorInducation = async (req, res) => {
   try {
-    const { userEmail, first_name, last_name, mobile_no,invite_by } = req.body;
+    const { userEmail, first_name, last_name, mobile_no, invite_by } = req.body;
     if (!userEmail) {
       return res.status(400).json({
         status: 400,
@@ -91,14 +91,13 @@ const RegitserContractiorInducation = async (req, res) => {
     const newRecordData = {
       email: userEmail,
       email_otp: otp,
-      invited_by_organization:invite_by,
+      invited_by_organization: invite_by,
       email_otp_expired_at: new Date(Date.now() + 10 * 60 * 1000),
     };
     if (mobile_no) {
       newRecordData.mobile_no = mobile_no;
       newRecordData.mobile_otp = otp;
-      invited_by_organization:invite_by,
-      newRecordData.mobile_verified_expired_at = new Date(Date.now() + 10 * 60 * 1000);
+      invited_by_organization: invite_by, (newRecordData.mobile_verified_expired_at = new Date(Date.now() + 10 * 60 * 1000));
     }
     await ContractorInductionRegistration.create(newRecordData);
     await sendOtpEmail(userEmail, otp);
@@ -224,9 +223,9 @@ const ContractorRegistrationForm = async (req, res) => {
     const token = crypto.randomBytes(64).toString("hex");
     const expiresAt = moment().add(72, "hours").toDate();
     if (password) {
-  const hashedPassword = await bcrypt.hash(password, 10);
-  findDetails.password = hashedPassword;
-}
+      const hashedPassword = await bcrypt.hash(password, 10);
+      findDetails.password = hashedPassword;
+    }
     // const addedIntoUser = await User.create({
     //   name: findDetails.first_name,
     //   email: findDetails.email,
@@ -302,47 +301,37 @@ const UploadContractorDocuments = async (req, res) => {
   try {
     console.log("Files received by multer:", req.files);
     console.log("Body received:", req.body);
-    const { VerificationId, reference_number, issue_date, expiry_date, trade_type_id, confirmfinalSubmit, document_type } = req.body;
-
+    const { VerificationId, reference_number, issue_date, documentfileName, expiry_date, trade_type_id, confirmfinalSubmit, document_type } = req.body;
     if (!VerificationId) {
       return res.status(400).json({
         status: false,
         message: "VerificationId is required",
       });
     }
-
-    // Always update or insert documents
     const savedDocuments = await handleFileUploads(req.files, {
       VerificationId,
       trade_type_id,
+      documentfileName,
       reference_number,
       issue_date,
       expiry_date,
     });
-
-    // If user confirms final submission, update registration table
     if (confirmfinalSubmit === "true" && document_type) {
       const allDocs = await ContractorDocument.findAll({
         where: { contractor_reg_id: VerificationId },
       });
-
       const docIds = allDocs.map(doc => doc.id);
-
       for (const doc of allDocs) {
         if (doc.uploaded !== "uploaded") {
           await doc.update({ uploaded: "uploaded" });
         }
       }
-
       const updateFields = getRegistrationUpdateFields(document_type, docIds);
-
       await ContractorInductionRegistration.update(updateFields, {
         where: { id: VerificationId },
       });
-
-      console.log(`✅ Final submit updated for ${document_type}. Total documents confirmed: ${docIds.length}`);
+      console.log(`Final submit updated for ${document_type}. Total documents confirmed: ${docIds.length}`);
     }
-
     return res.status(200).json({
       status: true,
       message: "Document uploaded successfully.",
@@ -358,28 +347,23 @@ const UploadContractorDocuments = async (req, res) => {
   }
 };
 
-// Handle file upload and update/create
-async function handleFileUploads(files, { VerificationId, trade_type_id, reference_number, issue_date, expiry_date }) {
-  const savedDocuments = [];
 
+async function handleFileUploads(files, { VerificationId, documentfileName,trade_type_id, reference_number, issue_date, expiry_date }) {
+  const savedDocuments = [];
   for (const fieldName in files) {
     const fileArray = files[fieldName];
     if (!fileArray || !fileArray[0]) continue;
-
     const file = fileArray[0];
-
-    // Check for existing document with same VerificationId and trade_type_id
     const existingDoc = await ContractorDocument.findOne({
       where: {
         contractor_reg_id: VerificationId,
         document_type_id: trade_type_id,
       },
     });
-
     const documentData = {
       contractor_reg_id: VerificationId,
       document_type_id: trade_type_id,
-      document_type: fieldName,
+      document_type: documentfileName,
       document_name: file.originalname,
       reference_number,
       issue_date,
@@ -388,18 +372,16 @@ async function handleFileUploads(files, { VerificationId, trade_type_id, referen
       file_path: file.path,
       uploaded: "upload",
     };
-
     if (existingDoc) {
       await existingDoc.update(documentData);
       savedDocuments.push(existingDoc);
-      console.log(`🔄 Updated existing document for trade_type_id ${trade_type_id}`);
+      console.log(`Updated existing document for trade_type_id ${trade_type_id}`);
     } else {
       const newDoc = await ContractorDocument.create(documentData);
       savedDocuments.push(newDoc);
-      console.log(`✅ Created new document for trade_type_id ${trade_type_id}`);
+      console.log(`Created new document for trade_type_id ${trade_type_id}`);
     }
   }
-
   return savedDocuments;
 }
 
@@ -642,15 +624,60 @@ const GetInductionContractorPdf = async (req, res) => {
 const GetAllInductionRegister = async (req, res) => {
   try {
     const user_org_id = req.user?.id;
+
     const findAllInductionRegister = await ContractorInductionRegistration.findAll({
       where: {
         invited_by_organization: user_org_id,
       },
+      raw: true,
+    });
+    if (!findAllInductionRegister.length) {
+      return res.status(404).json({
+        success: false,
+        status: 404,
+        message: "No induction registrations found for this organization",
+      });
+    }
+    const registrationIds = findAllInductionRegister.map(item => item.id);
+    const allDocuments = await ContractorDocument.findAll({
+      where: {
+        contractor_reg_id: registrationIds,
+      },
+      raw: true,
+    });
+    const allTradeTypes = await TradeType.findAll({
+      attributes: ["id", "name"],
+      raw: true,
+    });
+    const BASE_URL = `${req.protocol}://${req.get("host")}/`;
+    const enrichedRegistrations = findAllInductionRegister.map(reg => {
+      let tradeTypeIds = [];
+      try {
+        const parsed = JSON.parse(reg.trade_type);
+        if (Array.isArray(parsed) && parsed.length) {
+          tradeTypeIds = parsed[0].split(",").map(id => Number(id.trim()));
+        }
+      } catch (err) {
+        console.error(`Failed to parse trade_type for registration ID ${reg.id}:`, err);
+      }
+      const tradeTypes = allTradeTypes.filter(type => tradeTypeIds.includes(type.id));
+      const documents = allDocuments
+        .filter(doc => doc.contractor_reg_id === reg.id)
+        .map(doc => ({
+          ...doc,
+          file_url: `${BASE_URL}${doc.file_path.replace(/\\/g, "/")}`,
+        }));
+
+      return {
+        ...reg,
+        tradeTypes,
+        documents,
+      };
     });
     return res.status(200).json({
       success: true,
-      data: findAllInductionRegister,
       status: 200,
+      data: enrichedRegistrations,
       message: "All data retrieved successfully",
     });
   } catch (error) {
@@ -662,6 +689,7 @@ const GetAllInductionRegister = async (req, res) => {
     });
   }
 };
+
 
 const GetInvitationorgId = async (req, res) => {
   try {
@@ -677,7 +705,7 @@ const GetInvitationorgId = async (req, res) => {
 
     const getDetails = await contractorInvitation.findOne({
       where: { invite_token },
-      attributes: ['id', 'invited_by', 'invite_token', 'status'], // include 'status' if needed
+      attributes: ["id", "invited_by", "invite_token", "status"], // include 'status' if needed
     });
 
     if (!getDetails) {
@@ -689,15 +717,12 @@ const GetInvitationorgId = async (req, res) => {
     }
 
     // Update status to 'accepted'
-    await contractorInvitation.update(
-      { status: 'accepted' },
-      { where: { id: getDetails.id } }
-    );
+    await contractorInvitation.update({ status: "accepted" }, { where: { id: getDetails.id } });
 
     return res.status(200).json({
       status: 200,
       success: true,
-      data: { ...getDetails.toJSON(), status: 'accepted' },
+      data: { ...getDetails.toJSON(), status: "accepted" },
       message: "Invitation accepted and details retrieved successfully",
     });
   } catch (error) {
@@ -706,6 +731,83 @@ const GetInvitationorgId = async (req, res) => {
       status: 500,
       success: false,
       message: "Internal Server Error",
+    });
+  }
+};
+
+const FetchPrequalification = async (req, res) => {
+  try {
+    const user_id = req.user?.id;
+    const { name } = req.query;
+
+    const whereCondition = {
+      invited_by_organization: user_id,
+    };
+
+    if (name) {
+      whereCondition.organization_name = {
+        [Op.like]: `%${name}%`,
+      };
+    }
+
+    const contractorInductions = await ContractorInductionRegistration.findAll({
+      where: whereCondition,
+      attributes: [
+        "email",
+        "organization_name",
+        "id",
+        "invited_by_organization",
+        "first_name",
+        "last_name",
+      ],
+      raw: true,
+    });
+
+    const orgIds = contractorInductions.map(item => item.invited_by_organization);
+    console.log("orgIds",orgIds)
+    const contractorInvitations = await contractorInvitation.findAll({
+      where: {
+        invited_by: orgIds,
+      },
+      attributes: ["contractor_email", "id", "invited_by"],
+      raw: true,
+    });
+
+    // Map invitations by email for easier lookup
+    const invitationMap = contractorInvitations.reduce((acc, invite) => {
+      if (!acc[invite.contractor_email]) {
+        acc[invite.contractor_email] = [];
+      }
+      acc[invite.contractor_email].push(invite);
+      return acc;
+    }, {});
+
+    // Merge invitations into inductions
+    const mergedInductions = contractorInductions.map(induction => {
+      const relatedInvites = invitationMap[induction.email] || [];
+      return {
+        ...induction,
+        contractorInvitations: relatedInvites,
+        totalInvitationsFound: relatedInvites.length,
+      };
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        contractorInductions: mergedInductions,
+      },
+      message: "Retrieved invitation records successfully.",
+      status: 200,
+    });
+
+  } catch (error) {
+    console.error("Error fetching invitations:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching invitations.",
+      error: error.message,
+      status: 500,
     });
   }
 };
@@ -724,5 +826,6 @@ module.exports = {
   UploadContentInduction,
   GetInductionContractorPdf,
   GetAllInductionRegister,
-  GetInvitationorgId
+  GetInvitationorgId,
+  FetchPrequalification
 };

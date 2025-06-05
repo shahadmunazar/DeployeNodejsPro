@@ -151,13 +151,15 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  // Define associations here if needed
-  // ContractorInductionRegistration.associate = (models) => {
-  //   ContractorInductionRegistration.belongsTo(models.Organization, {
-  //     foreignKey: 'organization_id',
-  //     as: 'organization',
-  //   });
-  // };
+ContractorInductionRegistration.associate = (models) => {
+    ContractorInductionRegistration.belongsTo(models.ContractorInvitation, {
+      foreignKey: "invited_by_organization",
+      targetKey: "invited_by",
+      as: "invitation",
+      onDelete: "SET NULL",
+      onUpdate: "CASCADE",
+    });
+  };
 
   return ContractorInductionRegistration;
 };

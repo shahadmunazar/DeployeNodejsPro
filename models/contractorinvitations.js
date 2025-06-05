@@ -82,10 +82,16 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   // Associations (optional)
-  ContractorInvitation.associate = function (models) {
+ ContractorInvitation.associate = function (models) {
     ContractorInvitation.belongsTo(models.User, {
       foreignKey: "invited_by",
       as: "inviter",
+    });
+
+    ContractorInvitation.hasMany(models.ContractorInductionRegistration, {
+      foreignKey: "invited_by_organization",
+      sourceKey: "invited_by",
+      as: "contractors",
     });
   };
 

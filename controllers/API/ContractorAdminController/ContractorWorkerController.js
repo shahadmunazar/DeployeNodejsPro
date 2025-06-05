@@ -207,6 +207,133 @@ function generateSecureOTP(length = 6) {
   return otp;
 }
 
+const SendContratorInduction = async (req, res) => {
+  try {
+    const { contractor_id, UserEmail } = req.body;
+    const invited_by = req.user?.id;
+
+    console.log("invited by", invited_by);
+
+    if (!contractor_id && !UserEmail) {
+      return res.status(400).json({
+        status: 400,
+        message: "Either contractor_id or UserEmail is required.",
+      });
+    }
+
+    let email = null;
+    let name = null;
+    let invite_token = null;
+
+    if (contractor_id) {
+      const contractorDetails = await ContractorRegistration.findOne({
+        where: { id: contractor_id },
+      });
+
+      if (!contractorDetails) {
+        return res.status(404).json({
+          status: 404,
+          message: "Contractor not found.",
+        });
+      }
+
+      const contractorInvitation = await ContractorInvitation.findOne({
+        where: { id: contractorDetails.contractor_invitation_id },
+      });
+
+      if (!contractorInvitation) {
+        return res.status(404).json({
+          status: 404,
+          message: "Contractor invitation not found.",
+        });
+      }
+
+      email = contractorInvitation.contractor_email;
+      name = contractorInvitation.contractor_name;
+      invite_token = contractorInvitation.invite_token;
+    }
+
+    // If only email is provided, create new invitation
+    if (!email && UserEmail) {
+      email = UserEmail;
+      name = "Contractor";
+      invite_token = crypto.randomBytes(64).toString("hex");
+
+      const existingInvite = await ContractorInvitation.findOne({
+        where: { contractor_email: email },
+      });
+
+      if (!existingInvite) {
+        await ContractorInvitation.create({
+          contractor_email: email,
+          contractor_name: name,
+          invite_token,
+          invited_by,
+          status: "pending",
+          sent_at: new Date(),
+          invitation_type: "contractor_induction",
+        });
+      } else {
+        invite_token = existingInvite.invite_token;
+      }
+    }
+
+    if (!email) {
+      return res.status(400).json({
+        status: 400,
+        message: "No email provided or found for the contractor.",
+      });
+    }
+
+    const link = `${process.env.FRONTEND_URL}/induction-info/${invite_token}`;
+
+    await emailQueue.add("sendInductionEmail", {
+      to: email,
+      subject: "Contractor Induction",
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+            .container { max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; }
+            .button { background-color: #004b8d; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h2>Contractor Induction Invitation</h2>
+            <p>Dear ${name || "Contractor"},</p>
+            <p>You have been invited to complete your contractor induction process.</p>
+            <p>Please click the button below to begin:</p>
+            <p><a href="${link}" class="button">Start Induction</a></p>
+            <p>If the button doesn’t work, copy and paste this URL into your browser:</p>
+            <p><a href="${link}">${link}</a></p>
+            <p>Regards,<br/>Konnect</p>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    return res.status(200).json({
+      status: 200,
+      message: "Induction email has been queued successfully.",
+    });
+  } catch (error) {
+    console.error("Error in SendInductionEmail:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error.",
+    });
+  }
+};
+
+
+
+
 module.exports = {
- SendIvitationLinkContractorWorker,getRecentContractorWorkers
+ SendIvitationLinkContractorWorker,getRecentContractorWorkers,SendContratorInduction
 };
