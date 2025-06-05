@@ -1,10 +1,12 @@
 const nodemailer = require('nodemailer');
 const fs = require('fs');
+const moment = require('moment');
 
-async function sendConfirmationEmail(useremail, findDetails, nameOrganization, pdfPath) {
+async function sendConfirmationEmail(useremail, registration, nameOrganization, pdfPath) {
   try {
     console.log("email", nameOrganization);
-
+    const dateTaken = moment(registration.createdAt).format('DD/MM/YYYY');
+    const validTo = moment(registration.createdAt).add(1, 'year').format('DD/MM/YYYY');
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -100,18 +102,18 @@ async function sendConfirmationEmail(useremail, findDetails, nameOrganization, p
             <span class="village-text">VILLAGE</span>
           </div>
           <div class="message">
-            <p>Hello ${findDetails.first_name} ${findDetails.last_name},</p>
+            <p>Hello ${registration.first_name} ${registration.last_name},</p>
             <p>Thank you for completing the Contractor Induction.</p>
             <p>Please find your induction ID card attached and your confirmed details below.</p>
           </div>
           <div class="details">
-            <p><strong>Date Taken:</strong> 03/06/2025</p>
-            <p><strong>Valid To:</strong> 03/06/2026</p>
-            <p><strong>Name:</strong> ${findDetails.first_name} ${findDetails.last_name}</p>
+            <p><strong>Date Taken:</strong> ${dateTaken}</p>
+            <p><strong>Valid To:</strong> ${validTo}</p>
+            <p><strong>Name:</strong> ${registration.first_name} ${registration.last_name}</p>
             <p><strong>E-mail Address:</strong> ${useremail}</p>
-            <p><strong>Contact Phone Number:</strong> ${findDetails.phone_number || 'N/A'}</p>
+            <p><strong>Contact Phone Number:</strong> ${registration.mobile_no || 'N/A'}</p>
             <p><strong>Company:</strong> ${nameOrganization}</p>
-            <p><strong>Address:</strong> Noida Sector 16 Metro Station, Noida 201301</p>
+            <p><strong>Address:</strong> ${registration.address}</p>
           </div>
           <div class="footer-link">
             <p>If you ever need to update your details and manage your completed inductions, you can use the Inductee Portal by <a href="#">clicking here</a>.</p>
@@ -130,14 +132,14 @@ async function sendConfirmationEmail(useremail, findDetails, nameOrganization, p
       from: `"${nameOrganization}" <${process.env.EMAIL_USER}>`,
       to: useremail,
       subject: 'Contractor Registration Confirmation',
-      text: `Hello ${findDetails.first_name} ${findDetails.last_name},\n\nPlease find your induction ID card attached and your confirmed details below.\n\nDate Taken: 03/06/2025\nValid To: 03/06/2026\n\nName: ${findDetails.first_name} ${findDetails.last_name}\nE-mail Address: ${useremail}\nContact Phone Number: ${findDetails.phone_number || 'N/A'}\nCompany: ${nameOrganization}\nAddress: Noida Sector 16 Metro Station, Noida 201301\n\nKind regards,\nJames Milson Village`,
+      text: `Hello ${registration.first_name} ${registration.last_name},\n\nPlease find your induction ID card attached and your confirmed details below.\n\nDate Taken: ${dateTaken}\nValid To: ${validTo}\n\nName: ${registration.first_name} ${registration.last_name}\nE-mail Address: ${useremail}\nContact Phone Number: ${registration.phone_number || 'N/A'}\nCompany: ${nameOrganization}\nAddress: ${registration.address}\n\nKind regards,\nJames Milson Village`,
       html: htmlBody,
       attachments: [],
     };
 
     if (pdfPath && fs.existsSync(pdfPath)) {
       mailOptions.attachments.push({
-        filename: `identity_card_${findDetails.first_name}.pdf`,
+        filename: `identity_card_${registration.first_name}.pdf`,
         path: pdfPath,
         contentType: 'application/pdf',
       });

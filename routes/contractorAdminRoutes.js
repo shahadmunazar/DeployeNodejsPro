@@ -6,7 +6,7 @@ const { Op } = require("sequelize");
 
 const {GetContractorDetails,ContractorAdminLogout,SendIvitationLinkContractor} = require("../controllers/API/ContractorAdminController/UserProfileController")
 const uploadFiles = require("../middleware/uploadOrganizationFiles");
-const { SendIvitationLinkContractorWorker,getRecentContractorWorkers } = require("../controllers/API/ContractorAdminController/ContractorWorkerController");
+const { SendIvitationLinkContractorWorker,getRecentContractorWorkers, GetInductionContractorWorkersList  } = require("../controllers/API/ContractorAdminController/ContractorWorkerController");
 /**
  * Middleware wrapper to apply checkAuth and checkRole globally to routes.
  * @param {Function} handler - The route handler function.
@@ -32,6 +32,8 @@ router.post("/send-contract-invitation-link", ...WithContractorAdminAndRole(Send
 
 router.post("/contactor-worker-invitation", ...WithContractorAdminAndRole(SendIvitationLinkContractorWorker));
 router.get("/recent-add-contractor-worker-invitation", ...WithContractorAdminAndRole(getRecentContractorWorkers));
+router.get("/get-induction-contractor-workers-list", ...WithContractorAdminAndRole(GetInductionContractorWorkersList));
+
 // Start For Routes SuperAdmin
 
 module.exports = router;

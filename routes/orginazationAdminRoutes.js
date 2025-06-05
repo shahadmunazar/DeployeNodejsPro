@@ -46,7 +46,9 @@ const {
   GetInductionContent,
   UploadContentInduction,
   GetInductionContractorPdf,
-  GetAllInductionRegister
+  GetAllInductionRegister,
+  GetInvitationorgId,
+  FetchPrequalification
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
 // const {TestingRoute} = require('../controllers/testingController')
@@ -85,8 +87,6 @@ router.post("/resend-email-to-invitation", ...WithOrginazationAdminAndRole(Resen
 // router.post("/make-pdf-to-contractor-form", ...WithOrginazationAdminAndRole(MakePdfToAllContractorForm));
 router.post("/make-pdf-to-contractor-form", MakePdfToAllContractorForm);
 
-
-
 router.post("/send-induction-email", ...WithOrginazationAdminAndRole(SendInductionEmail));
 router.get("/get-all-submission-prequalification", GetSubmissionPrequalification);
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
@@ -99,7 +99,7 @@ router.post("/upload-contractor-documents", UploadInductionDocuments, UploadCont
 router.get("/get-all-uploaded-documents", GetUploadedDocuments);
 router.post("/create-trade-type", CreateTradeTypes);
 router.get("/get-all-trade-types", GetAllTradeTypes);
-router.post("/added-pdf-induction-contractor", uploadFiles, UploadContentInduction)
+router.post("/added-pdf-induction-contractor", uploadFiles, UploadContentInduction);
 router.get("/get-induction-pdf", GetInductionContractorPdf);
 router.post("/added-induction-content", AddedInductionContent);
 router.get("/get-all-induction-content", GetInductionContent);
@@ -107,9 +107,13 @@ router.post("/create-trade-type-select-documents", TradeTypeDoucmentCreate);
 router.get("/uploaded-all-trade-type-documents", getAllTraderTpeUploadedDocuments);
 router.get("/get-all-trade-type-select-documents", GetTradeTypeselectDocuments);
 
-router.get("/get-all-contractor-induction-register" , ...WithOrginazationAdminAndRole(GetAllInductionRegister));
+// router.get("/get-induction-list", ...WithOrginazationAdminAndRole(GetInductionList));
 
+router.get("/get-all-contractor-induction-list", ...WithOrginazationAdminAndRole(GetAllInductionRegister));
+router.get("/get-invitation-org-id", GetInvitationorgId);
 router.get("/search-location", SearchLocation);
+
+router.get("/fetch-prequalification-organization-to-induction", ...WithOrginazationAdminAndRole(FetchPrequalification));
 
 // router.get("/testing-routes",TestingRoute );
 
