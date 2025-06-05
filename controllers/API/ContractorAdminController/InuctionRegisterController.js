@@ -215,7 +215,7 @@ const ContractorRegistrationForm = async (req, res) => {
     findDetails.first_name = first_name ?? findDetails.first_name;
     findDetails.last_name = last_name ?? findDetails.last_name;
     findDetails.organization_name = organization_name ?? findDetails.organization_name;
-    findDetails.address = address ?? null;
+    findDetails.address = address ?? findDetails.address;
     findDetails.trade_type = Array.isArray(trade_Types) ? trade_Types : trade_Types ? [trade_Types] : findDetails.trade_type;
     findDetails.user_image = contractorImageFile ?? findDetails.user_image;
     // findDetails.password = hashedPassword;
