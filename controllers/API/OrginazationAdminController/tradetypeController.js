@@ -290,7 +290,6 @@ try {
 const getAllCountry = async (req, res) => {
   try {
     const { search } = req.query;
-
     const whereClause = search
       ? {
           name: {
@@ -298,11 +297,8 @@ const getAllCountry = async (req, res) => {
           }
         }
       : {};
-
     const allcountries = await Country.findAll({
-      where: whereClause,
-        include: [{ model: State, as: 'states' }]
-
+      where: whereClause
     });
 
     if (!allcountries.length) {

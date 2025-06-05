@@ -624,7 +624,6 @@ const GetInductionContractorPdf = async (req, res) => {
 const GetAllInductionRegister = async (req, res) => {
   try {
     const user_org_id = req.user?.id;
-
     const findAllInductionRegister = await ContractorInductionRegistration.findAll({
       where: {
         invited_by_organization: user_org_id,
