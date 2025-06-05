@@ -19,7 +19,7 @@ module.exports = {
       name: 'fk_invited_by_org', // shorter name
       references: {
         table: 'contractor_invitations',
-        field: 'id',
+        field: 'invited_by',
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',

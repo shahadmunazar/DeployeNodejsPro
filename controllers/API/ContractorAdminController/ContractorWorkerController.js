@@ -38,6 +38,7 @@ const SendIvitationLinkContractorWorker = async (req, res) => {
 
     const results = [];
     for (const email of worker_email) {
+      // Check if already invited
       const existingInvite = await ContractorInvitation.findOne({
         where: {
           contractor_email: email,
@@ -55,7 +56,7 @@ const SendIvitationLinkContractorWorker = async (req, res) => {
         contractor_email: email,
         invited_by: req.user?.id,
         invitation_type: "contractor_induction",
-        invite_token: crypto.randomBytes(64).toString("hex"),
+        invite_token: crypto.randomBytes(16).toString("hex"),
         send_status: "sent",
       });
 
@@ -163,6 +164,52 @@ const getRecentContractorWorkers = async (req, res) => {
   }
 };
 
+const GetInductionContractorWorkersList = async (req, res) => {
+  try{
+    // const { userId } = req.query;
+
+    // if (!userId) {
+    //   return res.status(400).json({
+    //     status: 400,
+    //     message: "User ID is required.",
+    //   });
+    // }
+    console.log("Fetching induction contractor workers list for user ID:", req.user?.id);
+
+    const inductions = await ContractorInductionRegistration.findAll({
+      where: {
+        invited_by_organization: req.user?.id,
+      },
+      // include: [
+      //   {
+      //     model: ContractorDocument,
+      //     as: 'documents',
+      //     attributes: ['document_name', 'document_url'],
+      //   },
+      //   {
+      //     model: InductionContent,
+      //     as: 'inductionContent',
+      //     attributes: ['content_title', 'content_description'],
+      //   },
+      // ],
+      order: [['createdAt', 'DESC']],
+    });
+
+    return res.status(200).json({
+      status: 200,
+      data: inductions,
+    });
+  
+} catch (error) {
+  console.error("Error fetching induction list:", error);
+  return res.status(500).json({
+    status: 500,
+    message: "Internal Server Error",
+    error: error.message,
+  });
+};
+
+};
 
 const sendInductionNotification = async (req, res) => {
   try {
@@ -208,5 +255,5 @@ function generateSecureOTP(length = 6) {
 }
 
 module.exports = {
- SendIvitationLinkContractorWorker,getRecentContractorWorkers
+ SendIvitationLinkContractorWorker,getRecentContractorWorkers, GetInductionContractorWorkersList 
 };
