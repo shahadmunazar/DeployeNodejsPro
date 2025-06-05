@@ -47,7 +47,8 @@ const {
   UploadContentInduction,
   GetInductionContractorPdf,
   GetAllInductionRegister,
-  GetInvitationorgId
+  GetInvitationorgId,
+  FetchPrequalification
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
 // const {TestingRoute} = require('../controllers/testingController')
@@ -111,6 +112,8 @@ router.get("/get-all-trade-type-select-documents", GetTradeTypeselectDocuments);
 router.get("/get-all-contractor-induction-list", ...WithOrginazationAdminAndRole(GetAllInductionRegister));
 router.get("/get-invitation-org-id", GetInvitationorgId);
 router.get("/search-location", SearchLocation);
+
+router.get("/fetch-prequalification-organization-to-induction", ...WithOrginazationAdminAndRole(FetchPrequalification));
 
 // router.get("/testing-routes",TestingRoute );
 
