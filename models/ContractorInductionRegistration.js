@@ -1,5 +1,5 @@
 "use strict";
-
+const contractor_document = require("./contractor_document");
 module.exports = (sequelize, DataTypes) => {
   const ContractorInductionRegistration = sequelize.define(
     "ContractorInductionRegistration",
@@ -159,7 +159,17 @@ ContractorInductionRegistration.associate = (models) => {
       onDelete: "SET NULL",
       onUpdate: "CASCADE",
     });
+
+     ContractorInductionRegistration.hasMany(models.ContractorDocument, {
+      foreignKey: 'contractor_reg_id',
+      as: 'documents', // Alias used in the query
+    });
+
   };
+// Many-to-many association with contractor_document
+
+
+
 
   return ContractorInductionRegistration;
 };

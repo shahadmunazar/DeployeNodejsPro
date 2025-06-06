@@ -19,7 +19,6 @@ const organization = require("../../../models/organization");
 const TradeTypeSelectDocument = require("../../../models/TradeTypeSelectDocument")(sequelize, DataTypes);
 const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
 const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
-
 const SendIvitationLinkContractorWorker = async (req, res) => {
   try {
     let { worker_email } = req.body;
@@ -165,33 +164,17 @@ const getRecentContractorWorkers = async (req, res) => {
 };
 
 const GetInductionContractorWorkersList = async (req, res) => {
-  try{
-    // const { userId } = req.query;
-
-    // if (!userId) {
-    //   return res.status(400).json({
-    //     status: 400,
-    //     message: "User ID is required.",
-    //   });
-    // }
-    // console.log("Fetching induction contractor workers list for user ID:", req.user?.id);
-
-    const inductions = await ContractorInductionRegistration.findAll({
+  try {
+  const inductions = await ContractorInductionRegistration.findAll({
       where: {
         invited_by_organization: req.user?.id,
       },
-      // include: [
-      //   {
-      //     model: ContractorDocument,
-      //     as: 'documents',
-      //     attributes: ['document_name', 'document_url'],
-      //   },
-      //   {
-      //     model: InductionContent,
-      //     as: 'inductionContent',
-      //     attributes: ['content_title', 'content_description'],
-      //   },
-      // ],
+      include: [
+        {
+          model: ContractorDocument,
+          as: 'registration', // Use the alias defined in the model association
+        },
+      ],
       order: [['createdAt', 'DESC']],
     });
 
@@ -199,16 +182,14 @@ const GetInductionContractorWorkersList = async (req, res) => {
       status: 200,
       data: inductions,
     });
-  
-} catch (error) {
-  console.error("Error fetching induction list:", error);
-  return res.status(500).json({
-    status: 500,
-    message: "Internal Server Error",
-    error: error.message,
-  });
-};
-
+  } catch (error) {
+    console.error("Error fetching induction list:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
 };
 
 const sendInductionNotification = async (req, res) => {
