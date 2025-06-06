@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const https = require("https");
 const bcrypt = require("bcrypt");
 const sequelize = require("../../../config/database");
@@ -439,6 +439,75 @@ const AddedCitiesByStatesCountry = async (req, res) => {
   }
 };
 
+const GetStatesbyCountry = async (req, res) => {
+  try {
+    const { country_id, name } = req.query;
+    const whereCondition = {};
+
+    if (country_id) {
+      whereCondition.country_id = country_id;
+    }
+
+    if (name) {
+      whereCondition.state_name = {
+        [Op.like]: `%${name}%`,
+      };
+    }
+
+    const findStates = await State.findAll({
+      where: whereCondition,
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: findStates,
+      status: 200,
+      message: 'States retrieved successfully.',
+    });
+  } catch (error) {
+    console.error("Error in GetStatesbyCountry:", error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred while retrieving states.',
+      error: error.message,
+      status: 500,
+    });
+  }
+};
+
+
+const GetCitySelectedState = async (req, res) => {
+  try {
+    const { states_id, name } = req.query;
+    const whereCondition = {};
+    if (states_id) {
+      whereCondition.state_id = states_id;
+    }
+    if (name) {
+      whereCondition.city_name = {
+        [Op.like]: `%${name}%`,
+      };
+    }
+    const findCities = await Cities.findAll({
+      where: whereCondition,
+    });
+    return res.status(200).json({
+      success: true,
+      data: findCities,
+      status: 200,
+      message: "Cities retrieved successfully.",
+    });
+  } catch (error) {
+    console.error("Error in GetCitySelectedState:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while retrieving cities.",
+      error: error.message,
+      status: 500,
+    });
+  }
+};
+
 module.exports = {
   CreateTradeTypes,
   GetAllTradeTypes,
@@ -447,5 +516,7 @@ module.exports = {
   AddedAllCountry,
   getAllCountry,
   AddedAllStatesByCountry,
-  AddedCitiesByStatesCountry
+  AddedCitiesByStatesCountry,
+  GetStatesbyCountry,
+  GetCitySelectedState
 };
