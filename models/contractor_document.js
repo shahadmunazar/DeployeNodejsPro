@@ -84,10 +84,10 @@ module.exports = (sequelize, DataTypes) => {
 
   ContractorDocument.associate = models => {
     ContractorDocument.belongsTo(models.ContractorInductionRegistration, {
-      foreignKey: "contractor_reg_id",
-      as: "contractor",
+      foreignKey: 'contractor_reg_id',
+      as: 'registration',
     });
-    ContractorDocument.belongsTo(models.TradeTypeSelectDocuments, {
+    ContractorDocument.belongsTo(models.TradeTypeSelectDocument, {
       foreignKey: "document_type_id",
       as: "documentType",
     });

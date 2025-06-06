@@ -3,7 +3,7 @@ const { login, getCurrentUser, verifyOtp } = require("../controllers/authControl
 const { ForgetPassword, UpdatePassword,GetLocation,SendEmailAgain } = require("../controllers/API/SuperAdminController/ProfileController");
 const { SubmitEnquiry } = require("../controllers/API/EnquirySection/enquiryController");
 const { authenticateUser } = require("../middleware/auth");
-const {AddedAllCountry,getAllCountry,AddedAllStatesByCountry,AddedCitiesByStatesCountry} = require("../controllers/API/OrginazationAdminController/tradetypeController");
+const {AddedAllCountry,getAllCountry,AddedAllStatesByCountry,AddedCitiesByStatesCountry,GetStatesbyCountry,GetCitySelectedState} = require("../controllers/API/OrginazationAdminController/tradetypeController");
 const router = express.Router();
 
 
@@ -19,8 +19,8 @@ router.get("/me", authenticateUser, getCurrentUser);
 router.post("/added-all-country",AddedAllCountry)
 router.get("/get-all-countrys", getAllCountry);
 router.post("/added-All-states-by-country", AddedAllStatesByCountry);
-
-
+router.get("/get-states-by-country",GetStatesbyCountry)
+router.get("/get-city-selected-states-by-id",GetCitySelectedState);
 router.post("/added-cities-by-states-country", AddedCitiesByStatesCountry)
 
 module.exports = router;
