@@ -24,7 +24,7 @@ const IdentityCardPdf = require("../../../PdfGenerator/identitycardpdf");
 
 const getAllDocumentContractor = async (req, res) => {
   try {
-   const { induction_type } = req.body;
+   const { induction_type } = req.query;
     const invitedById = req.user?.id;
     console.log("Invited By ID:", invitedById);
 
