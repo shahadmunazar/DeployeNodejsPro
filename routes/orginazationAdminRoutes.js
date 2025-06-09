@@ -53,12 +53,8 @@ const {
   FetchPrequalification
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
-<<<<<<< HEAD
-const {getAllDocumentContractor} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
 const { SendIvitationLinkContractorWorker,getRecentContractorWorkers, GetInductionContractorWorkersList  } = require("../controllers/API/ContractorAdminController/ContractorWorkerController");
-=======
 const {getAllDocumentContractor,TestDataDetails} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
->>>>>>> ae2c523324ce8951f3d5a98d2f202bd0ac29addb
 
 // const {TestingRoute} = require('../controllers/testingController')
 
