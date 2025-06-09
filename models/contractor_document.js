@@ -82,16 +82,12 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  ContractorDocument.associate = models => {
-    ContractorDocument.belongsTo(models.ContractorInductionRegistration, {
-      foreignKey: "contractor_reg_id",
-      as: "contractor",
-    });
-    ContractorDocument.belongsTo(models.TradeTypeSelectDocuments, {
-      foreignKey: "document_type_id",
-      as: "documentType",
-    });
-  };
+ ContractorDocument.associate = (models) => {
+  ContractorDocument.belongsTo(models.ContractorInductionRegistration, {
+    foreignKey: 'contractor_reg_id',
+    as: 'contractor',
+  });
+};
 
   return ContractorDocument;
 };

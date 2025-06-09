@@ -1,5 +1,6 @@
 "use strict";
 
+const Documents = require('./contractor_document')
 module.exports = (sequelize, DataTypes) => {
   const ContractorInductionRegistration = sequelize.define(
     "ContractorInductionRegistration",
@@ -151,15 +152,14 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-ContractorInductionRegistration.associate = (models) => {
-    ContractorInductionRegistration.belongsTo(models.ContractorInvitation, {
-      foreignKey: "invited_by_organization",
-      targetKey: "invited_by",
-      as: "invitation",
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
-    });
-  };
+ ContractorInductionRegistration.associate = (models) => {
+  ContractorInductionRegistration.hasMany(models.ContractorDocument, {
+    foreignKey: "contractor_reg_id",
+    as: "documents",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+  });
+};
 
   return ContractorInductionRegistration;
 };
