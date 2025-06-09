@@ -53,8 +53,12 @@ const {
   FetchPrequalification
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
+<<<<<<< HEAD
 const {getAllDocumentContractor} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
 const { SendIvitationLinkContractorWorker,getRecentContractorWorkers, GetInductionContractorWorkersList  } = require("../controllers/API/ContractorAdminController/ContractorWorkerController");
+=======
+const {getAllDocumentContractor,TestDataDetails} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
+>>>>>>> ae2c523324ce8951f3d5a98d2f202bd0ac29addb
 
 // const {TestingRoute} = require('../controllers/testingController')
 
@@ -125,6 +129,7 @@ router.get("/get-all-documents-contractor", ...WithOrginazationAdminAndRole(getA
 
 router.post("/send-worker-invitation-link", ...WithOrginazationAdminAndRole(SendIvitationLinkContractor));
 router.post("/all-contractor-admins", ...WithOrginazationAdminAndRole(getAllContractorAdmins));
+router.get("/get-all-documents-contractor-details", ...WithOrginazationAdminAndRole(TestDataDetails));
 // router.get("/testing-routes",TestingRoute );
 
 module.exports = router;
