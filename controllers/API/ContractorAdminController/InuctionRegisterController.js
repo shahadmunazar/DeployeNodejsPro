@@ -21,6 +21,7 @@ const organization = require("../../../models/organization");
 const TradeTypeSelectDocument = require("../../../models/TradeTypeSelectDocument")(sequelize, DataTypes);
 const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
 const IdentityCardPdf = require("../../../PdfGenerator/identitycardpdf");
+const ContractorRegistration = require("../../../models/ContractorRegistration");
 function generateSecureOTP(length = 6) {
   const digits = "0123456789";
   let otp = "";
@@ -624,9 +625,9 @@ const GetInductionContractorPdf = async (req, res) => {
 const GetAllInductionRegister = async (req, res) => {
   try {
     const user_org_id = req.user?.id;
-    const findAllInductionRegister = await ContractorInductionRegistration.findAll({
+    const findAllInductionRegister = await ContractorRegistration.findAll({
       where: {
-        invited_by_organization: user_org_id,
+        invited_by: user_org_id,
       },
       raw: true,
     });
@@ -634,10 +635,14 @@ const GetAllInductionRegister = async (req, res) => {
       return res.status(404).json({
         success: false,
         status: 404,
-        message: "No induction registrations found for this organization",
+        message: "No induction contractor found for this organization",
       });
     }
-    const registrationIds = findAllInductionRegister.map(item => item.id);
+
+    const findOutContractorRegistration = await ContractorInductionRegistration.findAll({
+      where:findAllInductionRegister.id
+    })
+    const registrationIds = findOutContractorRegistration.map(item => item.id);
     const allDocuments = await ContractorDocument.findAll({
       where: {
         contractor_reg_id: registrationIds,

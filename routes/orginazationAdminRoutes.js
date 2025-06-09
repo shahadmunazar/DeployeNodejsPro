@@ -52,7 +52,7 @@ const {
   FetchPrequalification
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
-const {getAllDocumentContractor} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
+const {getAllDocumentContractor,TestDataDetails} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
 
 // const {TestingRoute} = require('../controllers/testingController')
 
@@ -120,6 +120,11 @@ router.get("/search-location", SearchLocation);
 
 router.get("/fetch-prequalification-organization-to-induction", ...WithOrginazationAdminAndRole(FetchPrequalification));
 router.get("/get-all-documents-contractor", ...WithOrginazationAdminAndRole(getAllDocumentContractor));
+router.get("/get-all-documents-contractor-details", ...WithOrginazationAdminAndRole(TestDataDetails));
+
+
+
+
 // router.get("/testing-routes",TestingRoute );
 
 module.exports = router;
