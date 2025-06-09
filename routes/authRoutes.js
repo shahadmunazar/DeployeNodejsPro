@@ -1,5 +1,5 @@
 const express = require("express");
-const { login, getCurrentUser, verifyOtp } = require("../controllers/authController");
+const { login, getCurrentUser, verifyOtp,LogoutFunction } = require("../controllers/authController");
 const { ForgetPassword, UpdatePassword,GetLocation,SendEmailAgain } = require("../controllers/API/SuperAdminController/ProfileController");
 const { SubmitEnquiry } = require("../controllers/API/EnquirySection/enquiryController");
 const { authenticateUser } = require("../middleware/auth");
@@ -15,6 +15,7 @@ router.post("/verify-otp", verifyOtp); // Step 2: Verify OTP & generate token
 router.post("/forget-password", ForgetPassword);
 router.post("/update-password", UpdatePassword);
 router.get("/me", authenticateUser, getCurrentUser);
+router.post("/logout-for-all",LogoutFunction)
 
 router.post("/added-all-country",AddedAllCountry)
 router.get("/get-all-countrys", getAllCountry);

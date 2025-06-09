@@ -1,5 +1,6 @@
 "use strict";
 
+const Documents = require('./contractor_document')
 module.exports = (sequelize, DataTypes) => {
   const ContractorInductionRegistration = sequelize.define(
     "ContractorInductionRegistration",
@@ -110,8 +111,8 @@ module.exports = (sequelize, DataTypes) => {
       },
        induction_reg_type: {
         type: DataTypes.ENUM('contractor_admin', 'contractor'),
-        allowNull: true, // or false, depending on your requirements
-        defaultValue: 'contractor_admin', // Set a default value if needed
+        allowNull: true, 
+        defaultValue: 'contractor_admin', 
       },
 
       // police_check_id: {
@@ -156,15 +157,14 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-ContractorInductionRegistration.associate = (models) => {
-    ContractorInductionRegistration.belongsTo(models.ContractorInvitation, {
-      foreignKey: "invited_by_organization",
-      targetKey: "invited_by",
-      as: "invitation",
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
-    });
-  };
+ ContractorInductionRegistration.associate = (models) => {
+  ContractorInductionRegistration.hasMany(models.ContractorDocument, {
+    foreignKey: "contractor_reg_id",
+    as: "documents",
+    onUpdate: "CASCADE",
+    onDelete: "SET NULL",
+  });
+};
 
   return ContractorInductionRegistration;
 };

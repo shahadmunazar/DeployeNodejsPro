@@ -108,17 +108,17 @@ const login = async (req, res) => {
     if (!isPasswordValid) {
       await user.increment("loginAttemptCount");
       await user.reload();
-      if (user.loginAttemptCount >= 5) {
-        await user.update({ loginAttemptCount: 0, user_status: false });
-        return res.status(403).json({ status: 403, message: "Too many failed attempts. Account is now locked." });
-      }
-      if (user.loginAttemptCount >= 3) {
-        return res.status(403).json({
-          showcaptcha: true,
-          status: 403,
-          message: "Too many failed attempts. Please verify the Captcha.",
-        });
-      }
+      // if (user.loginAttemptCount >= 5) {
+      //   await user.update({ loginAttemptCount: 0, user_status: false });
+      //   return res.status(403).json({ status: 403, message: "Too many failed attempts. Account is now locked." });
+      // }
+      // if (user.loginAttemptCount >= 3) {
+      //   return res.status(403).json({
+      //     showcaptcha: true,
+      //     status: 403,
+      //     message: "Too many failed attempts. Please verify the Captcha.",
+      //   });
+      // }
       return res.status(403).json({ status: 403, message: "Incorrect password." });
     }
 
@@ -617,5 +617,57 @@ const GetUserProfile = async (req, res) => {
   }
 };
 
+const LogoutFunction = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({ success: false, status: 401, error: "Unauthorized: Token missing" });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
+    } catch (err) {
+      console.error("JWT Verification Error:", err.message);
+      return res.status(401).json({ success: false, status: 401, error: "Unauthorized: Invalid token" });
+    }
+
+    if (!decoded?.id) {
+      return res.status(401).json({ success: false, status: 401, error: "Unauthorized: Invalid token payload" });
+    }
+
+    const admin = await User.findByPk(decoded.id);
+    if (!admin) {
+      return res.status(401).json({ success: false, status: 401, error: "Admin user not found" });
+    }
+
+    const deleted = await RefreshToken.destroy({
+      where: {
+        userId: admin.id,
+        token: token,
+      },
+    });
+
+    await admin.update({
+      logout_at: new Date(),
+      login_at: null,
+    });
+
+    return res.status(200).json({
+      success: true,
+      status: 200,
+      message: deleted
+        ? "Admin successfully logged out. Refresh token deleted."
+        : "Admin logged out. No matching refresh token found.",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({ success: false, status: 500, error: "Internal Server Error" });
+  }
+};
+
+
 // ========================== EXPORT FUNCTIONS ==========================
-module.exports = { login, verifyOtp, getCurrentUser, CreateAdminLogout, GetUserProfile };
+module.exports = { login, verifyOtp, getCurrentUser, CreateAdminLogout, GetUserProfile,LogoutFunction };

@@ -27,8 +27,8 @@ const getAllDocumentContractor = async (req, res) => {
    const { induction_type } = req.query;
     const invitedById = req.user?.id;
     console.log("Invited By ID:", invitedById);
-
     const query = `
+<<<<<<< HEAD
             SELECT cd.*, cir.id AS contractor_id, cir.email, cir.first_name, 
             cir.last_name, cir.organization_name, 
             cir.mobile_no, 
@@ -53,6 +53,25 @@ const getAllDocumentContractor = async (req, res) => {
           WHERE cir.invited_by_organization = :invitedById AND ci.invited_by=:invitedById AND cir.induction_reg_type= :induction_type AND cd.approve_status = 0 AND cir.induction_reg_type = 'contractor_admin' 
           ORDER BY cd.createdAt DESC`;
 
+=======
+      SELECT 
+        cd.*, 
+        cir.id AS contractor_id, 
+        cir.email, 
+        cir.first_name, 
+        cir.last_name, 
+        cir.organization_name,
+        cir.mobile_no,
+        cir.address,
+        cir.user_image,
+        cir.induction_status,
+        cir.agree_terms
+      FROM contractor_documents cd
+      LEFT JOIN contractor_induction_registration cir ON cd.contractor_reg_id = cir.id
+      WHERE cir.invited_by_organization = :invitedById AND cd.approve_status = 0 AND cir.induction_reg_type = :induction_type
+      ORDER BY cd.createdAt DESC
+    `;
+>>>>>>> fbdf74d44b801533583d18ecf945ef4a1afddb50
     const results = await sequelize.query(query, {
       replacements: { invitedById, induction_type },
       type: sequelize.QueryTypes.SELECT,

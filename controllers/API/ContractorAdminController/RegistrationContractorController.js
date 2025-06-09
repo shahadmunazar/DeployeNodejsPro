@@ -6,7 +6,7 @@ const moment = require("moment");
 const Role = require("../../../models/role");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const https = require("https");
 
 require("dotenv").config();
@@ -1230,7 +1230,7 @@ const SearchLocation = async (req, res) => {
 
 const SendInductionEmail = async (req, res) => {
   try {
-    const { contractor_id, UserEmail } = req.body;
+    const { contractor_id, UserEmail,inductionType } = req.body;
     const invited_by = req.user?.id;
     console.log("invited by", invited_by);
     if (!contractor_id) {
@@ -1259,6 +1259,9 @@ const SendInductionEmail = async (req, res) => {
         message: "Contractor invitation not found.",
       });
     }
+    await contractorInvitation.update({
+      invitation_type: inductionType,
+    });
     const email = contractorInvitation.contractor_email;
     const name = contractorInvitation.contractor_name;
     if (!email) {
@@ -1321,6 +1324,28 @@ const RegitserContractiorInducation = async (req, res) => {
   } catch (error) {}
 };
 
+const ChangeEmailRequest =  async (req,res)=>{
+  try {
+    const {contractor_id,email_change} = req.body
+    const findRegisterEmail = await ContractorRegistration.findOne({
+      where:{
+        contractor_invitation_id:contractor_id
+      },attributes:['contractor_invitation_id','id']
+    })
+    const findcontractorRegister = await ContractorInvitation.findOne({
+      where:{
+        id:findRegisterEmail.contractor_invitation_id
+      },attributes:['contractor_email','id']
+    })
+    const updateNewEmail = findcontractorRegister.update({
+      
+    })
+  } catch (error) {
+    
+  }
+}
+
+
 module.exports = {
   CreateContractorRegistration,
   UploadInsuranceContrator,
@@ -1339,4 +1364,5 @@ module.exports = {
   SearchLocation,
   SendInductionEmail,
   RegitserContractiorInducation,
+  ChangeEmailRequest
 };
