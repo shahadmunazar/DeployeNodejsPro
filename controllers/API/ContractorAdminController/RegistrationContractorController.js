@@ -1230,7 +1230,7 @@ const SearchLocation = async (req, res) => {
 
 const SendInductionEmail = async (req, res) => {
   try {
-    const { contractor_id, UserEmail } = req.body;
+    const { contractor_id, UserEmail,inductionType } = req.body;
     const invited_by = req.user?.id;
     console.log("invited by", invited_by);
     if (!contractor_id) {
@@ -1259,6 +1259,9 @@ const SendInductionEmail = async (req, res) => {
         message: "Contractor invitation not found.",
       });
     }
+    await contractorInvitation.update({
+      invitation_type: inductionType,
+    });
     const email = contractorInvitation.contractor_email;
     const name = contractorInvitation.contractor_name;
     if (!email) {

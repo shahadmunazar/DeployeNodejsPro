@@ -111,8 +111,8 @@ module.exports = (sequelize, DataTypes) => {
       },
        induction_reg_type: {
         type: DataTypes.ENUM('contractor_admin', 'contractor'),
-        allowNull: true, // or false, depending on your requirements
-        defaultValue: 'contractor_admin', // Set a default value if needed
+        allowNull: true, 
+        defaultValue: 'contractor_admin', 
       },
 
       // police_check_id: {

@@ -27,7 +27,6 @@ const getAllDocumentContractor = async (req, res) => {
    const { induction_type } = req.query;
     const invitedById = req.user?.id;
     console.log("Invited By ID:", invitedById);
-
     const query = `
       SELECT 
         cd.*, 
@@ -46,7 +45,6 @@ const getAllDocumentContractor = async (req, res) => {
       WHERE cir.invited_by_organization = :invitedById AND cd.approve_status = 0 AND cir.induction_reg_type = :induction_type
       ORDER BY cd.createdAt DESC
     `;
-
     const results = await sequelize.query(query, {
       replacements: { invitedById, induction_type },
       type: sequelize.QueryTypes.SELECT,
