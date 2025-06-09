@@ -108,17 +108,17 @@ const login = async (req, res) => {
     if (!isPasswordValid) {
       await user.increment("loginAttemptCount");
       await user.reload();
-      if (user.loginAttemptCount >= 5) {
-        await user.update({ loginAttemptCount: 0, user_status: false });
-        return res.status(403).json({ status: 403, message: "Too many failed attempts. Account is now locked." });
-      }
-      if (user.loginAttemptCount >= 3) {
-        return res.status(403).json({
-          showcaptcha: true,
-          status: 403,
-          message: "Too many failed attempts. Please verify the Captcha.",
-        });
-      }
+      // if (user.loginAttemptCount >= 5) {
+      //   await user.update({ loginAttemptCount: 0, user_status: false });
+      //   return res.status(403).json({ status: 403, message: "Too many failed attempts. Account is now locked." });
+      // }
+      // if (user.loginAttemptCount >= 3) {
+      //   return res.status(403).json({
+      //     showcaptcha: true,
+      //     status: 403,
+      //     message: "Too many failed attempts. Please verify the Captcha.",
+      //   });
+      // }
       return res.status(403).json({ status: 403, message: "Incorrect password." });
     }
 
