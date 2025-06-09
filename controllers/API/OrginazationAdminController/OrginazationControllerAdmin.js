@@ -905,21 +905,21 @@ const getAllContractorAdmins = async (req, res) => {
     const invited_by = req.user?.id;
 
     const [results] = await sequelize.query(`
-      SELECT 
+     SELECT 
         u.id AS user_id, 
         u.name AS user_name, 
         u.email AS user_email, 
         u.user_status, 
         ur.roleId, 
-        r.name, 
+        r.name as role_name, 
         ci.id AS invitation_id, 
         ci.contractor_email, 
         cr.id AS registration_id, 
         cr.submission_status, 
         cr.contractor_company_name 
       FROM users u 
-      INNER JOIN userroles ur ON ur.userId = u.id AND ur.roleId = 3
-      LEFT JOIN roles r ON r.id = ur.roleId 
+      INNER JOIN UserRoles ur ON ur.userId = u.id AND ur.roleId = 3
+      LEFT JOIN Roles r ON r.id = ur.roleId 
       LEFT JOIN contractor_invitations ci ON ci.contractor_email = u.email 
       LEFT JOIN contractor_registration cr ON cr.contractor_invitation_id = ci.id 
       WHERE u.user_status = 1 and ci.invited_by = :invited_by
