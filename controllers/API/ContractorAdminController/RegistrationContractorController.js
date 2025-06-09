@@ -6,7 +6,7 @@ const moment = require("moment");
 const Role = require("../../../models/role");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 const https = require("https");
 
 require("dotenv").config();
@@ -1324,6 +1324,28 @@ const RegitserContractiorInducation = async (req, res) => {
   } catch (error) {}
 };
 
+const ChangeEmailRequest =  async (req,res)=>{
+  try {
+    const {contractor_id,email_change} = req.body
+    const findRegisterEmail = await ContractorRegistration.findOne({
+      where:{
+        contractor_invitation_id:contractor_id
+      },attributes:['contractor_invitation_id','id']
+    })
+    const findcontractorRegister = await ContractorInvitation.findOne({
+      where:{
+        id:findRegisterEmail.contractor_invitation_id
+      },attributes:['contractor_email','id']
+    })
+    const updateNewEmail = findcontractorRegister.update({
+      
+    })
+  } catch (error) {
+    
+  }
+}
+
+
 module.exports = {
   CreateContractorRegistration,
   UploadInsuranceContrator,
@@ -1342,4 +1364,5 @@ module.exports = {
   SearchLocation,
   SendInductionEmail,
   RegitserContractiorInducation,
+  ChangeEmailRequest
 };

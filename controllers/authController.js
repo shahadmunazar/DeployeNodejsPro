@@ -617,5 +617,47 @@ const GetUserProfile = async (req, res) => {
   }
 };
 
+const LogoutFunction = async(req,res)=>{
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(" ")[1];
+    console.log("Extracted Token:", token);
+    if (!token) {
+      return res.status(401).json({ error: "Unauthorized: Token missing" });
+    }
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || "your_secret_key");
+      if (!decoded?.id) {
+        return res.status(401).json({ error: "Unauthorized: Invalid token payload" });
+      }
+    } catch (err) {
+      console.error("JWT Verification Error:", err.message);
+      return res.status(401).json({ error: "Unauthorized: Invalid token" });
+    }
+    const admin = await User.findByPk(decoded.id);
+    if (!admin) {
+      return res.status(404).json({ error: "Admin user not found" });
+    }
+    const deleted = await RefreshToken.destroy({
+      where: {
+        userId: admin.id,
+        token: token,
+      },
+    });
+    await admin.update({
+      logout_at: new Date(),
+      login_at: null,
+    });
+
+    return res.status(200).json({
+      message: deleted ? "Contract Admin successfully logged out, refresh token deleted" : "Contract Admin logged out, but no matching refresh token found",
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+}
+
 // ========================== EXPORT FUNCTIONS ==========================
-module.exports = { login, verifyOtp, getCurrentUser, CreateAdminLogout, GetUserProfile };
+module.exports = { login, verifyOtp, getCurrentUser, CreateAdminLogout, GetUserProfile,LogoutFunction };

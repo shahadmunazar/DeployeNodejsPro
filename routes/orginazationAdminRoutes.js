@@ -32,6 +32,7 @@ const {
   MakePdfToAllContractorForm,
   SearchLocation,
   SendInductionEmail,
+  ChangeEmailRequest
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 const { CreateTradeTypes, GetAllTradeTypes, TradeTypeDoucmentCreate, GetTradeTypeselectDocuments } = require("../controllers/API/OrginazationAdminController/tradetypeController");
 const { GetSubmissionPrequalificationNotification } = require("../controllers/API/ContractorAdminController/NotificationController");
@@ -111,6 +112,8 @@ router.get("/get-all-trade-type-select-documents", GetTradeTypeselectDocuments);
 
 // router.get("/get-induction-list", ...WithOrginazationAdminAndRole(GetInductionList));
 
+
+router.post("/change-email-request", ...WithOrginazationAdminAndRole(ChangeEmailRequest));
 router.get("/get-all-contractor-induction-list", ...WithOrginazationAdminAndRole(GetAllInductionRegister));
 router.get("/get-invitation-org-id", GetInvitationorgId);
 router.get("/search-location", SearchLocation);
