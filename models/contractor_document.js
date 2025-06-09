@@ -60,11 +60,16 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: "not_select",
       },
-      approve_status: {
-        type: DataTypes.BOOLEAN,
-        allowNull: true,
-        defaultValue: false,
-      },
+       approved_status: {
+              type: DataTypes.ENUM('approved', 'not_approved', 'pending'),
+              allowNull: true,
+              defaultValue: 'pending',
+            },
+            seen_status: {
+              type: DataTypes.ENUM('seen', 'not_seen', 'pending'),
+              allowNull: true,
+              defaultValue: 'pending',
+            },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,

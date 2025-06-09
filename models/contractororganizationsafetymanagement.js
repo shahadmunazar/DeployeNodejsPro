@@ -42,6 +42,16 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: sequelize.literal('CURRENT_TIMESTAMP'),
     },
+    approved_status: {
+        type: DataTypes.ENUM('approved', 'not_approved', 'pending'),
+        allowNull: true,
+        defaultValue: 'pending',
+      },
+      seen_status: {
+        type: DataTypes.ENUM('seen', 'not_seen', 'pending'),
+        allowNull: true,
+        defaultValue: 'pending',
+      },
     deletedAt:{
       type: DataTypes.DATE,
       allowNull: false,
