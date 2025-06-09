@@ -14,6 +14,7 @@ const {
   UpdateContractorComments,
   UpdateSubmissionStatus,
   GetSubmissionPrequalification,
+  getAllContractorAdmins
 } = require("../controllers/API/OrginazationAdminController/OrginazationControllerAdmin");
 const {
   CreateContractorRegistration,
@@ -123,7 +124,7 @@ router.get("/fetch-prequalification-organization-to-induction", ...WithOrginazat
 router.get("/get-all-documents-contractor", ...WithOrginazationAdminAndRole(getAllDocumentContractor));
 
 router.post("/send-worker-invitation-link", ...WithOrginazationAdminAndRole(SendIvitationLinkContractor));
-
+router.post("/all-contractor-admins", ...WithOrginazationAdminAndRole(getAllContractorAdmins));
 // router.get("/testing-routes",TestingRoute );
 
 module.exports = router;
