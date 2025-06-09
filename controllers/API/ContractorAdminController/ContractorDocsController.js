@@ -41,7 +41,7 @@ const getAllDocumentContractor = async (req, res) => {
     const docsPerContractor = await Promise.all(
       contractorRegisters.map(async register => {
         const rawDocs = await ContractorDocument.findAll({
-          where: { contractor_reg_id: register.id },
+          where: {approved_status:'pending', contractor_reg_id: register.id },
         });
         const invitation = await contractorInvitation.findOne({
           where: { invited_by: register.invited_by_organization },
@@ -50,9 +50,9 @@ const getAllDocumentContractor = async (req, res) => {
           where: { contractor_invitation_id: invitation?.id },
         });
         const [safetyManagement, publicLiability, insurance] = await Promise.all([
-          ContractorOrganizationSafetyManagement.findOne({ where: { contractor_id: contractor?.id } }),
-          ContractorPublicLiability.findOne({ where: { contractor_id: contractor?.id } }),
-          ContractorRegisterInsurance.findOne({ where: { contractor_id: contractor?.id } }),
+          ContractorOrganizationSafetyManagement.findOne({ where: {approved_status:'pending', contractor_id: contractor?.id } }),
+          ContractorPublicLiability.findOne({ where: {approved_status:'pending', contractor_id: contractor?.id } }),
+          ContractorRegisterInsurance.findOne({ where: { approved_status:'pending',contractor_id: contractor?.id } }),
         ]);
         const contractor_name = invitation?.contractor_name ?? null;
         const contractor_company = contractor?.contractor_company_name ?? null;
@@ -123,7 +123,6 @@ const getAllDocumentContractor = async (req, res) => {
               ]
             : []),
         ];
-
         return allDocuments;
       })
     );
