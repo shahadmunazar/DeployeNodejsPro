@@ -20,20 +20,20 @@ const sendConfirmationEmail = require("../helpers/sendConfirmationEmail");
 
 const sendinductionRegistrationEmails = async () => {
   try {
-    console.log("Running contractor induction registration email cron job...");
+    console.log("🔁 Running contractor induction registration email cron job...");
 
     const confirmedRegistrations = await ContractorRegistrationInduction.findAll({
       where: { agree_terms: "submit" },
     });
 
     if (confirmedRegistrations.length === 0) {
-      console.log("No confirmed contractor registrations found.");
+      console.log("🚫 No confirmed contractor registrations found.");
       return;
     }
 
     for (const registration of confirmedRegistrations) {
       try {
-        console.log(`Processing registration ID: ${registration.id}`);
+        console.log(`📩 Processing registration ID: ${registration.id}`);
 
         let nameOrganization = registration.organization_name;
 
@@ -44,7 +44,7 @@ const sendinductionRegistrationEmails = async () => {
             nameOrganization = invitedOrg.organization_name;
           }
         }
-
+        
 
         const pdfData = {
           useremail: registration.email,
@@ -58,35 +58,36 @@ const sendinductionRegistrationEmails = async () => {
           expiry_date: moment(registration.createdAt).add(1, 'year').format('DD-MM-YYYY'),
         };
 
+        // Generate PDF
         const pdfPath = await IdentityCardPdf(pdfData);
 
-        if (fs.existsSync(pdfPath)) {
-          console.log("PDF path exists:", pdfPath);
-          await sendConfirmationEmail(
-            registration.email,
-            registration,
-            nameOrganization,
-            pdfPath
-          );
-
-          // Mark status as 'sent'
-          await registration.update({ agree_terms: "sent" });
-
-          console.log(`✅Email sent to: ${registration.email}`);
-        } else {
-          console.warn("PDF not found for:", registration.email);
-          await registration.update({ agree_terms: "failed" });
+        // Re-check if file was created
+        if (!fs.existsSync(pdfPath)) {
+          throw new Error("PDF file was not created.");
         }
 
+        // Send email
+        await sendConfirmationEmail(
+          registration.email,
+          registration,
+          nameOrganization,
+          pdfPath
+        );
+
+        // Mark status as 'sent'
+        await registration.update({ agree_terms: "sent" });
+
+        console.log(`✅ Email sent to: ${registration.email}`);
+
       } catch (innerError) {
-        console.error(`Error processing registration ID ${registration.id}:`, innerError);
+        console.error(`❌ Error processing registration ID ${registration.id}:`, innerError);
         await registration.update({ agree_terms: "failed" });
       }
     }
 
     console.log("✅ All contractor registration emails processed.");
   } catch (error) {
-    console.error("Contractor induction registration email cron failed:", error);
+    console.error("🔥 Contractor induction registration email cron failed:", error);
   }
 };
 

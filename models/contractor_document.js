@@ -60,6 +60,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: "not_select",
       },
+      approve_status: {
+        type: DataTypes.BOOLEAN,
+        allowNull: true,
+        defaultValue: false,
+      },
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,

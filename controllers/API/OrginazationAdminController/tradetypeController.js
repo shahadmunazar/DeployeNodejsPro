@@ -184,19 +184,32 @@ const GetTradeTypeselectDocuments = async (req, res) => {
       });
     }
     let tradeTypeIds = [];
-try {
-  const parsed = JSON.parse(registration.trade_type); // results in ["1,2,3,4,5"]
-  if (Array.isArray(parsed)) {
-    parsed.forEach(item => {
-      item.split(',').forEach(id => {
-        const numId = parseInt(id.trim());
-        if (!isNaN(numId)) tradeTypeIds.push(numId);
-      });
-    });
-  }
-} catch (err) {
-  console.error("Failed to parse trade_type:", err.message);
-}
+        try {
+          // const parsed = JSON.parse(registration.trade_type); // results in ["1,2,3,4,5"]
+          // if (Array.isArray(parsed)) {
+          //   parsed.forEach(item => {
+          //     item.split(',').forEach(id => {
+          //       const numId = parseInt(id.trim());
+          //       if (!isNaN(numId)) tradeTypeIds.push(numId);
+          //     });
+          //   });
+          // }
+            // registration.trade_type is already an array like ['2,3']
+          const parsed = Array.isArray(registration.trade_type)
+            ? registration.trade_type
+            : [registration.trade_type];
+
+          parsed.forEach(item => {
+            if (typeof item === 'string') {
+              item.split(',').forEach(id => {
+                const numId = parseInt(id.trim());
+                if (!isNaN(numId)) tradeTypeIds.push(numId);
+              });
+            }
+          });
+        } catch (err) {
+          console.error("Failed to parse trade_type:", err.message);
+        }
     console.log("Parsed Trade Type IDs:", tradeTypeIds);
     if (tradeTypeIds.length === 0) {
       return res.status(400).json({

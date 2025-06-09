@@ -39,6 +39,6 @@ app.use("/api/superadmin",SuperAdminRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/api", LoginRoutes);
 app.use("/api/contractor", ContractorRoutes);
-app.use("/api/orginazation",OrginazationRoutes)
+app.use("/api/orginazation",OrginazationRoutes);
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
