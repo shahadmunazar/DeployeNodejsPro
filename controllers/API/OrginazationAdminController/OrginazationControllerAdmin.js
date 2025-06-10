@@ -906,6 +906,10 @@ const getAllContractorAdmins = async (req, res) => {
   try {
 
     const invited_by = req.user?.id;
+    if (!invited_by) {
+      return res.status(400).json({ message: "User ID is required." });   
+    }
+    // Fetch all contractor admins who were invited by the current user
 
     const [results] = await sequelize.query(`
      SELECT 

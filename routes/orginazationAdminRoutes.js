@@ -14,6 +14,7 @@ const {
   UpdateContractorComments,
   UpdateSubmissionStatus,
   GetSubmissionPrequalification,
+  getAllContractorAdmins,
 } = require("../controllers/API/OrginazationAdminController/OrginazationControllerAdmin");
 const {
   CreateContractorRegistration,
@@ -55,7 +56,7 @@ const {
 const {getAllDocumentContractor,updateDocumentApprovalStatus,GetAllDocumentsForWorker} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
 
 // const {TestingRoute} = require('../controllers/testingController')
-
+const {SendIvitationLinkContractorWorker} = require("../controllers/API/ContractorAdminController/ContractorWorkerController");
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 const WithOrginazationAdminAndRole = (handler, role = "organization") => {
   return [authenticateUser, authorizeRoles(role), handler];
@@ -124,6 +125,9 @@ router.get("/get-all-documents-contractor", ...WithOrginazationAdminAndRole(getA
 router.put("/update-contractor-documents", ...WithOrginazationAdminAndRole(updateDocumentApprovalStatus));
 
 router.get("/get-all-documents-for-worker", ...WithOrginazationAdminAndRole(GetAllDocumentsForWorker));
+
+router.post("/send-invitation-link-all-contractor", ...WithOrginazationAdminAndRole(SendIvitationLinkContractorWorker));
+router.get("/all-contractor-admins", ...WithOrginazationAdminAndRole(getAllContractorAdmins));
 
 // router.get("/testing-routes",TestingRoute );
 
