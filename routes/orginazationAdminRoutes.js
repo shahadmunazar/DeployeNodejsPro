@@ -14,7 +14,7 @@ const {
   UpdateContractorComments,
   UpdateSubmissionStatus,
   GetSubmissionPrequalification,
-  getAllContractorAdmins
+  getAllContractorAdmins,
 } = require("../controllers/API/OrginazationAdminController/OrginazationControllerAdmin");
 const {
   CreateContractorRegistration,
@@ -53,11 +53,10 @@ const {
   FetchPrequalification
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
-const { SendIvitationLinkContractorWorker,getRecentContractorWorkers, GetInductionContractorWorkersList  } = require("../controllers/API/ContractorAdminController/ContractorWorkerController");
-const {getAllDocumentContractor,TestDataDetails} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
+const {getAllDocumentContractor,updateDocumentApprovalStatus} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
 
 // const {TestingRoute} = require('../controllers/testingController')
-
+const {SendIvitationLinkContractorWorker} = require("../controllers/API/ContractorAdminController/ContractorWorkerController");
 const { authenticateUser, authorizeRoles } = require("../middleware/auth");
 const WithOrginazationAdminAndRole = (handler, role = "organization") => {
   return [authenticateUser, authorizeRoles(role), handler];
@@ -122,10 +121,14 @@ router.get("/search-location", SearchLocation);
 
 router.get("/fetch-prequalification-organization-to-induction", ...WithOrginazationAdminAndRole(FetchPrequalification));
 router.get("/get-all-documents-contractor", ...WithOrginazationAdminAndRole(getAllDocumentContractor));
+// router.get("/get-all-documents-contractor-details", ...WithOrginazationAdminAndRole(TestDataDetails));
+router.put("/update-contractor-documents", ...WithOrginazationAdminAndRole(updateDocumentApprovalStatus));
+
+
 
 router.post("/send-invitation-link-all-contractor", ...WithOrginazationAdminAndRole(SendIvitationLinkContractorWorker));
 router.get("/all-contractor-admins", ...WithOrginazationAdminAndRole(getAllContractorAdmins));
-router.get("/get-all-documents-contractor-details", ...WithOrginazationAdminAndRole(TestDataDetails));
+
 // router.get("/testing-routes",TestingRoute );
 
 module.exports = router;
