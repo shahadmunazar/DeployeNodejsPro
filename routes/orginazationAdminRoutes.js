@@ -123,7 +123,7 @@ router.get("/search-location", SearchLocation);
 router.get("/fetch-prequalification-organization-to-induction", ...WithOrginazationAdminAndRole(FetchPrequalification));
 router.get("/get-all-documents-contractor", ...WithOrginazationAdminAndRole(getAllDocumentContractor));
 
-router.post("/send-worker-invitation-link", ...WithOrginazationAdminAndRole(SendIvitationLinkContractor));
+router.post("/send-invitation-link-all-contractor", ...WithOrginazationAdminAndRole(SendIvitationLinkContractorWorker));
 router.post("/all-contractor-admins", ...WithOrginazationAdminAndRole(getAllContractorAdmins));
 router.get("/get-all-documents-contractor-details", ...WithOrginazationAdminAndRole(TestDataDetails));
 // router.get("/testing-routes",TestingRoute );
