@@ -21,8 +21,9 @@ const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
 const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
 const SendIvitationLinkContractorWorker = async (req, res) => {
   try {
-    let { worker_email,contractor_id, send_by_user } = req.body;
+    let { worker_email,contractor_id, send_by_user, additional_message } = req.body;
     let invitedBy;
+    let additional_messages = additional_message || "";
     if(send_by_user=='organization_admin') {
       if(!contractor_id) {
         return res.status(400).json({
@@ -66,13 +67,13 @@ const SendIvitationLinkContractorWorker = async (req, res) => {
 
       const contractorInvitation = await ContractorInvitation.create({
         contractor_email: email,
-        invited_by: invitedBy,
-        invitation_type: "contractor_induction",
-        invite_token: crypto.randomBytes(16).toString("hex"),
-        send_status: "sent",
+        invited_by      : invitedBy,
+        invitation_type : "contractor_induction",
+        invite_token    : crypto.randomBytes(16).toString("hex"),
+        send_status     : "sent",
       });
 
-      await SendInductionEmail(contractorInvitation);
+      await SendInductionEmail(contractorInvitation, additional_messages);
       results.push({ email, status: "invited" });
     }
 
@@ -91,9 +92,9 @@ const SendIvitationLinkContractorWorker = async (req, res) => {
   }
 };
 
-const SendInductionEmail = async (contractorInvitation) => {
+const SendInductionEmail = async (contractorInvitation, additional_messages) => {
   try {
-    const { contractor_email, contractor_name, invite_token, invited_by } = contractorInvitation;
+    const { contractor_email, contractor_name, invite_token, invited_by,additional_message } = contractorInvitation;
     
     const email = contractor_email;
     const name = contractor_name? contractor_name : "Contractor";
@@ -125,6 +126,7 @@ const SendInductionEmail = async (contractorInvitation) => {
             <h2>Contractor Induction Invitation</h2>
             <p>Dear ${name || "Contractor"},</p>
             <p>You have been invited to complete your contractor induction process.</p>
+            <p>${additional_messages}</p>
             <p>Please click the button below to begin:</p>
             <p><a href="${link}" class="button">Start Induction</a></p>
             <p>If the button doesn’t work, copy and paste this URL into your browser:</p>
