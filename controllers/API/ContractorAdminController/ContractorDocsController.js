@@ -31,8 +31,8 @@ const pathToUrl = (req, relativePath) =>
 const getAllDocumentContractor = async (req, res) => {
   try {
     const invitedById = req.user?.id;
-    const contractorRegisters = await ContractorInductionRegistration.findAll({
-      where: { invited_by_organization: invitedById },
+    const contractorRegisters = await contractorInvitation.findAll({
+      where: { invited_by: invitedById },
     });
 
     if (!contractorRegisters.length) {
@@ -44,11 +44,9 @@ const getAllDocumentContractor = async (req, res) => {
     }
     const docsPerContractor = await Promise.all(
       contractorRegisters.map(async register => {
-        const invitation = await contractorInvitation.findOne({
-          where: { invited_by: register.invited_by_organization },
-        });
+        
         const contractor = await ContractorRegistration.findOne({
-          where: { contractor_invitation_id: invitation?.id },
+          where: { contractor_invitation_id: register?.id },
         });
         const [
           safetyManagement,
@@ -75,7 +73,7 @@ const getAllDocumentContractor = async (req, res) => {
           }),
         ]);
         const meta = {
-          contractor_name: invitation?.contractor_name ?? null,
+          contractor_name: register?.contractor_name ?? null,
           contractor_company: contractor?.contractor_company_name ?? null,
           contractor_abn: contractor?.abn_number ?? null,
           entitydescription: contractor?.company_structure ?? null,
