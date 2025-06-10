@@ -124,7 +124,7 @@ router.get("/fetch-prequalification-organization-to-induction", ...WithOrginazat
 router.get("/get-all-documents-contractor", ...WithOrginazationAdminAndRole(getAllDocumentContractor));
 
 router.post("/send-invitation-link-all-contractor", ...WithOrginazationAdminAndRole(SendIvitationLinkContractorWorker));
-router.post("/all-contractor-admins", ...WithOrginazationAdminAndRole(getAllContractorAdmins));
+router.get("/all-contractor-admins", ...WithOrginazationAdminAndRole(getAllContractorAdmins));
 router.get("/get-all-documents-contractor-details", ...WithOrginazationAdminAndRole(TestDataDetails));
 // router.get("/testing-routes",TestingRoute );
 
