@@ -52,7 +52,7 @@ const {
   FetchPrequalification
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
-const {getAllDocumentContractor,updateDocumentApprovalStatus} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
+const {getAllDocumentContractor,updateDocumentApprovalStatus,GetAllDocumentsForWorker} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
 
 // const {TestingRoute} = require('../controllers/testingController')
 
@@ -91,7 +91,7 @@ router.post("/resend-email-to-invitation", ...WithOrginazationAdminAndRole(Resen
 router.post("/make-pdf-to-contractor-form", MakePdfToAllContractorForm);
 
 router.post("/send-induction-email", ...WithOrginazationAdminAndRole(SendInductionEmail));
-router.get("/get-all-submission-prequalification", GetSubmissionPrequalification);
+router.get("/get-all-submission-prequalification", ...WithOrginazationAdminAndRole(GetSubmissionPrequalification));
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
 router.get("/get-submission-pendings-notificaton", ...WithOrginazationAdminAndRole(GetSubmissionPrequalificationNotification));
 // routes for induction testing
@@ -123,7 +123,7 @@ router.get("/get-all-documents-contractor", ...WithOrginazationAdminAndRole(getA
 // router.get("/get-all-documents-contractor-details", ...WithOrginazationAdminAndRole(TestDataDetails));
 router.put("/update-contractor-documents", ...WithOrginazationAdminAndRole(updateDocumentApprovalStatus));
 
-
+router.get("/get-all-documents-for-worker", ...WithOrginazationAdminAndRole(GetAllDocumentsForWorker));
 
 // router.get("/testing-routes",TestingRoute );
 

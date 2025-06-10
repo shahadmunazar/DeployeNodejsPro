@@ -838,6 +838,8 @@ const GetSubmissionPrequalification = async (req, res) => {
   try {
     const { filter } = req.query;
 
+    const reqUserId = req.user?.id;
+
     let whereClause = {};
 
     if (filter !== undefined && filter !== "") {
@@ -855,11 +857,12 @@ const GetSubmissionPrequalification = async (req, res) => {
         include: [
           [
             sequelize.literal(`(
-              SELECT contractor_email 
-              FROM contractor_invitations 
-              WHERE contractor_invitations.id = ContractorRegistration.contractor_invitation_id
-            )`),
-            "contractor_email",
+          SELECT contractor_email 
+          FROM contractor_invitations 
+          WHERE contractor_invitations.id = ContractorRegistration.contractor_invitation_id 
+          AND contractor_invitations.invited_by = ${reqUserId}
+        )`),
+        "contractor_email",
           ],
         ],
       },
