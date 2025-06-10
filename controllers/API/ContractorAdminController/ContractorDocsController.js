@@ -31,8 +31,8 @@ const pathToUrl = (req, relativePath) =>
 const getAllDocumentContractor = async (req, res) => {
   try {
     const invitedById = req.user?.id;
-    const contractorRegisters = await ContractorInductionRegistration.findAll({
-      where: { invited_by_organization: invitedById },
+    const contractorRegisters = await contractorInvitation.findAll({
+      where: { invited_by: invitedById },
     });
 
     if (!contractorRegisters.length) {
@@ -44,11 +44,9 @@ const getAllDocumentContractor = async (req, res) => {
     }
     const docsPerContractor = await Promise.all(
       contractorRegisters.map(async register => {
-        const invitation = await contractorInvitation.findOne({
-          where: { invited_by: register.invited_by_organization },
-        });
+        
         const contractor = await ContractorRegistration.findOne({
-          where: { contractor_invitation_id: invitation?.id },
+          where: { contractor_invitation_id: register?.id },
         });
         const [
           safetyManagement,
@@ -75,7 +73,7 @@ const getAllDocumentContractor = async (req, res) => {
           }),
         ]);
         const meta = {
-          contractor_name: invitation?.contractor_name ?? null,
+          contractor_name: register?.contractor_name ?? null,
           contractor_company: contractor?.contractor_company_name ?? null,
           contractor_abn: contractor?.abn_number ?? null,
           entitydescription: contractor?.company_structure ?? null,
@@ -202,4 +200,72 @@ const updateDocumentApprovalStatus = async (req, res) => {
 };
 
 
-module.exports = { getAllDocumentContractor, updateDocumentApprovalStatus };
+const GetAllDocumentsForWorker = async (req,res)=>{
+  try {
+    const invitedById = req.user?.id;
+    const contractorRegisters = await ContractorInductionRegistration.findAll({
+      where: { invited_by_organization: invitedById },
+    });
+    if (!contractorRegisters.length) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: 'No contractors found',
+      });
+    }
+    const docsPerContractor = await Promise.all(
+      contractorRegisters.map(async register => {
+        const rawDocs = await ContractorDocument.findAll({
+          where: {
+            approved_status: 'pending',
+            contractor_reg_id: register.id,
+          },
+        });
+        const invitation = await contractorInvitation.findOne({
+          where: { invited_by: register.invited_by_organization },
+        });
+        const contractor = await ContractorRegistration.findOne({
+          where: { contractor_invitation_id: invitation?.id },
+        });        
+        const meta = {
+          worker_name: contractorRegisters?.first_name ?? null,
+          contractor_company: contractor?.organization_name ?? null,
+          user_image:contractorRegisters?.user_image ?? null,
+          contractor_abn: contractor?.abn_number ?? null,
+          entitydescription: contractor?.company_structure ?? null,
+          Contractperson: contractor?.company_representative_first_name ?? null,
+        };
+        const genericDocs = rawDocs.map(doc => ({
+          id: doc.id,
+          uploaded_by_id: doc.contractor_reg_id,
+          type: doc.doc_type ?? 'misc_document',
+          source: 'worker_document',
+          documentName: doc.original_file_name ?? null,
+          referenceNumber: doc.reference_number ?? null,
+          issueDate: doc.issue_date ?? null,
+          expiryDate: doc.expiry_date ?? null,
+          filePath: pathToUrl(req, doc.filename),
+          description:doc.document_type,
+          combine_date:issueDate+expiryDate,
+          fileName: doc.expiryDate,
+          ...meta,
+        }));
+        return [...genericDocs];
+      })
+    );
+    const allDocuments = docsPerContractor.flat();
+    return res.status(200).json({
+      success: true,
+      data: allDocuments,
+    });
+  } catch (error) {
+    console.error('Error fetching contractor documents:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+}
+
+
+module.exports = { getAllDocumentContractor, updateDocumentApprovalStatus,GetAllDocumentsForWorker };
