@@ -21,7 +21,20 @@ const TradeType = require("../../../models/trade_type")(sequelize, DataTypes);
 const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
 const SendIvitationLinkContractorWorker = async (req, res) => {
   try {
-    let { worker_email } = req.body;
+    let { worker_email,contractor_id, send_by_user } = req.body;
+    let invitedBy;
+    if(send_by_user=='organization_admin') {
+      if(!contractor_id) {
+        return res.status(400).json({
+          status: 400,
+          message: "Contractor ID is required when sending by organization admin.",
+        });
+      }
+     invitedBy =  contractor_id;
+    }else{
+     invitedBy = req.user?.id; 
+    }
+    
 
     if (!worker_email || (Array.isArray(worker_email) && worker_email.length === 0)) {
       return res.status(400).json({
@@ -41,7 +54,7 @@ const SendIvitationLinkContractorWorker = async (req, res) => {
       const existingInvite = await ContractorInvitation.findOne({
         where: {
           contractor_email: email,
-          invited_by: req.user?.id,
+          invited_by: invitedBy,
           invitation_type: "contractor_induction",
           status: { [Op.not]: "accepted" }
         }
@@ -53,7 +66,7 @@ const SendIvitationLinkContractorWorker = async (req, res) => {
 
       const contractorInvitation = await ContractorInvitation.create({
         contractor_email: email,
-        invited_by: req.user?.id,
+        invited_by: invitedBy,
         invitation_type: "contractor_induction",
         invite_token: crypto.randomBytes(16).toString("hex"),
         send_status: "sent",

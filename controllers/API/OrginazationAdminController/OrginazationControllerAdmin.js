@@ -899,6 +899,46 @@ const UpdateInvitationStatus = async (req, res) => {
   }
 };
 
+const getAllContractorAdmins = async (req, res) => {
+  try {
+
+    const invited_by = req.user?.id;
+
+    const [results] = await sequelize.query(`
+     SELECT 
+        u.id AS user_id, 
+        u.name AS user_name, 
+        u.email AS user_email, 
+        u.user_status, 
+        ur.roleId, 
+        r.name as role_name, 
+        ci.id AS invitation_id, 
+        ci.contractor_email, 
+        cr.id AS registration_id, 
+        cr.submission_status, 
+        cr.contractor_company_name 
+      FROM users u 
+      INNER JOIN UserRoles ur ON ur.userId = u.id AND ur.roleId = 3
+      LEFT JOIN Roles r ON r.id = ur.roleId 
+      LEFT JOIN contractor_invitations ci ON ci.contractor_email = u.email 
+      LEFT JOIN contractor_registration cr ON cr.contractor_invitation_id = ci.id 
+      WHERE u.user_status = 1 and ci.invited_by = :invited_by
+      ORDER BY u.id DESC
+    `, {
+      replacements: { invited_by }
+    });
+
+    res.status(200).json({
+      status: 200,
+      data: results,
+      message: "All contractor admins fetched successfully"
+    });
+  } catch (error) {
+    console.error("Error fetching contractor admins:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   GetOrginazationDetails,
   OrginazationAdminLogout,
@@ -912,5 +952,6 @@ module.exports = {
   UpdateContractorComments,
   UpdateSubmissionStatus,
   GetSubmissionPrequalification,
-  UpdateInvitationStatus
+  UpdateInvitationStatus,
+  getAllContractorAdmins
 };
