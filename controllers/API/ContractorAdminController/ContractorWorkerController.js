@@ -77,8 +77,8 @@ const SendIvitationLinkContractorWorker = async (req, res) => {
       results.push({ email, status: "invited" });
     }
 
-    return res.status(201).json({
-      status: 201,
+    return res.status(200).json({
+      status: 200,
       message: "Invitation process completed.",
       results,
     });

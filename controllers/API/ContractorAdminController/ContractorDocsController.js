@@ -32,9 +32,10 @@ const getAllDocumentContractor = async (req, res) => {
   try {
     const invitedById = req.user?.id;
     const contractorRegisters = await contractorInvitation.findAll({
-      where: { invited_by: invitedById },
+      where: { invited_by: invitedById, status: 'accepted' },
     });
-
+    // Check if there are any contractor registers
+    // If no contractor registers found, return an empty array with a message
     if (!contractorRegisters.length) {
       return res.status(200).json({
         success: true,
