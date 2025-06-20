@@ -33,7 +33,8 @@ const {
   MakePdfToAllContractorForm,
   SearchLocation,
   SendInductionEmail,
-  ChangeEmailRequest
+  ChangeEmailRequest,
+  UploadContractorCompanyDocument
 } = require("../controllers/API/ContractorAdminController/RegistrationContractorController");
 const { CreateTradeTypes, GetAllTradeTypes, TradeTypeDoucmentCreate, GetTradeTypeselectDocuments } = require("../controllers/API/OrginazationAdminController/tradetypeController");
 const { GetSubmissionPrequalificationNotification } = require("../controllers/API/ContractorAdminController/NotificationController");
@@ -53,7 +54,7 @@ const {
   FetchPrequalification
 } = require("../controllers/API/ContractorAdminController/InuctionRegisterController");
 
-const {getAllDocumentContractor,updateDocumentApprovalStatus,GetAllDocumentsForWorker} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
+const {getAllDocumentContractor,updateDocumentApprovalStatus,GetAllDocumentsForWorker, ApprovedWorkerDocument} = require("../controllers/API/ContractorAdminController/ContractorDocsController");
 
 // const {TestingRoute} = require('../controllers/testingController')
 const {SendIvitationLinkContractorWorker} = require("../controllers/API/ContractorAdminController/ContractorWorkerController");
@@ -67,6 +68,7 @@ const { route } = require("./userRoutes");
 router.post("/send-multifactor-verification", SendverificationCode);
 router.post("/verify-multifactor-authentication", VerifyMultifactorAuth);
 router.post("/create-registration-contractor", CreateContractorRegistration);
+router.post("/upload-contractor-company-document", uploadFiles, UploadContractorCompanyDocument);
 router.post("/upload-insurace-contractor", uploadFiles, UploadInsuranceContrator);
 router.post("/upload-public-liability", uploadFiles, UploadPublicLiability);
 router.post("/upload-safety-managment", uploadFiles, UploadSafetyMNContractor);
@@ -128,7 +130,7 @@ router.get("/get-all-documents-for-worker", ...WithOrginazationAdminAndRole(GetA
 
 router.post("/send-invitation-link-all-contractor", ...WithOrginazationAdminAndRole(SendIvitationLinkContractorWorker));
 router.get("/all-contractor-admins", ...WithOrginazationAdminAndRole(getAllContractorAdmins));
-
+router.put("/approved-worker-document", ...WithOrginazationAdminAndRole(ApprovedWorkerDocument));
 // router.get("/testing-routes",TestingRoute );
 
 module.exports = router;

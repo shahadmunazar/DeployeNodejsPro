@@ -26,6 +26,7 @@ const ContractorRegistration = require("../../../models/ContractorRegistration")
 const Organization = require("../../../models/organization")(sequelize, DataTypes);
 // const OrganizationSubscribeUser = require("../../../models/organization_subscribeuser")(sequelize, DataTypes);
 const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
+const contractorCompanyDocument = require("../../../models/contractor_company_document")(sequelize, DataTypes);
 const { response } = require("express");
 
 const formatDate = date => {
@@ -229,6 +230,72 @@ const CreateContractorRegistration = async (req, res) => {
     });
   }
 };
+
+const UploadContractorCompanyDocument = async (req, res) => {
+  try { 
+
+    const { contractor_id, coverage_amount,  end_date, document_type } = req.body;
+
+    if (!contractor_id || !coverage_amount || !end_date || !document_type) {
+      return res.status(400).json({ message: "Contractor ID, coverage amount, end date, and document type are required." });
+    }
+    const file = req.files?.contractor_company_document?.[0];
+    if (!file) {
+      return res.status(400).json({ message: "Company document file is required." });
+    }
+
+    const document_url = file.path.replace(/\\/g, "/");
+    const original_file_name = file.originalname;
+
+    const contractor = await ContractorRegistration.findOne({
+      where: { id: contractor_id },
+    });
+
+    if (!contractor) {
+      return res.status(404).json({ message: "Contractor not found." });
+    }
+
+    let companyDocument = await contractorCompanyDocument.findOne({
+      where: { contractor_id, document_type   },  
+    });
+
+    if (companyDocument) {
+      await companyDocument.update({
+        coverage_amount,
+        end_date,
+        document_type,
+        file_url: document_url,
+        original_file_name,
+      });
+    } else {
+      companyDocument = await contractorCompanyDocument.create({
+        contractor_id,
+        coverage_amount,
+        end_date,
+        document_type,
+        file_url: document_url,
+        original_file_name,
+      });
+    }
+    // await contractor.update({
+    // public_liability_doc_id: companyDocument.id,
+    // covered_amount: coverage_amount,
+    // });
+    
+    return res.status(200).json({ 
+      success: true,
+      status: 200,
+      message: "Contractor company document uploaded and updated successfully.",
+      data: companyDocument, 
+    });
+
+  } catch (err) { 
+    console.error("UploadContractorCompanyDocument error:", err);
+    return res.status(500).json({ message: "Server error", error: err.message });
+
+  }
+
+}
 
 const UploadInsuranceContrator = async (req, res) => {
   try {
@@ -874,11 +941,14 @@ const CheckContractorRegisterStatus = async (req, res) => {
         "do_you_regularly_monitor_compliance",
         "do_you_have_procedures_circumstances",
         "have_you_been_prosecuted_health_regulator",
+        "employee_insure_doc_id",
+        "public_liability_doc_id",
+        // "organization_safety_management_id",
       ];
 
       let formStatus = "";
       let incompletePage = null;
-
+  // console.log("plain",plain);
       switch (plain.submission_status) {
         case "confirm_submit":
           formStatus = "complete";
@@ -908,7 +978,9 @@ const CheckContractorRegisterStatus = async (req, res) => {
           // Check for incomplete form logic
           const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
           const isPage5Incomplete = requiredPage5Fields.some(field => plain[field]);
-
+          console.log("isPage1Incomplete", isPage1Incomplete);
+          console.log("plain", plain);
+        formStatus = "pending";
           if (isPage1Incomplete) {
             incompletePage = 1;
           } else if (!plain.employee_insure_doc_id) {
@@ -1364,5 +1436,6 @@ module.exports = {
   SearchLocation,
   SendInductionEmail,
   RegitserContractiorInducation,
-  ChangeEmailRequest
+  ChangeEmailRequest,
+  UploadContractorCompanyDocument
 };

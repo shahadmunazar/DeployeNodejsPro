@@ -42,7 +42,8 @@ const storage = multer.diskStorage({
       health_practitioner_registration: "./uploads/contractorRegistratioDocuments/health_practitioner_registration",
       police_check_documnets: "./uploads/contractorRegistratioDocuments/police_check_documnets",
       trade_qualification_documents: "./uploads/contractorRegistratioDocuments/trade_qualification_documents",
-      contractor_induction_pdf: "./uploads/contractorRegistratioDocuments/contractor_induction_pdf"
+      contractor_induction_pdf: "./uploads/contractorRegistratioDocuments/contractor_induction_pdf",
+      contractor_company_document: "./uploads/contractorRegistratioDocuments/contractor_company_document"
     };
 
     const uploadPath = map[file.fieldname];
@@ -67,7 +68,7 @@ const fileFilter = (req, file, cb) => {
 
   const pdfFields = [
     "agreement_paper", "contractor_insurance", "contractor_liability",
-    "safety_contractor_managment", "contractor_induction_pdf"
+    "safety_contractor_managment", "contractor_induction_pdf", "contractor_company_document"
   ];
 
   if (imageFields.includes(file.fieldname)) {
@@ -104,7 +105,8 @@ const uploadFiles = multer({
   { name: "health_practitioner_registration", maxCount: 1 },
   { name: "police_check_documnets", maxCount: 1 },
   { name: "trade_qualification_documents", maxCount: 1 },
-  { name: "contractor_induction_pdf", maxCount: 1 }
+  { name: "contractor_induction_pdf", maxCount: 1 },
+  { name: "contractor_company_document", maxCount: 1 }
 ]);
 
 module.exports = uploadFiles;
