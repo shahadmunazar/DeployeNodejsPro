@@ -277,11 +277,19 @@ const UploadContractorCompanyDocument = async (req, res) => {
         original_file_name,
       });
     }
-    // await contractor.update({
-    // public_liability_doc_id: companyDocument.id,
-    // covered_amount: coverage_amount,
-    // });
-    
+            // Update the contractor's reference to the company document  
+
+            const fieldMap = {
+                    contractor_insurance: 'employee_insure_doc_id',
+                    public_liability: 'public_liability_doc_id',
+                    safety_contractor_managment: 'organization_safety_management_id',
+                  };
+
+            const field = fieldMap[document_type];
+            if (field) {
+              await contractor.update({ [field]: companyDocument.id, covered_amount: coverage_amount });
+            }
+
     return res.status(200).json({ 
       success: true,
       status: 200,
@@ -978,8 +986,8 @@ const CheckContractorRegisterStatus = async (req, res) => {
           // Check for incomplete form logic
           const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
           const isPage5Incomplete = requiredPage5Fields.some(field => plain[field]);
-          console.log("isPage1Incomplete", isPage1Incomplete);
-          console.log("plain", plain);
+          // console.log("isPage1Incomplete", isPage1Incomplete);
+          // console.log("plain", plain);
         formStatus = "pending";
           if (isPage1Incomplete) {
             incompletePage = 1;
