@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
     }
   }
+  //this is the AuditLogsContractorAdmin model
   AuditLogsContractorAdmin.init({
    contractor_id:{
       type: DataTypes.INTEGER,
