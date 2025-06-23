@@ -234,11 +234,18 @@ const CreateContractorRegistration = async (req, res) => {
 const UploadContractorCompanyDocument = async (req, res) => {
   try { 
 
-    const { contractor_id, coverage_amount,  end_date, document_type } = req.body;
+    const { contractor_id, covered_amount, end_date, document_type } = req.body;
+    const coverage_amount = covered_amount ? covered_amount : null;
 
-    if (!contractor_id || !coverage_amount || !end_date || !document_type) {
+    if (!contractor_id || !end_date || !document_type) {
       return res.status(400).json({ message: "Contractor ID, coverage amount, end date, and document type are required." });
     }
+
+    if (document_type === 'public_liability' && !coverage_amount) {
+      return res.status(400).json({ message: "Coverage amount is required for public liability." });
+    }
+
+
     const file = req.files?.contractor_company_document?.[0];
     if (!file) {
       return res.status(400).json({ message: "Company document file is required." });
@@ -287,7 +294,7 @@ const UploadContractorCompanyDocument = async (req, res) => {
 
             const field = fieldMap[document_type];
             if (field) {
-              await contractor.update({ [field]: companyDocument.id, covered_amount: coverage_amount });
+              await contractor.update({ [field]: companyDocument.id });
             }
 
     return res.status(200).json({ 

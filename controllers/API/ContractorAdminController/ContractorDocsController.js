@@ -224,6 +224,7 @@ const updateDocumentApprovalStatus = async (req, res) => {
      const contractor = await ContractorRegistration.findOne({
           where: { id: document?.contractor_id },
         }); 
+        
         const contractor_Invitation = await contractorInvitation.findOne({
           where: {id: contractor?.contractor_invitation_id },
         });
