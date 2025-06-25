@@ -18,6 +18,7 @@ const {
   CompanyComplianceList,
   getComplianceDetails,
   resendEmailForDocsExpired,
+  ActivateContratorAdmin
 } = require("../controllers/API/OrginazationAdminController/OrginazationControllerAdmin");
 const {
   CreateContractorRegistration,
@@ -104,6 +105,7 @@ router.get("/get-submission-pendings-notificaton", ...WithOrginazationAdminAndRo
 router.get("/company-compliance-list", ...WithOrginazationAdminAndRole(CompanyComplianceList));
 router.get("/get-compliance-details", ...WithOrginazationAdminAndRole(getComplianceDetails));
 router.post("/resend-email-docs-expired", ...WithOrginazationAdminAndRole(resendEmailForDocsExpired));
+router.post("/activate-contractor-admin", ...WithOrginazationAdminAndRole(ActivateContratorAdmin));
 // routes for induction testing
 router.post("/register-with-induction-contractor", RegitserContractiorInducation);
 router.post("/verify-mobile-and-email", VerifyMobileAndEmail);

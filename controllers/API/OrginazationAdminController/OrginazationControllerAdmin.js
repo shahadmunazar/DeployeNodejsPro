@@ -535,19 +535,14 @@ const GetDetailsInvitationDetails = async (req, res) => {
       where: { id: contractor.contractor_invitation_id },
     });
 
-    const insurance = await ContractorRegisterInsurance.findOne({
-      where: { contractor_id: contractor.id },
-      attributes: ["document_url", "original_file_name", "end_date"],
-    });
+    // Remove these three blocks:
+    // const insurance = await ContractorRegisterInsurance.findOne({ ... });
+    // const publicLiability = await ContractorPublicLiability.findOne({ ... });
+    // const safetyManagement = await ContractorOrganizationSafetyManagement.findOne({ ... });
 
-    const publicLiability = await ContractorPublicLiability.findOne({
-      where: { contractor_id: contractor.id },
-      attributes: ["public_liabilty_file_url", "end_date", "original_file_name"],
-    });
-
-    const safetyManagement = await ContractorOrganizationSafetyManagement.findOne({
-      where: { contractor_id: contractor.id },
-      attributes: ["does_organization_safety_management_system_filename", "original_file_name"],
+    // Get all documents from ContractorCompanyDocument
+    const allDocuments = await ContractorCompanyDocument.findAll({
+      where: { contractor_id: contractor.id }
     });
 
     const backendUrl = process.env.BACKEND_URL || "";
@@ -584,17 +579,10 @@ const GetDetailsInvitationDetails = async (req, res) => {
       Status: contractor.submission_status,
       Expires: formattedExpires,
       Renewal: renewalStatus,
-      InsuranceDoc_full_url: insurance?.document_url ? `${backendUrl}/${insurance.document_url}` : null,
-      insurance_expire_date: insurance?.end_date || null,
-      insurance_original_file_name: insurance?.original_file_name || null,
+      // Remove insurance/publicLiability/safetyManagement fields
+      // Add all company documents
+      company_documents: allDocuments,
 
-      PublicLiability_doc_url: publicLiability?.public_liabilty_file_url ? `${backendUrl}/${publicLiability.public_liabilty_file_url}` : null,
-      PublicLiability_expiry: publicLiability?.end_date || null,
-      PublicLiability_original_name: publicLiability?.original_file_name || null,
-
-      SafetyManagement_doc_url: safetyManagement?.does_organization_safety_management_system_filename
-        ? `${backendUrl}/${safetyManagement.does_organization_safety_management_system_filename}`
-        : null,
       contractor_abn: contractor.abn_number,
       contractor_company_name: contractor.name,
       contractor_trading_name: contractor.contractor_trading_name,
@@ -1049,21 +1037,21 @@ const resendEmailForDocsExpired = async (req, res) => {
 
 
 const complianceDetail = await ContractorRegistration.findOne({
-  where: { id: complianceItems.contractor_id },
-  attributes: [
-    "id",
-    "abn_number",
-    "contractor_company_name",
-    "contractor_trading_name",
-    "company_representative_first_name",
-    "contractor_invitation_id",
-    [sequelize.literal(`(
-      SELECT contractor_email 
-      FROM contractor_invitations 
-      WHERE contractor_invitations.id = ContractorRegistration.contractor_invitation_id 
-    )`), "contractor_email"],
-  ],
-});
+              where: { id: complianceItems.contractor_id },
+              attributes: [
+                "id",
+                "abn_number",
+                "contractor_company_name",
+                "contractor_trading_name",
+                "company_representative_first_name",
+                "contractor_invitation_id",
+                [sequelize.literal(`(
+                  SELECT contractor_email 
+                  FROM contractor_invitations 
+                  WHERE contractor_invitations.id = ContractorRegistration.contractor_invitation_id 
+                )`), "contractor_email"],
+              ],
+            });
 
     if (!complianceDetail) { 
       return res.status(404).json({ message: "Compliance details not found for the given contractor registration ID." });
@@ -1187,6 +1175,93 @@ const ReSendEmailDocsExpried = async (complianceDetails, auditLog, register_type
   }
 };
 
+const ActivateContratorAdmin = async (req, res) => {
+  try {
+    const { contractor_reg_id } = req.body;
+    if (!contractor_reg_id) {
+      return res.status(400).json({ message: "contractor_reg_id is required." });
+    }
+
+    // 1. Get contractor registration and invitation
+    const contractor = await ContractorRegistration.findOne({
+      where: { id: contractor_reg_id },
+    });
+    if (!contractor) {
+      return res.status(404).json({ message: "Contractor not found." });
+    }
+
+    const invitation = await ContractorInvitation.findOne({
+      where: { id: contractor.contractor_invitation_id },
+    });
+    // Check if invitation exists
+    if (!invitation) {
+      return res.status(404).json({ message: "Contractor invitation not found." });
+    }
+
+    // 2. Check all compliance items are approved
+    const complianceItems = await ContractorCompanyDocument.findAll({
+      where: { contractor_id: contractor_reg_id },
+    });
+    if (!complianceItems.length || complianceItems.some(item => item.approved_status !== 'approved')) {
+      return res.status(400).json({ message: "All compliance items must be approved before activation." });
+    }
+
+   // 3. Check if user already exists
+    let user = await User.findOne({ where: { email: invitation.contractor_email } });
+    let plainPassword;
+    if (!user) {
+      // 4. Generate a strong random 8-character password
+      plainPassword = crypto.randomBytes(6).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
+
+      // 5. Create user
+      let userName = contractor.company_representative_first_name + ' ' + contractor.company_representative_last_name || invitation.contractor_email;
+      user = await User.create({
+        name: userName,
+        email: invitation.contractor_email,
+        password: bcrypt.hashSync(plainPassword, 10), // hashed password
+        user_status: 1, // active
+      });
+
+      // 6. Assign contractor admin role (roleId 3 assumed)
+      await sequelize.models.UserRoles.create({
+        userId: user.id,
+        roleId: 3,
+      });
+    }
+
+    // 7. Send activation email with password
+    const link = `${process.env.FRONTEND_URL}/user/login`;
+    await emailQueue.add("sendContractorAdminActivation", {
+      to: user.email,
+      subject: "Your Contractor Admin Account is Activated",
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>Welcome, ${user.name}!</h2>
+          <p>Your contractor admin account has been activated. You can now log in and manage your compliance documents.</p>
+          <p><strong>Login Email:</strong> ${user.email}</p>
+          ${plainPassword ? `<p><strong>Temporary Password:</strong> ${plainPassword}</p>` : ""}
+          <p>
+            <a href="${link}" style="padding: 10px 20px; background: #004b8d; color: #fff; border-radius: 4px; text-decoration: none;">Login</a>
+          </p>
+          <p>If you have any questions, please contact our support team.</p>
+          <p>Regards,<br/>Konnect</p>
+        </div>
+      `,
+    });
+
+     return res.status(200).json({
+      status: 200,
+      message: "Contractor admin activated and email sent.",
+      user_id: user.id,
+    });
+  } catch (error) {
+    console.error("Error in ActivateContratorAdmin:", error);
+    return res.status(500).json({
+      status: 500,
+      message: error.message || "Internal server error.",
+    });
+  }
+};
 
 const getAllContractorAdmins = async (req, res) => {
   try {
@@ -1249,5 +1324,6 @@ module.exports = {
   getAllContractorAdmins,
   CompanyComplianceList,
   getComplianceDetails,
-  resendEmailForDocsExpired 
+  resendEmailForDocsExpired,
+  ActivateContratorAdmin
 };
