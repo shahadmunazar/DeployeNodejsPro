@@ -57,24 +57,24 @@ const getAllDocumentContractor = async (req, res) => {
       // insurance,
       ContractorCompanyDocuments,
     ] = await Promise.all([
-      ContractorOrganizationSafetyManagement.findOne({
-        where: {
-          approved_status: 'pending',
-          contractor_id: contractor?.id,
-        },
-      }),
-      ContractorPublicLiability.findOne({
-        where: {
-          approved_status: 'pending',
-          contractor_id: contractor?.id,
-        },
-      }),
-      ContractorRegisterInsurance.findOne({
-        where: {
-          approved_status: 'pending',
-          contractor_id: contractor?.id,
-        },
-      }),
+      // ContractorOrganizationSafetyManagement.findOne({
+      //   where: {
+      //     approved_status: 'pending',
+      //     contractor_id: contractor?.id,
+      //   },
+      // }),
+      // ContractorPublicLiability.findOne({
+      //   where: {
+      //     approved_status: 'pending',
+      //     contractor_id: contractor?.id,
+      //   },
+      // }),
+      // ContractorRegisterInsurance.findOne({
+      //   where: {
+      //     approved_status: 'pending',
+      //     contractor_id: contractor?.id,
+      //   },
+      // }),
       ContractorCompanyDocument.findAll({
         where: {
           approved_status: 'pending',

@@ -15,6 +15,9 @@ const {
   UpdateSubmissionStatus,
   GetSubmissionPrequalification,
   getAllContractorAdmins,
+  CompanyComplianceList,
+  getComplianceDetails,
+  resendEmailForDocsExpired,
 } = require("../controllers/API/OrginazationAdminController/OrginazationControllerAdmin");
 const {
   CreateContractorRegistration,
@@ -93,10 +96,14 @@ router.post("/resend-email-to-invitation", ...WithOrginazationAdminAndRole(Resen
 // router.post("/make-pdf-to-contractor-form", ...WithOrginazationAdminAndRole(MakePdfToAllContractorForm));
 router.post("/make-pdf-to-contractor-form", MakePdfToAllContractorForm);
 
+// routes for contractor registration
 router.post("/send-induction-email", ...WithOrginazationAdminAndRole(SendInductionEmail));
 router.get("/get-all-submission-prequalification", ...WithOrginazationAdminAndRole(GetSubmissionPrequalification));
 router.get("/contractor/validate-invitation", handleContractorTokenInvitation);
 router.get("/get-submission-pendings-notificaton", ...WithOrginazationAdminAndRole(GetSubmissionPrequalificationNotification));
+router.get("/company-compliance-list", ...WithOrginazationAdminAndRole(CompanyComplianceList));
+router.get("/get-compliance-details", ...WithOrginazationAdminAndRole(getComplianceDetails));
+router.post("/resend-email-docs-expired", ...WithOrginazationAdminAndRole(resendEmailForDocsExpired));
 // routes for induction testing
 router.post("/register-with-induction-contractor", RegitserContractiorInducation);
 router.post("/verify-mobile-and-email", VerifyMobileAndEmail);

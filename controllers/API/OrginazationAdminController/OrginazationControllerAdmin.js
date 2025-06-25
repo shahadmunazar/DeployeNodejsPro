@@ -27,6 +27,9 @@ const { stat } = require("fs");
 const ContractorOrganizationSafetyManagement = require("../../../models/contractororganizationsafetymanagement")(sequelize, DataTypes);
 const ContractorPublicLiability = require("../../../models/contractorpublicliability")(sequelize, DataTypes);
 const ContractorRegisterInsurance = require("../../../models/contractorregisterinsurance")(sequelize, DataTypes);
+const ContractorCompanyDocument = require("../../../models/contractor_company_document")(sequelize, DataTypes);
+const AuditLogsContractorAdmin = require("../../../models/AuditLogsContractorAdmin")(sequelize, DataTypes);
+
 
 const GetOrginazationDetails = async (req, res) => {
   try {
@@ -839,6 +842,10 @@ const GetSubmissionPrequalification = async (req, res) => {
     const { filter } = req.query;
 
     const reqUserId = req.user?.id;
+    const Organizations = await Organization.findOne({
+      where: { user_id: reqUserId },
+      attributes: ["id", "organization_name", "user_id"],
+    }); 
 
     let whereClause = {};
 
@@ -849,6 +856,7 @@ const GetSubmissionPrequalification = async (req, res) => {
         whereClause.submission_status = filter;
       }
     }
+    whereClause.invited_organization_by = Organizations.id;
     // If filter is null, empty or undefined => whereClause = {} => fetch all records
 
     const data = await ContractorRegistration.findAll({
@@ -901,6 +909,284 @@ const UpdateInvitationStatus = async (req, res) => {
     res.status(500).json({ message: 'Internal server error.' });
   }
 };
+
+const CompanyComplianceList = async (req, res) => {
+  try {
+    const { status,compliance_status } = req.query;
+    const reqUserId = req.user?.id;
+
+    const Organizations = await Organization.findOne({
+      where: { user_id: reqUserId },
+      attributes: ["id", "organization_name", "user_id"],
+    }); 
+
+      let whereClause = {};
+    
+    if (compliance_status !== undefined && compliance_status !== "") {
+        whereClause.compliance_status = compliance_status;
+    }
+    if( status !== undefined && status !== "") {
+      if (status === "true" || status === "false") {
+        whereClause.status = status === "true";
+      } else {
+        whereClause.status = status;  
+      }
+    }      
+
+    whereClause.invited_organization_by = Organizations.id;
+    // If filter is null, empty or undefined => whereClause = {} => fetch all records
+
+    const data = await ContractorRegistration.findAll({
+      where: whereClause,
+      attributes: {
+        include: [
+          [
+                  sequelize.literal(`(
+                SELECT contractor_email 
+                FROM contractor_invitations 
+                WHERE contractor_invitations.id = ContractorRegistration.contractor_invitation_id 
+                AND contractor_invitations.invited_by = ${reqUserId}
+              )`),
+              "contractor_email",
+          ],
+        ],
+      },
+    });
+
+    res.status(200).json({
+      status: 200,
+      data,
+      message: "Company compliance list retrieved successfully",
+    }); 
+
+
+  } catch (error) {
+    console.error("Error fetching company compliance list:", error);
+    res.status(500).json({  message: "Internal server error" });    
+  }
+}
+
+const getComplianceDetails = async (req, res) => {
+  try {
+    const { contractor_reg_id } = req.query;     
+      const reqUserId = req.user?.id;
+
+    if (!contractor_reg_id) {
+      return res.status(400).json({ message: "Contractor registration ID is required." });
+      
+    }
+
+    const Organizations = await Organization.findOne({
+      where: { user_id: reqUserId },
+      attributes: ["id", "organization_name", "user_id"],
+    }); 
+
+     const complianceDetails = await ContractorRegistration.findOne({
+      where: { id: contractor_reg_id, invited_organization_by: Organizations.id },
+      attributes: {
+        include: [
+          [
+            sequelize.literal(`(
+              SELECT contractor_email 
+              FROM contractor_invitations 
+              WHERE contractor_invitations.id = ContractorRegistration.contractor_invitation_id 
+              AND contractor_invitations.invited_by = ${reqUserId}
+            )`),
+            "contractor_email",
+          ],
+        ],
+      },
+    });
+
+    if (!complianceDetails) { 
+      return res.status(404).json({ message: "Compliance details not found for the given contractor registration ID." });
+    }
+
+    // Fetch all company documents for this contractor
+    const complianceItems = await ContractorCompanyDocument.findAll({
+      where: { contractor_id: contractor_reg_id }
+    });
+
+    // Attach documents to the result
+    const result = {
+      ...complianceDetails.toJSON(),
+      compliance_items: complianceItems
+    };
+
+    res.status(200).json({
+      status: 200,
+      data: result,
+      message: "Compliance details fetched successfully"
+    });
+      
+  } catch (error) {
+    console.error("Error fetching compliance details:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+const resendEmailForDocsExpired = async (req, res) => {
+  try {
+
+    console.log("rrr",req.body)
+    const { contractor_reg_id, compliance_id } = req.body;
+    const senderID = req.user?.id;
+
+    if (!contractor_reg_id || !compliance_id) {
+      return res.status(400).json({
+        status: 400,
+        message: "contractor_reg_id and compliance_id are required.",
+      });
+    }
+
+      const complianceItems = await ContractorCompanyDocument.findOne({
+      where: { id: compliance_id }
+    });
+
+    if (!complianceItems || complianceItems.length === 0) {
+      return res.status(404).json({ message: "No compliance items found for this contractor." });
+    }
+
+
+const complianceDetail = await ContractorRegistration.findOne({
+  where: { id: complianceItems.contractor_id },
+  attributes: [
+    "id",
+    "abn_number",
+    "contractor_company_name",
+    "contractor_trading_name",
+    "company_representative_first_name",
+    "contractor_invitation_id",
+    [sequelize.literal(`(
+      SELECT contractor_email 
+      FROM contractor_invitations 
+      WHERE contractor_invitations.id = ContractorRegistration.contractor_invitation_id 
+    )`), "contractor_email"],
+  ],
+});
+
+    if (!complianceDetail) { 
+      return res.status(404).json({ message: "Compliance details not found for the given contractor registration ID." });
+    }
+    
+    console.log("complianceDetails", complianceDetail.toJSON());
+
+    const getComplianceDetails =  complianceDetail.toJSON();
+    console.log("getComplianceDetailsss", getComplianceDetails.contractor_email);
+    if(complianceItems.end_date < new Date()) {
+      console.log("Compliance item has expired, sending email...");
+    }
+
+         const auditLog = await AuditLogsContractorAdmin.create({
+                          contractor_id: complianceItems.contractor_id,
+                          entity_type  : complianceItems.document_type, // e.g., 'safety_management', 'public_liability', etc.
+                          entity_id    : complianceItems.id,
+                          reviewer_id  : req.user?.id,
+                          reviewer_name: req.user?.name,
+                          action       : 'sent',
+                          comments     : 'Resend email for expired document',
+                          // contractor_type: 'contractor', // for worker documents
+                    });
+                    // console.log('Audit Log created:', auditLog.toJSON());
+
+        await ReSendEmailDocsExpried(getComplianceDetails, auditLog, 'registration');
+
+        return res.status(200).json({"message":"Email sent for expired document."});
+    
+
+  } catch (error) {
+    console.error("Error in resendEmailForDocsExpired:", error);
+    return res.status(500).json({
+      status: 500,
+      message:  error.message || "Internal server error.",
+    });
+  }
+};    
+
+const ReSendEmailDocsExpried = async (complianceDetails, auditLog, register_type) => {
+  try {   
+          let emailID, name;
+          if(register_type === 'registration'){ // for contarctor registration
+              const { contractor_email, company_representative_first_name} = complianceDetails;
+               emailID = contractor_email;
+               name = company_representative_first_name? company_representative_first_name: "Contractor Admin";
+          }else{
+              const { email, first_name,last_name } = complianceDetails;
+               emailID = email;
+               name = first_name ? `${first_name} ${last_name}` : "Contractor";
+          }
+
+    
+    const { entity_type, action, comments, end_date } = auditLog;
+    const status = action; // Assuming action is the status
+  
+    if (!emailID) {
+      throw new Error("No email found for this contractor.");
+    }
+
+    const link = `${process.env.FRONTEND_URL}/user/login`;
+    await emailQueue.add("ReSendEmailDocsExpried", {
+      to: emailID,
+      subject: "Action Required: Contractor Document Expired",
+      html: `
+        <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+                .container { max-width: 600px; margin: auto; background: #ffffff; padding: 30px; border-radius: 8px; }
+                .button { background-color: #004b8d; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; }
+                .status-approved { color: #28a745; font-weight: bold; }
+                .status-rejected { color: #dc3545; font-weight: bold; }
+                .document-list { margin: 20px 0; padding-left: 20px; }
+                .reason { background-color: #f8f9fa; padding: 10px; border-left: 4px solid #004b8d; margin: 10px 0; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h2>Contractor Document Status Notification</h2>
+                <p>Dear ${name || "Contractor Admin"},</p>
+          
+                 <p>The following document for your contractor registration has expired and requires resubmission:</p>
+            
+                <ul class="document-list">
+                  ${entity_type === 'safety_management' ? '<li><strong>File Name:</strong> Safety Management Plan</li>' : ''}
+                  ${entity_type === 'public_liability' ? '<li><strong>File Name:</strong> Public Liability</li>' : ''}
+                  ${entity_type === 'register_insurance' ? '<li><strong>File Name:</strong> Register Insurance</li>' : ''}
+                 <li><strong>Expiry Date:</strong> ${end_date ? new Date(end_date).toLocaleDateString() : "N/A"}</li>
+                  </ul> 
+                  <h4>Status: <span class="status-expired">${status}</span></h4>
+              
+               <div class="reason">
+                <p>${comments || 'Please upload a new, valid document as soon as possible.'}</p>
+                </div>
+                
+                <p>Please click the button below to view details or take further action:</p>
+                <p><a href="${link}" class="button">View Details</a></p>
+                <p>If the button doesn’t work, copy and paste this URL into your browser:</p>
+                <p><a href="${link}">${link}</a></p>
+                
+                <p>If you have any questions, please contact our support team.</p>
+                <p>Regards,<br/>Konnect</p>
+              </div>
+            </body>
+            </html>
+      `,
+    });
+
+     return;
+
+  } catch (error) {
+    console.error("Error in ReSendEmailDocsExpried:", error);
+    return res.status(500).json({
+      status: 500,
+      message: "Internal server error.",
+    });
+  }
+};
+
 
 const getAllContractorAdmins = async (req, res) => {
   try {
@@ -960,5 +1246,8 @@ module.exports = {
   UpdateSubmissionStatus,
   GetSubmissionPrequalification,
   UpdateInvitationStatus,
-  getAllContractorAdmins
+  getAllContractorAdmins,
+  CompanyComplianceList,
+  getComplianceDetails,
+  resendEmailForDocsExpired 
 };

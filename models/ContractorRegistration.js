@@ -156,7 +156,12 @@ module.exports = (sequelize, DataTypes) => {
       comments_history: {
         type: DataTypes.JSON,
         allowNull: true,
-      },      
+      }, 
+      compliance_status: {
+        type: DataTypes.ENUM('pending', 'compliance', 'non-compliance'),
+        allowNull: true,
+        defaultValue: 'pending', // Default value set to 'pending'
+      },       
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
