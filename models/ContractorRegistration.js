@@ -133,7 +133,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       submission_status: {
-        type: DataTypes.ENUM('confirm_submit', 'let_me_check', 'i_do_it_later', 'save_and_come_back_later','approved','rejected','save','pause'),
+        type: DataTypes.ENUM('confirm_submit', 'let_me_check', 'i_do_it_later', 'save_and_come_back_later','approved','rejected','save','pause','resubmission'),
         allowNull: true,
       },
       status: {
