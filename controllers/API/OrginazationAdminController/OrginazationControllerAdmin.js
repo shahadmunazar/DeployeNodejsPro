@@ -694,13 +694,16 @@ const UpdateSubmissionStatus = async (req, res) => {
       return res.status(404).json({ message: "Contractor registration not found." });
     }
 
+    if(submission_status=='approved'){
       // 2. Check all compliance items are approved
-    const complianceItems = await ContractorCompanyDocument.findAll({
+      const complianceItems = await ContractorCompanyDocument.findAll({
       where: { contractor_id: contractor_reg_id },
-    });
+      });
     
-    if (!complianceItems.length || complianceItems.some(item => item.approved_status !== 'approved')) {
-      return res.status(400).json({ message: "All compliance items must be approved before activation." });
+      if (!complianceItems.length || complianceItems.some(item => item.approved_status !== 'approved')) {
+        return res.status(400).json({ message: "All compliance items must be approved before activation." });
+      }
+
     }
 
     // Prepare comments history
