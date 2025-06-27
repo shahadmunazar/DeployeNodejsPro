@@ -1031,7 +1031,10 @@ const GetSubmissionPrequalification = async (req, res) => {
       } else {
         whereClause.submission_status = filter;
       }
+    }else{
+         whereClause.submission_status = {[Op.not]: null};
     }
+    
     whereClause.invited_organization_by = Organizations.id;
     // If filter is null, empty or undefined => whereClause = {} => fetch all records
 
