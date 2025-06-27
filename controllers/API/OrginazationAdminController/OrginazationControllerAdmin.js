@@ -823,7 +823,9 @@ const UpdateSubmissionStatus = async (req, res) => {
 
     if(contractor.submission_status=='approved'){
     
-
+    await contractor.update({
+      compliance_status:'compliance',
+    });
    // 3. Check if user already exists
     let user = await User.findOne({ where: { email: emailID } });
     let plainPassword;
