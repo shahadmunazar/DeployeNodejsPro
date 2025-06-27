@@ -28,6 +28,7 @@ const Organization = require("../../../models/organization")(sequelize, DataType
 const emailQueue = require("../../../queues/emailQueue"); // Ensure the emailQueue is correctly imported
 const contractorCompanyDocument = require("../../../models/contractor_company_document")(sequelize, DataTypes);
 const { response } = require("express");
+const {getFormIncompletePage, getRequiredDocs} = require("../../../services/contractor.service");
 
 const formatDate = date => {
   const formattedDate = new Date(date);
@@ -844,201 +845,425 @@ const DeleteSafetyMContrator = async (req, res) => {
 };
 
 const CheckContractorRegisterStatus = async (req, res) => {
-  try {
-    const { contractor_invitation_id } = req.query;
-    if (!contractor_invitation_id) {
-      return res.status(400).json({ message: "Contractor invitation ID is required." });
-    }
+    try {
+        const {contractor_invitation_id} = req.query;
+        if (!contractor_invitation_id) {
+            return res.status(400).json({message: "Contractor invitation ID is required."});
+        }
 
-    const getTimeAgo = timestamp => {
-      const now = new Date();
-      const past = new Date(timestamp);
-      const diffInMs = now - past;
-      const seconds = Math.floor(diffInMs / 1000);
-      const minutes = Math.floor(diffInMs / (1000 * 60));
-      const hours = Math.floor(diffInMs / (1000 * 60 * 60));
-      const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-      const months = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 30));
-      const years = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 365));
+        const getTimeAgo = timestamp => {
+            const now = new Date();
+            const past = new Date(timestamp);
+            const diffInMs = now - past;
+            const seconds = Math.floor(diffInMs / 1000);
+            const minutes = Math.floor(diffInMs / (1000 * 60));
+            const hours = Math.floor(diffInMs / (1000 * 60 * 60));
+            const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+            const months = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 30));
+            const years = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 365));
 
-      if (years > 0) return `${years} year${years > 1 ? "s" : ""} ago`;
-      if (months > 0) return `${months} month${months > 1 ? "s" : ""} ago`;
-      if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
-      if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
-      if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
-      return `${seconds} second${seconds !== 1 ? "s" : ""} ago`;
-    };
+            if (years > 0) return `${years} year${years > 1 ? "s" : ""} ago`;
+            if (months > 0) return `${months} month${months > 1 ? "s" : ""} ago`;
+            if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
+            if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+            if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+            return `${seconds} second${seconds !== 1 ? "s" : ""} ago`;
+        };
 
-    const registrations = await ContractorRegistration.findAll({
-      where: { contractor_invitation_id },
-      attributes: [
-        "id",
-        "invited_organization_by",
-        "abn_number",
-        "contractor_company_name",
-        "contractor_trading_name",
-        "company_structure",
-        "company_representative_first_name",
-        "company_representative_last_name",
-        "position_at_company",
-        "address",
-        "street",
-        "postal_code",
-        "suburb",
-        "state",
-        "contractor_phone_number",
-        "service_to_be_provided",
-        "employee_insure_doc_id",
-        "public_liability_doc_id",
-        "organization_safety_management_id",
-        "submission_status",
-        "updatedAt",
-        "covered_amount",
-        "have_professional_indemnity_insurance",
-        "is_staff_member_nominated",
-        "provide_name_position_mobile_no",
-        "are_employees_provided_with_health_safety",
-        "are_employees_appropriately_licensed_qualified_safety",
-        "are_employees_confirmed_as_competent_to_undertake_work",
-        "do_you_all_sub_contractor_qualified_to_work",
-        "do_you_all_sub_contractor_required_insurance_public_liability",
-        "have_you_identified_all_health_safety_legislation",
-        "do_you_have_emergency_response",
-        "do_you_have_procedures_to_notify_the_applicable",
-        "do_you_have_SWMS_JSAS_or_safe_work",
-        "do_your_workers_conduct_on_site_review",
-        "do_you_regularly_monitor_compliance",
-        "do_you_have_procedures_circumstances",
-        "have_you_been_prosecuted_health_regulator",
-      ],
-    });
+        const registrations = await ContractorRegistration.findAll({
+            where: {contractor_invitation_id},
+            attributes: [
+                "id",
+                "invited_organization_by",
+                "abn_number",
+                "contractor_company_name",
+                "contractor_trading_name",
+                "company_structure",
+                "company_representative_first_name",
+                "company_representative_last_name",
+                "position_at_company",
+                "address",
+                "street",
+                "postal_code",
+                "suburb",
+                "state",
+                "contractor_phone_number",
+                "service_to_be_provided",
+                "employee_insure_doc_id",
+                "public_liability_doc_id",
+                "organization_safety_management_id",
+                "submission_status",
+                "updatedAt",
+                "covered_amount",
+                "have_professional_indemnity_insurance",
+                "is_staff_member_nominated",
+                "provide_name_position_mobile_no",
+                "are_employees_provided_with_health_safety",
+                "are_employees_appropriately_licensed_qualified_safety",
+                "are_employees_confirmed_as_competent_to_undertake_work",
+                "do_you_all_sub_contractor_qualified_to_work",
+                "do_you_all_sub_contractor_required_insurance_public_liability",
+                "have_you_identified_all_health_safety_legislation",
+                "do_you_have_emergency_response",
+                "do_you_have_procedures_to_notify_the_applicable",
+                "do_you_have_SWMS_JSAS_or_safe_work",
+                "do_your_workers_conduct_on_site_review",
+                "do_you_regularly_monitor_compliance",
+                "do_you_have_procedures_circumstances",
+                "have_you_been_prosecuted_health_regulator",
+            ],
+        });
 
-    if (!registrations || registrations.length === 0) {
-      return res.status(200).json({
-        registered: false,
-        message: "No contractor registration found for the provided invitation ID.",
-      });
-    }
+        if (!registrations || registrations.length === 0) {
+            return res.status(200).json({
+                registered: false,
+                message: "No contractor registration found for the provided invitation ID.",
+            });
+        }
 
-    const enrichedData = registrations.map(registration => {
-      const plain = registration.toJSON();
+        const enrichedData = await Promise.all(registrations.map(async registration => {
+            const plain = registration.toJSON();
 
-      const requiredPage1Fields = [
-        "abn_number",
-        "contractor_company_name",
-        "contractor_trading_name",
-        "company_structure",
-        "company_representative_first_name",
-        "company_representative_last_name",
-        "position_at_company",
-        "address",
-        "street",
-        "suburb",
-        "state",
-        "contractor_phone_number",
-        "service_to_be_provided",
-      ];
+            const requiredPage1Fields = [
+                "abn_number",
+                "contractor_company_name",
+                "contractor_trading_name",
+                "company_structure",
+                "company_representative_first_name",
+                "company_representative_last_name",
+                "position_at_company",
+                "address",
+                "street",
+                "suburb",
+                "state",
+                "contractor_phone_number",
+                "service_to_be_provided",
+            ];
 
-      const requiredPage5Fields = [
-        "have_professional_indemnity_insurance",
-        "is_staff_member_nominated",
-        "provide_name_position_mobile_no",
-        "are_employees_provided_with_health_safety",
-        "are_employees_appropriately_licensed_qualified_safety",
-        "are_employees_confirmed_as_competent_to_undertake_work",
-        "do_you_all_sub_contractor_qualified_to_work",
-        "do_you_all_sub_contractor_required_insurance_public_liability",
-        "have_you_identified_all_health_safety_legislation",
-        "do_you_have_emergency_response",
-        "do_you_have_procedures_to_notify_the_applicable",
-        "do_you_have_SWMS_JSAS_or_safe_work",
-        "do_your_workers_conduct_on_site_review",
-        "do_you_regularly_monitor_compliance",
-        "do_you_have_procedures_circumstances",
-        "have_you_been_prosecuted_health_regulator",
-        "employee_insure_doc_id",
-        "public_liability_doc_id",
-        // "organization_safety_management_id",
-      ];
+            const requiredPage5Fields = [
+                "have_professional_indemnity_insurance",
+                "is_staff_member_nominated",
+                "provide_name_position_mobile_no",
+                "are_employees_provided_with_health_safety",
+                "are_employees_appropriately_licensed_qualified_safety",
+                "are_employees_confirmed_as_competent_to_undertake_work",
+                "do_you_all_sub_contractor_qualified_to_work",
+                "do_you_all_sub_contractor_required_insurance_public_liability",
+                "have_you_identified_all_health_safety_legislation",
+                "do_you_have_emergency_response",
+                "do_you_have_procedures_to_notify_the_applicable",
+                "do_you_have_SWMS_JSAS_or_safe_work",
+                "do_your_workers_conduct_on_site_review",
+                "do_you_regularly_monitor_compliance",
+                "do_you_have_procedures_circumstances",
+                "have_you_been_prosecuted_health_regulator",
+                "employee_insure_doc_id",
+                "public_liability_doc_id",
+                // "organization_safety_management_id",
+            ];
 
-      let formStatus = "";
-      let incompletePage = null;
-  // console.log("plain",plain);
-      switch (plain.submission_status) {
-        case "confirm_submit":
-          formStatus = "complete";
-          break;
-        case "approved":
-          formStatus = "Approved";
-          break;
-        case "rejected":
-          formStatus = "Rejected";
-          break;
-        case "save":
-          formStatus = "Save";
-          break;
-        case "let_me_check":
-          formStatus = "Let Me Check";
-          break;
-        case "i_do_it_later":
-          formStatus = "I do it Later";
-          break;
-        case "save_and_come_back_later":
-          formStatus = "Save and come Back Later";
-          break;
-        case "pause":
-          formStatus = "Paused";
-          break;
-        default:
-          // Check for incomplete form logic
-          const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
-          const isPage5Incomplete = requiredPage5Fields.some(field => plain[field]);
-          // console.log("isPage1Incomplete", isPage1Incomplete);
-          // console.log("plain", plain);
-        formStatus = "pending";
-          if (isPage1Incomplete) {
-            incompletePage = 1;
-          } else if (!plain.employee_insure_doc_id) {
-            if (plain.public_liability_doc_id && plain.organization_safety_management_id) {
-              incompletePage = isPage5Incomplete ? 5 : 5;
-            } else if (plain.public_liability_doc_id) {
-              incompletePage = 4;
-            } else {
-              incompletePage = 2;
+            let formStatus = "";
+            let incompletePage = null;
+            // console.log("plain",plain);
+            // form status check for steps
+            switch (plain.submission_status) {
+                case "confirm_submit":
+                    const {employeeInsuranceDoc, publicLiabilityDoc, safetyDoc} = await getRequiredDocs(plain);
+                    if (
+                        employeeInsuranceDoc.approved_status === "rejected"
+                    ) {
+                        incompletePage = 2;
+                    } else if (
+                        publicLiabilityDoc.approved_status === "rejected"
+                    ) {
+                        incompletePage = 3;
+                    } else if (
+                        safetyDoc.approved_status === "rejected"
+                    ) {
+                        incompletePage = 5;
+                    }
+                    const isAnyDocRejected =
+                        employeeInsuranceDoc?.approved_status === "rejected" ||
+                        publicLiabilityDoc?.approved_status === "rejected" ||
+                        safetyDoc?.approved_status === "rejected";
+
+                    if (isAnyDocRejected) {
+                        formStatus = "pending";
+                    } else {
+                        formStatus = "complete";
+                    }
+
+                    break;
+                case "approved":
+                    formStatus = "Approved";
+                    break;
+                case "rejected":
+                    formStatus = "Rejected";
+                    break;
+                case "save":
+                    formStatus = "Save";
+                    break;
+                case "let_me_check":
+                    formStatus = "Let Me Check";
+                    break;
+                case "i_do_it_later":
+                    formStatus = "I do it Later";
+                    break;
+                case "save_and_come_back_later":
+                    formStatus = "Save and come Back Later";
+                    break;
+                case "pause":
+                    formStatus = "Paused";
+                    break;
+                default:
+                    console.log("hit in default")
+                    // Check for incomplete form logic
+                    // const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
+                    // const isPage5Incomplete = requiredPage5Fields.some(field => plain[field]);
+                    // console.log("isPage1Incomplete", isPage1Incomplete);
+                    // console.log("plain", plain);
+                    // formStatus = "pending";
+                    // if (isPage1Incomplete) {
+                    //   incompletePage = 1;
+                    // } else if (!plain.employee_insure_doc_id) {
+                    //   if (plain.public_liability_doc_id && plain.organization_safety_management_id) {
+                    //     incompletePage = isPage5Incomplete ? 5 : 5;
+                    //   } else if (plain.public_liability_doc_id) {
+                    //     incompletePage = 4;
+                    //   } else {
+                    //     incompletePage = 2;
+                    //   }
+                    // } else if (!plain.public_liability_doc_id) {
+                    //   incompletePage = 3;
+                    // } else if (!plain.organization_safety_management_id) {
+                    //   incompletePage = 4;
+                    // } else if (isPage5Incomplete) {
+                    //   incompletePage = 5;
+                    // } else {
+                    //   formStatus = "complete";
+                    // }
+                    // break;
+                    incompletePage = await getFormIncompletePage(plain, requiredPage1Fields, requiredPage5Fields);
+                    formStatus = incompletePage ? "pending" : "complete";
+
             }
-          } else if (!plain.public_liability_doc_id) {
-            incompletePage = 3;
-          } else if (!plain.organization_safety_management_id) {
-            incompletePage = 4;
-          } else if (isPage5Incomplete) {
-            incompletePage = 5;
-          } else {
-            formStatus = "complete";
-          }
-          break;
-      }
 
-      return {
-        ...plain,
-        lastUpdatedAgo: getTimeAgo(plain.updatedAt),
-        incompletePage,
-        formStatus,
-      };
-    });
-
-    return res.status(200).json({
-      registered: true,
-      status: 200,
-      data: enrichedData,
-    });
-  } catch (error) {
-    console.error("Error checking contractor registration status:", error);
-    return res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
+            return {
+                ...plain,
+                lastUpdatedAgo: getTimeAgo(plain.updatedAt),
+                incompletePage,
+                formStatus,
+            };
+        }));
+        return res.status(200).json({
+            registered: true,
+            status: 200,
+            data: enrichedData,
+        });
+    } catch (error) {
+        console.error("Error checking contractor registration status:", error);
+        return res.status(500).json({
+            message: "Internal server error",
+            error: error.message,
+        });
+    }
 };
+// const CheckContractorRegisterStatus = async (req, res) => {
+//   try {
+//     const { contractor_invitation_id } = req.query;
+//     if (!contractor_invitation_id) {
+//       return res.status(400).json({ message: "Contractor invitation ID is required." });
+//     }
+
+//     const getTimeAgo = timestamp => {
+//       const now = new Date();
+//       const past = new Date(timestamp);
+//       const diffInMs = now - past;
+//       const seconds = Math.floor(diffInMs / 1000);
+//       const minutes = Math.floor(diffInMs / (1000 * 60));
+//       const hours = Math.floor(diffInMs / (1000 * 60 * 60));
+//       const days = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+//       const months = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 30));
+//       const years = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 365));
+
+//       if (years > 0) return `${years} year${years > 1 ? "s" : ""} ago`;
+//       if (months > 0) return `${months} month${months > 1 ? "s" : ""} ago`;
+//       if (days > 0) return `${days} day${days > 1 ? "s" : ""} ago`;
+//       if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+//       if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
+//       return `${seconds} second${seconds !== 1 ? "s" : ""} ago`;
+//     };
+
+//     const registrations = await ContractorRegistration.findAll({
+//       where: { contractor_invitation_id },
+//       attributes: [
+//         "id",
+//         "invited_organization_by",
+//         "abn_number",
+//         "contractor_company_name",
+//         "contractor_trading_name",
+//         "company_structure",
+//         "company_representative_first_name",
+//         "company_representative_last_name",
+//         "position_at_company",
+//         "address",
+//         "street",
+//         "postal_code",
+//         "suburb",
+//         "state",
+//         "contractor_phone_number",
+//         "service_to_be_provided",
+//         "employee_insure_doc_id",
+//         "public_liability_doc_id",
+//         "organization_safety_management_id",
+//         "submission_status",
+//         "updatedAt",
+//         "covered_amount",
+//         "have_professional_indemnity_insurance",
+//         "is_staff_member_nominated",
+//         "provide_name_position_mobile_no",
+//         "are_employees_provided_with_health_safety",
+//         "are_employees_appropriately_licensed_qualified_safety",
+//         "are_employees_confirmed_as_competent_to_undertake_work",
+//         "do_you_all_sub_contractor_qualified_to_work",
+//         "do_you_all_sub_contractor_required_insurance_public_liability",
+//         "have_you_identified_all_health_safety_legislation",
+//         "do_you_have_emergency_response",
+//         "do_you_have_procedures_to_notify_the_applicable",
+//         "do_you_have_SWMS_JSAS_or_safe_work",
+//         "do_your_workers_conduct_on_site_review",
+//         "do_you_regularly_monitor_compliance",
+//         "do_you_have_procedures_circumstances",
+//         "have_you_been_prosecuted_health_regulator",
+//       ],
+//     });
+
+//     if (!registrations || registrations.length === 0) {
+//       return res.status(200).json({
+//         registered: false,
+//         message: "No contractor registration found for the provided invitation ID.",
+//       });
+//     }
+
+//     const enrichedData = registrations.map(registration => {
+//       const plain = registration.toJSON();
+
+//       const requiredPage1Fields = [
+//         "abn_number",
+//         "contractor_company_name",
+//         "contractor_trading_name",
+//         "company_structure",
+//         "company_representative_first_name",
+//         "company_representative_last_name",
+//         "position_at_company",
+//         "address",
+//         "street",
+//         "suburb",
+//         "state",
+//         "contractor_phone_number",
+//         "service_to_be_provided",
+//       ];
+
+//       const requiredPage5Fields = [
+//         "have_professional_indemnity_insurance",
+//         "is_staff_member_nominated",
+//         "provide_name_position_mobile_no",
+//         "are_employees_provided_with_health_safety",
+//         "are_employees_appropriately_licensed_qualified_safety",
+//         "are_employees_confirmed_as_competent_to_undertake_work",
+//         "do_you_all_sub_contractor_qualified_to_work",
+//         "do_you_all_sub_contractor_required_insurance_public_liability",
+//         "have_you_identified_all_health_safety_legislation",
+//         "do_you_have_emergency_response",
+//         "do_you_have_procedures_to_notify_the_applicable",
+//         "do_you_have_SWMS_JSAS_or_safe_work",
+//         "do_your_workers_conduct_on_site_review",
+//         "do_you_regularly_monitor_compliance",
+//         "do_you_have_procedures_circumstances",
+//         "have_you_been_prosecuted_health_regulator",
+//         "employee_insure_doc_id",
+//         "public_liability_doc_id",
+//         // "organization_safety_management_id",
+//       ];
+
+//       let formStatus = "";
+//       let incompletePage = null;
+//   // console.log("plain",plain);
+//       switch (plain.submission_status) {
+//         case "confirm_submit":
+//           formStatus = "complete";
+//           break;
+//         case "approved":
+//           formStatus = "Approved";
+//           break;
+//         case "rejected":
+//           formStatus = "Rejected";
+//           break;
+//         case "save":
+//           formStatus = "Save";
+//           break;
+//         case "let_me_check":
+//           formStatus = "Let Me Check";
+//           break;
+//         case "i_do_it_later":
+//           formStatus = "I do it Later";
+//           break;
+//         case "save_and_come_back_later":
+//           formStatus = "Save and come Back Later";
+//           break;
+//         case "pause":
+//           formStatus = "Paused";
+//           break;
+//         default:
+//           // Check for incomplete form logic
+//           const isPage1Incomplete = requiredPage1Fields.some(field => !plain[field]);
+//           const isPage5Incomplete = requiredPage5Fields.some(field => plain[field]);
+//           // console.log("isPage1Incomplete", isPage1Incomplete);
+//           // console.log("plain", plain);
+//         formStatus = "pending";
+//           if (isPage1Incomplete) {
+//             incompletePage = 1;
+//           } else if (!plain.employee_insure_doc_id) {
+//             if (plain.public_liability_doc_id && plain.organization_safety_management_id) {
+//               incompletePage = isPage5Incomplete ? 5 : 5;
+//             } else if (plain.public_liability_doc_id) {
+//               incompletePage = 4;
+//             } else {
+//               incompletePage = 2;
+//             }
+//           } else if (!plain.public_liability_doc_id) {
+//             incompletePage = 3;
+//           } else if (!plain.organization_safety_management_id) {
+//             incompletePage = 4;
+//           } else if (isPage5Incomplete) {
+//             incompletePage = 5;
+//           } else {
+//             formStatus = "complete";
+//           }
+//           break;
+//       }
+
+//       return {
+//         ...plain,
+//         lastUpdatedAgo: getTimeAgo(plain.updatedAt),
+//         incompletePage,
+//         formStatus,
+//       };
+//     });
+
+//     return res.status(200).json({
+//       registered: true,
+//       status: 200,
+//       data: enrichedData,
+//     });
+//   } catch (error) {
+//     console.error("Error checking contractor registration status:", error);
+//     return res.status(500).json({
+//       message: "Internal server error",
+//       error: error.message,
+//     });
+//   }
+// };
 
 const DeleteContractorRecords = async (req, res) => {
   try {
