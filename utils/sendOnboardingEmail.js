@@ -29,6 +29,7 @@ const sendOnboardingEmail = async ({ email, name, tempPassword, orgName }) => {
       <h2>Welcome ${name},</h2>
       <p>Thank you for joining our platform! Please use the details below to activate your account:</p>
       <ul>
+        <li><strong>Email ID:</strong> ${email}</li>
         <li><strong>Temporary Password:</strong> ${tempPassword}</li>
         <li><strong>Activation Link:</strong> <a href="${activationLink}">${activationLink}</a></li>
       </ul>

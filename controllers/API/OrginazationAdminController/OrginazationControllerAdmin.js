@@ -11,7 +11,8 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { Op } = require("sequelize");
 const https = require("https");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
+
 const sequelize = require("../../../config/database");
 const { DataTypes } = require("sequelize");
 const RefreshToken = require("../../../models/refreshToken")(sequelize, DataTypes);
@@ -29,8 +30,8 @@ const ContractorPublicLiability = require("../../../models/contractorpublicliabi
 const ContractorRegisterInsurance = require("../../../models/contractorregisterinsurance")(sequelize, DataTypes);
 const ContractorCompanyDocument = require("../../../models/contractor_company_document")(sequelize, DataTypes);
 const AuditLogsContractorAdmin = require("../../../models/AuditLogsContractorAdmin")(sequelize, DataTypes);
-
-
+const UserRoles = require("../../../models/userrole");
+const generateStrongPassword = require("../../../utils/generateStrongPassword");
 const GetOrginazationDetails = async (req, res) => {
   try {
     console.log("check for routes");
@@ -678,19 +679,28 @@ const UpdateContractorComments = async (req, res) => {
 
 const UpdateSubmissionStatus = async (req, res) => {
   try {
-    const { req_id, submission_status, comments, approval_type, inclusion_list, minimum_hours, bcc_email } = req.body;
+    const { contractor_reg_id, submission_status, comments, approval_type, inclusion_list, minimum_hours, bcc_email } = req.body;
 
     const userId = req.user?.id || null;
     const userName = req.user?.name || "Admin";
 
-    if (!req_id || !submission_status) {
-      return res.status(400).json({ message: "req_id and submission_status are required." });
+    if (!contractor_reg_id || !submission_status) {
+      return res.status(400).json({ message: "contractor_reg_id and submission_status are required." });
     }
 
-    const contractor = await ContractorRegistration.findOne({ where: { id: req_id } });
+    const contractor = await ContractorRegistration.findOne({ where: { id: contractor_reg_id } });
 
     if (!contractor) {
       return res.status(404).json({ message: "Contractor registration not found." });
+    }
+
+      // 2. Check all compliance items are approved
+    const complianceItems = await ContractorCompanyDocument.findAll({
+      where: { contractor_id: contractor_reg_id },
+    });
+    
+    if (!complianceItems.length || complianceItems.some(item => item.approved_status !== 'approved')) {
+      return res.status(400).json({ message: "All compliance items must be approved before activation." });
     }
 
     // Prepare comments history
@@ -771,10 +781,11 @@ const UpdateSubmissionStatus = async (req, res) => {
         }
       }
     }
+    const emailID = invitation?.contractor_email;
 
-    if (["approved", "rejected"].includes(submission_status.toLowerCase()) && invitation?.contractor_email) {
+    if (["approved", "rejected"].includes(submission_status.toLowerCase()) && emailID) {
       await emailQueue.add("sendSubmissionStatusEmail", {
-        to: invitation.contractor_email,
+        to: emailID,
         bcc: bcc_email || undefined,
         subject: `Contractor Submission ${submission_status.toUpperCase()} - ${organizationName}`,
         html: `
@@ -810,9 +821,43 @@ const UpdateSubmissionStatus = async (req, res) => {
       });
     }
 
+    if(contractor.submission_status=='approved'){
+    
+
+   // 3. Check if user already exists
+    let user = await User.findOne({ where: { email: emailID } });
+    let plainPassword;
+    if (!user) {
+              // 4. Generate a strong random 8-character password
+              //plainPassword = crypto.randomBytes(6).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
+              plainPassword = generateStrongPassword(8);
+              console.log("password-",plainPassword);
+            const hashedPassword = await bcrypt.hash(plainPassword, 10);
+              // 5. Create user
+              let userName = contractor.company_representative_first_name + ' ' + contractor.company_representative_last_name || invitation.contractor_email;
+              user = await User.create({
+                name: userName,
+                email: emailID,
+                password: hashedPassword, // hashed password
+                // phone_number: contractor.contractor_phone_number || null,
+                // profile_image: null, // Assuming no profile image for now
+                user_status: 1, // active
+              });
+
+              // 6. Assign contractor admin role (roleId 3 assumed)
+            const roles =  await UserRoles.create({
+                userId: user.id,
+                roleId: 3,
+              });
+
+              //await  sendContractorAdminActivationEmail(user, plainPassword);
+    }
+
+    }
+
     return res.status(200).json({
       status: 200,
-      message: "Submission status and comments updated successfully.",
+      message: "Submission status updated and Contractor Activated successfully.",
       updated_status: submission_status,
       comments_history: updatedComments,
     });
@@ -821,6 +866,144 @@ const UpdateSubmissionStatus = async (req, res) => {
     return res.status(500).json({
       message: "Internal server error",
       error: error.message,
+    });
+  }
+};
+
+const sendContractorAdminActivationEmail = async (user, plainPassword) => {
+ try {
+        // 7. Send activation email with password
+        const link = `${process.env.FRONTEND_URL}/user/login`;
+        await emailQueue.add("sendContractorAdminActivationEmail", {
+          to: user.email,
+          subject: "Your Contractor Admin Account is Activated",
+          html: `
+            <div style="font-family: Arial, sans-serif;">
+              <h2>Welcome, ${user.name}!</h2>
+              <p>Your contractor admin account has been activated. You can now log in and manage your compliance documents.</p>
+              <p><strong>Login Email:</strong> ${user.email}</p>
+              ${plainPassword ? `<p><strong>Temporary Password:</strong> ${plainPassword}</p>` : ""}
+              <p>
+                <a href="${link}" style="padding: 10px 20px; background: #004b8d; color: #fff; border-radius: 4px; text-decoration: none;">Login</a>
+              </p>
+              <p>If you have any questions, please contact our support team.</p>
+              <p>Regards,<br/>Konnect</p>
+            </div>
+          `,
+        });
+        return;
+      } catch(error) {
+        console.error("Error sending activation email:", error);
+        return { status: 500, message: "Failed to send activation email." };
+      }
+  
+
+}
+
+
+const ActivateContratorAdmin = async (req, res) => {
+  try {
+    const { contractor_reg_id } = req.body;
+    if (!contractor_reg_id) {
+      return res.status(400).json({ message: "contractor_reg_id is required." });
+    }
+
+    // 1. Get contractor registration and invitation
+    const contractor = await ContractorRegistration.findOne({
+      where: { id: contractor_reg_id },
+    });
+
+    if (!contractor) {
+      return res.status(404).json({ message: "Contractor not found." });
+    }
+
+    const invitation = await ContractorInvitation.findOne({
+      where: { id: contractor.contractor_invitation_id },
+    });
+
+    // Check if invitation exists
+    if (!invitation) {
+      return res.status(404).json({ message: "Contractor invitation not found." });
+    }
+
+    // 2. Check all compliance items are approved
+    const complianceItems = await ContractorCompanyDocument.findAll({
+      where: { contractor_id: contractor_reg_id },
+    });
+    
+    if (!complianceItems.length || complianceItems.some(item => item.approved_status !== 'approved')) {
+      return res.status(400).json({ message: "All compliance items must be approved before activation." });
+    }
+
+   // 3. Check if user already exists
+    let user = await User.findOne({ where: { email: invitation.contractor_email } });
+    let plainPassword;
+    if (!user) {
+      // 4. Generate a strong random 8-character password
+      //plainPassword = crypto.randomBytes(6).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
+       plainPassword = generateStrongPassword(8);
+      console.log("password-",plainPassword);
+     const hashedPassword = await bcrypt.hash(plainPassword, 10);
+      // 5. Create user
+      let userName = contractor.company_representative_first_name + ' ' + contractor.company_representative_last_name || invitation.contractor_email;
+      user = await User.create({
+        name: userName,
+        email: invitation.contractor_email,
+        password: hashedPassword, // hashed password
+        // phone_number: contractor.contractor_phone_number || null,
+        // profile_image: null, // Assuming no profile image for now
+        user_status: 1, // active
+      });
+
+      // 6. Assign contractor admin role (roleId 3 assumed)
+     const roles =  await UserRoles.create({
+        userId: user.id,
+        roleId: 3,
+      });
+
+       // 7. Send activation email with password
+    const link = `${process.env.FRONTEND_URL}/user/login`;
+    await emailQueue.add("sendContractorAdminActivation", {
+      to: user.email,
+      subject: "Your Contractor Admin Account is Activated",
+      html: `
+        <div style="font-family: Arial, sans-serif;">
+          <h2>Welcome, ${user.name}!</h2>
+          <p>Your contractor admin account has been activated. You can now log in and manage your compliance documents.</p>
+          <p><strong>Login Email:</strong> ${user.email}</p>
+          ${plainPassword ? `<p><strong>Temporary Password:</strong> ${plainPassword}</p>` : ""}
+          <p>
+            <a href="${link}" style="padding: 10px 20px; background: #004b8d; color: #fff; border-radius: 4px; text-decoration: none;">Login</a>
+          </p>
+          <p>If you have any questions, please contact our support team.</p>
+          <p>Regards,<br/>Konnect</p>
+        </div>
+      `,
+    });
+      return res.status(200).json({
+      status: 200,
+      message: "Contractor admin activated and email sent.",
+      user_id: user.id,
+    });
+
+    }else{
+
+      return res.status(409).json({
+        status: 409,
+        message: "Contractor admin already exists.",
+          });
+    }
+            //   // 8. Update contractor registration status to active
+            // await contractor.update({ 
+            //   submission_status: "active",
+            //   status: true, // Assuming 'status' is a boolean field for active/inactive
+            // });     
+
+  } catch (error) {
+    console.error("Error in ActivateContratorAdmin:", error);
+    return res.status(500).json({
+      status: 500,
+      message: error.message || "Internal server error.",
     });
   }
 };
@@ -1175,93 +1358,7 @@ const ReSendEmailDocsExpried = async (complianceDetails, auditLog, register_type
   }
 };
 
-const ActivateContratorAdmin = async (req, res) => {
-  try {
-    const { contractor_reg_id } = req.body;
-    if (!contractor_reg_id) {
-      return res.status(400).json({ message: "contractor_reg_id is required." });
-    }
 
-    // 1. Get contractor registration and invitation
-    const contractor = await ContractorRegistration.findOne({
-      where: { id: contractor_reg_id },
-    });
-    if (!contractor) {
-      return res.status(404).json({ message: "Contractor not found." });
-    }
-
-    const invitation = await ContractorInvitation.findOne({
-      where: { id: contractor.contractor_invitation_id },
-    });
-    // Check if invitation exists
-    if (!invitation) {
-      return res.status(404).json({ message: "Contractor invitation not found." });
-    }
-
-    // 2. Check all compliance items are approved
-    const complianceItems = await ContractorCompanyDocument.findAll({
-      where: { contractor_id: contractor_reg_id },
-    });
-    if (!complianceItems.length || complianceItems.some(item => item.approved_status !== 'approved')) {
-      return res.status(400).json({ message: "All compliance items must be approved before activation." });
-    }
-
-   // 3. Check if user already exists
-    let user = await User.findOne({ where: { email: invitation.contractor_email } });
-    let plainPassword;
-    if (!user) {
-      // 4. Generate a strong random 8-character password
-      plainPassword = crypto.randomBytes(6).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 8);
-
-      // 5. Create user
-      let userName = contractor.company_representative_first_name + ' ' + contractor.company_representative_last_name || invitation.contractor_email;
-      user = await User.create({
-        name: userName,
-        email: invitation.contractor_email,
-        password: bcrypt.hashSync(plainPassword, 10), // hashed password
-        user_status: 1, // active
-      });
-
-      // 6. Assign contractor admin role (roleId 3 assumed)
-      await sequelize.models.UserRoles.create({
-        userId: user.id,
-        roleId: 3,
-      });
-    }
-
-    // 7. Send activation email with password
-    const link = `${process.env.FRONTEND_URL}/user/login`;
-    await emailQueue.add("sendContractorAdminActivation", {
-      to: user.email,
-      subject: "Your Contractor Admin Account is Activated",
-      html: `
-        <div style="font-family: Arial, sans-serif;">
-          <h2>Welcome, ${user.name}!</h2>
-          <p>Your contractor admin account has been activated. You can now log in and manage your compliance documents.</p>
-          <p><strong>Login Email:</strong> ${user.email}</p>
-          ${plainPassword ? `<p><strong>Temporary Password:</strong> ${plainPassword}</p>` : ""}
-          <p>
-            <a href="${link}" style="padding: 10px 20px; background: #004b8d; color: #fff; border-radius: 4px; text-decoration: none;">Login</a>
-          </p>
-          <p>If you have any questions, please contact our support team.</p>
-          <p>Regards,<br/>Konnect</p>
-        </div>
-      `,
-    });
-
-     return res.status(200).json({
-      status: 200,
-      message: "Contractor admin activated and email sent.",
-      user_id: user.id,
-    });
-  } catch (error) {
-    console.error("Error in ActivateContratorAdmin:", error);
-    return res.status(500).json({
-      status: 500,
-      message: error.message || "Internal server error.",
-    });
-  }
-};
 
 const getAllContractorAdmins = async (req, res) => {
   try {
